@@ -7,6 +7,11 @@ from notion_client import Client
 from .config import env
 
 
+def is_configured() -> bool:
+    """Notion is optional. Without a token, the Notion jobs skip instead of failing."""
+    return bool(env("NOTION_TOKEN"))
+
+
 def get_client() -> Client:
     return Client(
         auth=env("NOTION_TOKEN", required=True),

@@ -132,6 +132,10 @@ def run(dry_run: bool = False, days: int = 30) -> int:
     """Main entry point."""
     from . import db
 
+    if not dry_run and not notion_api.is_configured():
+        print("retention: Notion not configured (NOTION_TOKEN unset), skipping")
+        return 0
+
     cutoff = retention_cutoff(days=days)
     
     with db.connect() as conn:

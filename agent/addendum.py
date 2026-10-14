@@ -138,6 +138,10 @@ def run(dry_run: bool = False) -> int:
     """Main entry point."""
     from . import db
 
+    if not dry_run and not notion_api.is_configured():
+        print("addendum: Notion not configured (NOTION_TOKEN unset), skipping")
+        return 0
+
     window = addendum_window()
     
     with db.connect() as conn:

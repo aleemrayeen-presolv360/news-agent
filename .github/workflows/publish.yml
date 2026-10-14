@@ -81,16 +81,7 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
 
-      - name: Publish to Notion
-        run: python -m agent.publish
-        env:
-          NEON_DSN: ${{ secrets.NEON_DSN }}
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_VERSION: ${{ secrets.NOTION_VERSION }}
-          NOTION_DS_WEEKS: ${{ secrets.NOTION_DS_WEEKS }}
-          NOTION_DS_ITEMS: ${{ secrets.NOTION_DS_ITEMS }}
-          NOTION_DS_THREADS: ${{ secrets.NOTION_DS_THREADS }}
-
+      # Website data first, so it never waits on the optional Notion step
       - name: Generate static frontend data
         run: python -m agent.publish_static
         env:
@@ -103,6 +94,17 @@ jobs:
           git add frontend/data.js
           git diff --staged --quiet || git commit -m "chore: update weekly digest data [skip ci]"
           git push
+
+      # Optional: skips itself when the NOTION_TOKEN secret isn't set
+      - name: Publish to Notion
+        run: python -m agent.publish
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_VERSION: ${{ secrets.NOTION_VERSION }}
+          NOTION_DS_WEEKS: ${{ secrets.NOTION_DS_WEEKS }}
+          NOTION_DS_ITEMS: ${{ secrets.NOTION_DS_ITEMS }}
+          NOTION_DS_THREADS: ${{ secrets.NOTION_DS_THREADS }}
 
       - name: Notify on failure
         if: failure()

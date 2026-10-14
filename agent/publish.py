@@ -229,6 +229,10 @@ def run(dry_run: bool = False) -> int:
     """Main entry point."""
     from . import db
 
+    if not dry_run and not notion_api.is_configured():
+        print("publish: Notion not configured (NOTION_TOKEN unset), skipping")
+        return 0
+
     window = week_window()
     
     with db.connect() as conn:
