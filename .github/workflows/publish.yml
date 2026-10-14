@@ -1,0 +1,113 @@
+# Publish: process the week's news, refresh the website data (frontend/data.js)
+# and post the Notion digest.
+#
+# CRON IS UTC. IST = UTC+5:30.
+# '31 6 * * 5' = Friday 06:31 UTC = Friday 12:01 IST
+#
+# Budget: 4 runs/month x ~8 min = ~32 of 2,000 free minutes.
+
+name: publish
+
+on:
+  schedule:
+    - cron: '31 6 * * 5'
+  workflow_dispatch:
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+# Needed to commit the refreshed frontend/data.js back to the repo
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/fastembed
+          key: fastembed-bge-small-en-v1.5
+
+      - run: pip install -r requirements.txt
+
+      # Run the full pipeline for any items that need processing
+      - name: Extract articles
+        run: python -m agent.extract --limit 200
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Generate embeddings
+        run: python -m agent.embed --limit 200
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Triage items
+        run: python -m agent.triage --limit 500
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Score items
+        run: python -m agent.score --limit 100
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+
+      - name: Cluster stories
+        run: python -m agent.cluster
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Detect threads
+        run: python -m agent.threads
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Send breaking alerts
+        run: python -m agent.alerts
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+
+      - name: Publish to Notion
+        run: python -m agent.publish
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_VERSION: ${{ secrets.NOTION_VERSION }}
+          NOTION_DS_WEEKS: ${{ secrets.NOTION_DS_WEEKS }}
+          NOTION_DS_ITEMS: ${{ secrets.NOTION_DS_ITEMS }}
+          NOTION_DS_THREADS: ${{ secrets.NOTION_DS_THREADS }}
+
+      - name: Generate static frontend data
+        run: python -m agent.publish_static
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Commit and push data.js
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add frontend/data.js
+          git diff --staged --quiet || git commit -m "chore: update weekly digest data [skip ci]"
+          git push
+
+      - name: Notify on failure
+        if: failure()
+        run: python -m agent.notify_failure
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

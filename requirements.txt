@@ -1,0 +1,13 @@
+# Python packages for the news pipeline (agent/).
+#   pip install -r requirements.txt
+
+feedparser==6.0.11            # read RSS / Atom feeds
+httpx==0.28.1                 # HTTP client: feeds, Groq, Cloudflare, Telegram
+trafilatura==2.0.0            # pull the article text out of a web page
+psycopg[binary]==3.2.3        # Neon Postgres driver
+python-dateutil==2.9.0.post0  # parse messy feed dates
+tenacity==9.0.0               # retry LLM calls
+fastembed==0.5.1              # 384-dim text embeddings (downloads a 67 MB model once)
+numpy==2.2.2                  # similarity maths for clustering
+notion-client==2.3.0          # optional: weekly digest page in Notion
+python-dotenv==1.2.4          # read .env on local runs

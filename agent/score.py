@@ -1,0 +1,372 @@
+"""Phase 3a: LLM scoring + entity extraction.
+
+Uses the Groq API (model in GROQ_MODEL below) to score items 0-100 and
+extract entities/topics. Cloudflare Workers AI is the fallback if Groq fails.
+
+Scoring rubric:
+- Source authority: A=25, B=22, C=20, D=12
+- Novelty: 0-25 (is this genuinely new?)
+- Impact: 0-25 (how significant?)
+- Relevance: 0-25 (AI/ML/deep-tech focus?)
+
+    python -m agent.score                # score unscored items
+    python -m agent.score --dry-run      # test scoring without DB
+    python -m agent.score --limit 20     # only score 20 items
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from dataclasses import dataclass
+
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+from .config import env, SCORE_BREAKING, SCORE_MAJOR, SCORE_NOTABLE
+
+# Source tier scores
+TIER_SCORES = {"A": 25, "B": 22, "C": 20, "D": 12}
+
+# Groq config
+GROQ_MODEL = "qwen/qwen3.8-27b"
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+# Cloudflare Workers AI config (fallback)
+CF_MODEL = "@cf/meta/llama-3-8b-instruct"
+
+
+@dataclass
+class ScoreResult:
+    item_id: int
+    score: int
+    novelty: int
+    impact: int
+    relevance: int
+    entities: list[str]
+    topics: list[str]
+    market_impact: str | None
+    error: str | None
+
+
+SCORING_PROMPT = """You are a tech news analyst scoring articles for an AI/ML weekly digest.
+
+Score this article on three dimensions (0-25 each):
+- NOVELTY: Is this genuinely new? (0=old news rehashed, 25=world-first announcement)
+- IMPACT: How significant? (0=trivial, 25=industry-changing)
+- RELEVANCE: AI/ML/deep-tech focus? (0=tangential, 25=core AI research)
+
+Also extract:
+- ENTITIES: Key companies, labs, people, models mentioned (max 5)
+- TOPICS: Technical topics covered (max 5, e.g., "transformers", "robotics", "LLM")
+- MARKET_IMPACT: One sentence on business/market implications (or "none" if purely academic)
+
+Article:
+Title: {title}
+Source: {source_name} (Tier {tier})
+Summary: {summary}
+
+Respond in JSON only:
+{{"novelty": <0-25>, "impact": <0-25>, "relevance": <0-25>, "entities": [...], "topics": [...], "market_impact": "..."}}"""
+
+
+def _parse_score_response(text: str, tier: str) -> dict:
+    """Parse LLM JSON response, extract scores."""
+    # Try to find JSON in response
+    text = text.strip()
+    
+    # Handle markdown code blocks
+    if "```" in text:
+        match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+        if match:
+            text = match.group(1)
+    
+    # Find JSON object
+    match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
+    if not match:
+        raise ValueError("No JSON found in response")
+    
+    data = json.loads(match.group())
+    
+    # Extract and validate scores
+    novelty = max(0, min(25, int(data.get("novelty", 0))))
+    impact = max(0, min(25, int(data.get("impact", 0))))
+    relevance = max(0, min(25, int(data.get("relevance", 0))))
+    
+    # Total score = tier + novelty + impact + relevance
+    tier_score = TIER_SCORES.get(tier, 12)
+    total = tier_score + novelty + impact + relevance
+    
+    return {
+        "score": total,
+        "novelty": novelty,
+        "impact": impact,
+        "relevance": relevance,
+        "entities": data.get("entities", [])[:5],
+        "topics": data.get("topics", [])[:5],
+        "market_impact": data.get("market_impact"),
+    }
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+def _call_groq(prompt: str) -> str:
+    """Call Groq API with retry."""
+    api_key = env("GROQ_API_KEY", required=True)
+    
+    resp = httpx.post(
+        GROQ_URL,
+        headers={"Authorization": f"Bearer {api_key}"},
+        json={
+            "model": GROQ_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 500,
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
+
+
+@retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=5))
+def _call_cloudflare(prompt: str) -> str:
+    """Call Cloudflare Workers AI as fallback."""
+    account_id = env("CF_ACCOUNT_ID", required=True)
+    api_token = env("CF_API_TOKEN", required=True)
+    
+    resp = httpx.post(
+        f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{CF_MODEL}",
+        headers={"Authorization": f"Bearer {api_token}"},
+        json={
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 500,
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["result"]["response"]
+
+
+def score_item(item: dict) -> ScoreResult:
+    """Score a single item using Groq (with CF fallback)."""
+    prompt = SCORING_PROMPT.format(
+        title=item["title"],
+        source_name=item["source_name"],
+        tier=item["tier"],
+        summary=(item.get("article_text") or item.get("feed_summary") or "")[:2000],
+    )
+    
+    # Try Groq first
+    try:
+        response = _call_groq(prompt)
+        parsed = _parse_score_response(response, item["tier"])
+        return ScoreResult(
+            item_id=item["id"],
+            score=parsed["score"],
+            novelty=parsed["novelty"],
+            impact=parsed["impact"],
+            relevance=parsed["relevance"],
+            entities=parsed["entities"],
+            topics=parsed["topics"],
+            market_impact=parsed["market_impact"],
+            error=None,
+        )
+    except Exception as e:  # noqa: BLE001
+        groq_error = str(e)
+    
+    # Fallback to Cloudflare
+    try:
+        response = _call_cloudflare(prompt)
+        parsed = _parse_score_response(response, item["tier"])
+        return ScoreResult(
+            item_id=item["id"],
+            score=parsed["score"],
+            novelty=parsed["novelty"],
+            impact=parsed["impact"],
+            relevance=parsed["relevance"],
+            entities=parsed["entities"],
+            topics=parsed["topics"],
+            market_impact=parsed["market_impact"],
+            error=None,
+        )
+    except Exception as e:  # noqa: BLE001
+        return ScoreResult(
+            item_id=item["id"],
+            score=0,
+            novelty=0,
+            impact=0,
+            relevance=0,
+            entities=[],
+            topics=[],
+            market_impact=None,
+            error=f"groq: {groq_error[:100]}, cf: {str(e)[:100]}",
+        )
+
+
+def get_unscored_items(conn, limit: int | None = None) -> list[dict]:
+    """Get items that passed triage but haven't been scored."""
+    with conn.cursor() as cur:
+        query = """
+            SELECT r.id, r.title, r.article_text, r.feed_summary,
+                   s.name as source_name, s.tier
+            FROM raw_items r
+            JOIN sources s ON r.source_id = s.id
+            JOIN news_memory m ON r.id = m.id
+            WHERE r.rules_pass = true
+              AND m.score IS NULL
+            ORDER BY r.published_at DESC
+        """
+        if limit:
+            query += f" LIMIT {limit}"
+        cur.execute(query)
+        return cur.fetchall()
+
+
+def update_scores(conn, results: list[ScoreResult]) -> dict:
+    """Update news_memory with scores."""
+    stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0}
+    
+    with conn.cursor() as cur:
+        for r in results:
+            if r.error:
+                stats["failed"] += 1
+                continue
+            
+            breakdown = {
+                "novelty": r.novelty,
+                "impact": r.impact,
+                "relevance": r.relevance,
+            }
+            
+            cur.execute(
+                """
+                UPDATE news_memory
+                SET score = %s,
+                    score_breakdown = %s,
+                    entities = %s,
+                    topics = %s,
+                    market_impact = %s
+                WHERE id = %s
+                """,
+                (
+                    r.score,
+                    json.dumps(breakdown),
+                    r.entities,
+                    r.topics,
+                    r.market_impact,
+                    r.item_id,
+                ),
+            )
+            stats["scored"] += 1
+            
+            # Track score distribution
+            if r.score >= SCORE_BREAKING:
+                stats["breaking"] += 1
+            elif r.score >= SCORE_MAJOR:
+                stats["major"] += 1
+            elif r.score >= SCORE_NOTABLE:
+                stats["notable"] += 1
+    
+    return stats
+
+
+BATCH_SIZE = 25  # Save to DB every N items to avoid connection timeout
+
+
+def run(dry_run: bool = False, limit: int | None = None) -> int:
+    """Main entry point."""
+    if dry_run:
+        print(f"\n{'=' * 60}")
+        print("  DRY RUN - testing LLM scoring")
+        print(f"{'=' * 60}\n")
+
+        test_item = {
+            "id": 0,
+            "title": "OpenAI releases GPT-5 with 10x reasoning improvement",
+            "source_name": "OpenAI",
+            "tier": "B",
+            "article_text": "OpenAI announced GPT-5 today, claiming a 10x improvement in complex reasoning tasks. The model uses a new architecture combining chain-of-thought with retrieval augmentation.",
+            "feed_summary": None,
+        }
+
+        print(f"  Model: {GROQ_MODEL} (Cloudflare {CF_MODEL} fallback)")
+        print(f"  Tier scores: {TIER_SCORES}")
+        print(f"  Thresholds: breaking={SCORE_BREAKING}, major={SCORE_MAJOR}, notable={SCORE_NOTABLE}\n")
+        
+        print(f"  Test: {test_item['title'][:50]}...")
+        
+        # Check if API keys are set
+        groq_key = env("GROQ_API_KEY")
+        if not groq_key:
+            print("\n  ⚠ GROQ_API_KEY not set - skipping live test")
+            print("  Set it in .env to test scoring")
+            return 0
+        
+        result = score_item(test_item)
+        
+        if result.error:
+            print(f"\n  ✗ Error: {result.error}")
+        else:
+            print(f"\n  ✓ Score: {result.score}/100")
+            print(f"    Breakdown: novelty={result.novelty}, impact={result.impact}, relevance={result.relevance}")
+            print(f"    Entities: {result.entities}")
+            print(f"    Topics: {result.topics}")
+            print(f"    Market: {result.market_impact}")
+            
+            if result.score >= SCORE_BREAKING:
+                print(f"\n    → BREAKING NEWS (≥{SCORE_BREAKING})")
+            elif result.score >= SCORE_MAJOR:
+                print(f"\n    → Major story (≥{SCORE_MAJOR})")
+            elif result.score >= SCORE_NOTABLE:
+                print(f"\n    → Notable (≥{SCORE_NOTABLE})")
+        
+        return 0
+
+    from . import db
+
+    # Get items with fresh connection
+    with db.connect() as conn:
+        items = get_unscored_items(conn, limit)
+    
+    if not items:
+        print("score: no items need scoring")
+        return 0
+
+    print(f"score: processing {len(items)} items...")
+
+    total_stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0}
+    batch_results = []
+    
+    for i, item in enumerate(items):
+        batch_results.append(score_item(item))
+        
+        # Save batch to DB periodically
+        if len(batch_results) >= BATCH_SIZE or i == len(items) - 1:
+            with db.connect() as conn:
+                stats = update_scores(conn, batch_results)
+            for k in total_stats:
+                total_stats[k] += stats[k]
+            batch_results = []
+            print(f"score: {i + 1}/{len(items)} (saved batch)")
+        elif (i + 1) % 10 == 0:
+            print(f"score: {i + 1}/{len(items)}...")
+
+    print(
+        f"score: {total_stats['scored']} scored, {total_stats['failed']} failed | "
+        f"breaking={total_stats['breaking']}, major={total_stats['major']}, notable={total_stats['notable']}"
+    )
+
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Score items using LLM.")
+    ap.add_argument("--dry-run", action="store_true", help="test scoring without DB")
+    ap.add_argument("--limit", type=int, help="only score N items")
+    args = ap.parse_args()
+    return run(dry_run=args.dry_run, limit=args.limit)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

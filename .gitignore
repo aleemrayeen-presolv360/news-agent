@@ -1,0 +1,16 @@
+.env
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.fastembed_cache/
+models/
+*.sqlite
+*.db
+.DS_Store
+.vscode/
+!.vscode/settings.json
+dry_run_output.json
+
+# Local backups of removed or replaced files (not part of the app)
+_backup/

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#FBFBF9" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#12151B" media="(prefers-color-scheme: dark)">
+    <title>News Intel</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231E3570'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='17' font-weight='700' fill='white' text-anchor='middle'%3ENI%3C/text%3E%3C/svg%3E">
+
+    <!-- Apply the saved theme before first paint so the page never flashes -->
+    <script>
+        try {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+        } catch (e) { /* storage blocked: follow the system theme */ }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Public+Sans:wght@400;500;600;700&display=swap">
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/today.css">
+    <link rel="stylesheet" href="css/stories.css">
+    <link rel="stylesheet" href="css/notes.css">
+    <link rel="stylesheet" href="css/settings.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <!-- Icon sprite: every icon is decorative and paired with visible text or an aria-label -->
+    <svg class="sprite" aria-hidden="true">
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+        <symbol id="i-gear" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+        <symbol id="i-save" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></symbol>
+        <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></symbol>
+        <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+        <symbol id="i-prev" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+        <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+        <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+        <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+        <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 4 4H6l4-4zM12 14v7"/></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+        <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+        <symbol id="i-olist" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10M4 4v4M3 18h3l-3 3h3"/></symbol>
+        <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+        <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0M12 19h.01M3 3l18 18"/></symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></symbol>
+        <symbol id="i-out" viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></symbol>
+    </svg>
+
+    <!-- ============ Signed-out screens ============ -->
+    <div id="auth" class="auth" hidden>
+        <main class="auth-form-col" id="auth-main">
+            <p class="brand">News Intel</p>
+
+            <form id="signin-form" class="auth-form" novalidate>
+                <h1>Sign in</h1>
+                <div class="field">
+                    <label for="signin-email">Work email</label>
+                    <input id="signin-email" name="email" type="email" autocomplete="email" spellcheck="false" required placeholder="name@company.com">
+                </div>
+                <div class="field">
+                    <label for="signin-password">Password</label>
+                    <div class="input-with-action">
+                        <input id="signin-password" name="password" type="password" autocomplete="current-password" required>
+                        <button type="button" class="link-btn" data-toggle-password="signin-password" aria-pressed="false">Show</button>
+                    </div>
+                </div>
+                <p class="form-error" id="signin-error" aria-live="polite"></p>
+                <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+                <p class="auth-alt">
+                    <a href="#reset" data-auth-view="reset">Forgot password?</a>
+                    <span>New here? <a href="#signup" data-auth-view="signup">Create an account</a></span>
+                </p>
+            </form>
+
+            <form id="signup-form" class="auth-form" novalidate hidden>
+                <h1>Create your account</h1>
+                <div class="field">
+                    <label for="signup-name">Full name</label>
+                    <input id="signup-name" name="name" type="text" autocomplete="name" required placeholder="Your full name">
+                </div>
+                <div class="field">
+                    <label for="signup-email">Work email</label>
+                    <input id="signup-email" name="email" type="email" autocomplete="email" spellcheck="false" required placeholder="name@company.com">
+                </div>
+                <div class="field">
+                    <label for="signup-password">Password</label>
+                    <div class="input-with-action">
+                        <input id="signup-password" name="new-password" type="password" autocomplete="new-password" required minlength="8" aria-describedby="signup-password-hint">
+                        <button type="button" class="link-btn" data-toggle-password="signup-password" aria-pressed="false">Show</button>
+                    </div>
+                    <span class="hint" id="signup-password-hint">At least 8 characters.</span>
+                </div>
+                <p class="form-error" id="signup-error" aria-live="polite"></p>
+                <button type="submit" class="btn btn-primary btn-block">Create account</button>
+                <p class="auth-alt"><span>Already have an account? <a href="#signin" data-auth-view="signin">Sign in</a></span></p>
+            </form>
+
+            <form id="reset-form" class="auth-form" novalidate hidden>
+                <h1>Reset your password</h1>
+                <div id="reset-ask">
+                    <p class="muted">Enter your email and we'll send you a link to set a new password.</p>
+                    <div class="field">
+                        <label for="reset-email">Work email</label>
+                        <input id="reset-email" name="email" type="email" autocomplete="email" spellcheck="false" required placeholder="name@company.com">
+                    </div>
+                    <p class="form-error" id="reset-error" aria-live="polite"></p>
+                    <button type="submit" class="btn btn-primary btn-block">Send reset link</button>
+                </div>
+                <div id="reset-sent" class="notice-card" hidden aria-live="polite">
+                    <svg class="icon icon-lg"><use href="#i-check"/></svg>
+                    <h2>Check your email</h2>
+                    <p>We sent a reset link to <strong id="reset-sent-email"></strong>.</p>
+                    <p class="muted">Nothing after 2 minutes? Check your spam folder, or <button type="button" class="link-btn" id="reset-again">send it again</button>.</p>
+                </div>
+                <p class="auth-alt"><a href="#signin" data-auth-view="signin">Back to sign in</a></p>
+            </form>
+
+            <form id="newpass-form" class="auth-form" novalidate hidden>
+                <h1>Set a new password</h1>
+                <div class="field">
+                    <label for="newpass-password">New password</label>
+                    <input id="newpass-password" name="new-password" type="password" autocomplete="new-password" required minlength="8">
+                    <span class="hint">At least 8 characters.</span>
+                </div>
+                <p class="form-error" id="newpass-error" aria-live="polite"></p>
+                <button type="submit" class="btn btn-primary btn-block">Save new password</button>
+            </form>
+        </main>
+
+        <aside class="auth-side" aria-label="Today's top stories">
+            <p class="muted">Waiting for you</p>
+            <p class="auth-side-title" id="auth-side-title">This week's top stories</p>
+            <ol class="auth-peek" id="auth-peek"></ol>
+        </aside>
+    </div>
+
+    <!-- ============ Signed-in app ============ -->
+    <div id="app" class="app" hidden>
+        <header class="topbar">
+            <a class="brand" href="#/today">News Intel</a>
+            <nav class="topnav" aria-label="Main">
+                <a href="#/today" data-nav="today">Today</a>
+                <a href="#/stories" data-nav="stories">All stories <span class="count" id="nav-count-stories"></span></a>
+                <a href="#/saved" data-nav="saved">Saved <span class="count" id="nav-count-saved"></span></a>
+                <a href="#/notes" data-nav="notes">Notes <span class="count" id="nav-count-notes"></span></a>
+            </nav>
+            <span class="spacer"></span>
+            <button type="button" class="search-trigger" id="open-palette">
+                <svg class="icon"><use href="#i-search"/></svg>
+                <span>Search stories, notes, people…</span>
+                <kbd>Ctrl K</kbd>
+            </button>
+            <a class="icon-btn" href="#/settings" data-nav="settings" aria-label="Settings">
+                <svg class="icon"><use href="#i-gear"/></svg>
+            </a>
+            <div class="user-menu">
+                <button type="button" class="avatar" id="user-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="user-menu">
+                    <span id="user-initials">?</span>
+                    <span class="sr-only">Account menu</span>
+                </button>
+                <div class="menu" id="user-menu" role="menu" hidden>
+                    <p class="menu-head"><strong id="user-name"></strong><span id="user-email"></span><span id="user-role"></span></p>
+                    <a role="menuitem" href="#/settings/account">Account and password</a>
+                    <button role="menuitem" type="button" id="show-shortcuts">Keyboard shortcuts</button>
+                    <button role="menuitem" type="button" id="sign-out"><svg class="icon"><use href="#i-out"/></svg>Sign out</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="offline-banner" id="offline-banner" role="status" hidden>
+            <svg class="icon"><use href="#i-wifi"/></svg>
+            <p><strong>You're offline.</strong> Stories are from the last update. Notes and saves are kept on this laptop and sync when you're back.</p>
+        </div>
+
+        <main id="main" tabindex="-1">
+            <section id="view-today" class="view" hidden aria-label="Today"></section>
+            <section id="view-stories" class="view view-reader" hidden aria-label="Stories"></section>
+            <section id="view-notes" class="view" hidden aria-label="Notes"></section>
+            <section id="view-settings" class="view" hidden aria-label="Settings"></section>
+        </main>
+    </div>
+
+    <!-- ============ Dialogs ============ -->
+    <dialog id="palette" class="palette" aria-label="Search">
+        <div class="palette-input">
+            <svg class="icon"><use href="#i-search"/></svg>
+            <input id="palette-input" type="text" autocomplete="off" spellcheck="false" placeholder="Search stories, notes, people…" aria-label="Search" aria-controls="palette-results" aria-activedescendant="">
+        </div>
+        <div class="palette-results" id="palette-results" role="listbox" aria-label="Results"></div>
+        <p class="palette-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>Enter</kbd> to open</span><span><kbd>Esc</kbd> to close</span></p>
+    </dialog>
+
+    <dialog id="add-to-note" class="dialog" aria-labelledby="atn-title">
+        <form method="dialog" id="atn-form">
+            <h2 id="atn-title">Add to a note</h2>
+            <p class="atn-story">Adding <strong id="atn-headline"></strong></p>
+            <label class="sr-only" for="atn-search">Find a note or type a new name</label>
+            <input id="atn-search" type="text" autocomplete="off" placeholder="Find a note or type a new name…">
+            <div class="atn-choices" id="atn-choices" role="radiogroup" aria-label="Choose a note"></div>
+            <div class="field">
+                <label for="atn-comment">Your comment (optional)</label>
+                <textarea id="atn-comment" rows="2" autocomplete="off" placeholder="Why are you keeping this?…"></textarea>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn" data-close>Cancel</button>
+                <button type="submit" class="btn btn-primary" id="atn-submit">Add to note</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="shortcuts" class="dialog" aria-labelledby="shortcuts-title">
+        <h2 id="shortcuts-title">Keyboard shortcuts</h2>
+        <dl class="shortcut-list">
+            <dt><kbd>Ctrl K</kbd> or <kbd>/</kbd></dt><dd>Search everything</dd>
+            <dt><kbd>J</kbd> <kbd>K</kbd></dt><dd>Next or previous story</dd>
+            <dt><kbd>→</kbd> or <kbd>Enter</kbd></dt><dd>Next story in Today</dd>
+            <dt><kbd>S</kbd></dt><dd>Save or unsave the story</dd>
+            <dt><kbd>N</kbd></dt><dd>Add the story to a note</dd>
+            <dt><kbd>E</kbd></dt><dd>Mark the story read or unread</dd>
+            <dt><kbd>O</kbd></dt><dd>Open the original article</dd>
+            <dt><kbd>C</kbd></dt><dd>New note (on Notes)</dd>
+            <dt><kbd>?</kbd></dt><dd>Show this list</dd>
+        </dl>
+        <div class="dialog-actions"><button type="button" class="btn btn-primary" data-close>Close</button></div>
+    </dialog>
+
+    <dialog id="source-dialog" class="dialog" aria-labelledby="source-dialog-title">
+        <form id="source-form" novalidate>
+            <h2 id="source-dialog-title">Add a source</h2>
+            <div class="field">
+                <label for="source-name">Name</label>
+                <input id="source-name" name="source-name" type="text" autocomplete="off" required placeholder="TechCrunch AI…">
+            </div>
+            <div class="field">
+                <label for="source-url">Feed address</label>
+                <input id="source-url" name="source-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="techcrunch.com/feed…">
+                <span class="hint">An RSS or Atom feed. "https://" is added if you leave it out.</span>
+            </div>
+            <div class="field">
+                <label for="source-category">Category</label>
+                <select id="source-category" name="source-category">
+                    <option value="tech">AI and tech</option>
+                    <option value="legal">Legal India</option>
+                    <option value="market">Market</option>
+                    <option value="competitors">Competitors</option>
+                </select>
+            </div>
+            <p class="form-error" id="source-error" aria-live="polite"></p>
+            <div class="dialog-actions">
+                <button type="button" class="btn" data-close>Cancel</button>
+                <button type="submit" class="btn btn-primary">Add source</button>
+            </div>
+        </form>
+    </dialog>
+
+    <div class="toast-region" id="toasts" role="status" aria-live="polite"></div>
+
+    <!-- Scripts: config and data first, then helpers, then screens, then the app that wires them -->
+    <script src="js/config.js"></script>
+    <script src="data.js"></script>
+    <script src="js/util.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/stories.js"></script>
+    <script src="js/user-state.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/today.js"></script>
+    <script src="js/reader.js"></script>
+    <script src="js/notes.js"></script>
+    <script src="js/default-sources.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/palette.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

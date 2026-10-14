@@ -1,0 +1,393 @@
+# News Intel
+
+A weekly news-intelligence website for Presolv360. A Python pipeline reads dozens of
+news feeds, uses an AI model to rank every story, and publishes the important ones to a
+simple website where the team reads, saves and takes notes.
+
+**In one sentence:** feeds go in, an AI ranks them, the website shows the ones that matter
+and tells you why.
+
+---
+
+## Contents
+
+1. [How it works](#how-it-works)
+2. [Quick start](#quick-start)
+3. [Project layout](#project-layout)
+4. [The website](#the-website)
+5. [The pipeline](#the-pipeline)
+6. [Databases](#databases)
+7. [Configuration](#configuration)
+8. [Schedules (GitHub Actions)](#schedules-github-actions)
+9. [Common tasks](#common-tasks)
+10. [Troubleshooting](#troubleshooting)
+11. [Security notes](#security-notes)
+12. [Known gaps and next steps](#known-gaps-and-next-steps)
+
+---
+
+## How it works
+
+```
+ News feeds (RSS)                  Python pipeline (agent/)                     Website (frontend/)
+ ────────────────                  ────────────────────────                     ───────────────────
+ OpenAI, MIT, arXiv,   ──every──▶  ingest ─▶ extract ─▶ embed ─▶ triage           index.html + js/ + css/
+ TechCrunch, Nature …    4 hours            │                                       │
+                                            ▼                                       │ reads
+                              Friday:  score (Groq AI) ─▶ cluster ─▶ threads        ▼
+                                            │                                  frontend/data.js
+                                            ├─▶ alerts (Telegram, score ≥ 85)        ▲
+                                            ├─▶ publish (Notion page, optional)      │
+                                            └─▶ publish_static ──────── writes ──────┘
+
+ Storage:  Neon Postgres + pgvector  →  all articles, scores, embeddings (pipeline only)
+           Supabase                  →  sign-in, notes, source switches, audit log (website only)
+```
+
+There are two halves that only meet at one file:
+
+- **The pipeline** (`agent/`, Python) does all the heavy work and writes `frontend/data.js`.
+- **The website** (`frontend/`, plain HTML/CSS/JavaScript, no build step) reads `data.js`
+  for news and uses Supabase for accounts and notes.
+
+The website has no backend API of its own. That keeps it fast, free to host, and working even
+when offline.
+
+---
+
+## Quick start
+
+### See the website (2 minutes)
+
+```bash
+cd frontend
+python -m http.server 8000
+```
+
+Open <http://localhost:8000> and sign in with your Supabase account. It shows whatever is in
+`frontend/data.js` right now.
+
+> No Supabase? If the Supabase script can't load, the site runs in **demo mode**: any email
+> and a 6+ character password signs you in, and everything is stored in the browser only.
+
+### Run the pipeline locally
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+copy .env.example .env            # macOS/Linux: cp .env.example .env, then fill it in
+
+python scripts/selftest.py        # offline tests, should end "38 passed, 0 failed"
+python -m agent.ingest --dry-run  # fetch every feed, write nothing, print a report
+python -m agent.pipeline          # run every stage for real (needs .env filled in)
+```
+
+---
+
+## Project layout
+
+```
+news-agent/
+├── agent/                   Python pipeline (one file per stage)
+│   ├── config.py            settings, score thresholds, IST week window, env helper
+│   ├── sources.py           the feed list the pipeline fetches (48 entries, 40 enabled)
+│   ├── normalize.py         clean URLs and feed entries, so duplicates collapse
+│   ├── db.py                Neon connection, inserts, source health
+│   ├── ingest.py            stage 1: fetch feeds → raw_items
+│   ├── extract.py           stage 2: download article text, detect paywalls
+│   ├── embed.py             stage 3: 384-dim embedding per article → news_memory
+│   ├── triage.py            stage 4: drop noise (job posts, PR, listicles), gate arXiv papers
+│   ├── score.py             stage 5: AI score 0–100 + people/companies + "why it matters"
+│   ├── cluster.py           stage 6: group coverage of the same story
+│   ├── threads.py           stage 7: link stories into ongoing narratives across weeks
+│   ├── alerts.py            Telegram message for every new story scored 85+
+│   ├── publish_static.py    writes frontend/data.js (what the website shows)
+│   ├── publish.py           optional weekly digest page in Notion
+│   ├── addendum.py          optional Saturday "late breaking" add-on to the Notion page
+│   ├── retention.py         optional: archive Notion pages older than 30 days
+│   ├── audit.py             Monday source-health report on Telegram
+│   ├── pipeline.py          run all stages in order (for local runs)
+│   ├── notify_failure.py    Telegram message when a scheduled job fails
+│   ├── telegram.py          shared Telegram sender
+│   └── notion.py            shared Notion client
+├── frontend/                the website (static files, deploy this folder)
+│   ├── index.html           every screen and dialog lives here
+│   ├── data.js              GENERATED by publish_static.py; don't edit by hand
+│   ├── css/                 base.css (colours, type, controls) + one file per screen
+│   └── js/                  one file per screen + shared helpers (see "The website")
+├── sql/
+│   ├── schema.sql           Neon tables for the pipeline (safe to re-run)
+│   └── supabase.sql         Supabase tables for the website
+├── scripts/selftest.py      offline tests: URLs, week window, feed parsing, sources
+├── .github/workflows/       the schedules (see below)
+├── .env.example             every setting the pipeline needs, with where to get it
+└── requirements.txt         Python packages
+```
+
+---
+
+## The website
+
+### Screens
+
+| Screen | Address | What it's for |
+|---|---|---|
+| **Today** | `#/today` | Home. A short list (5 by default) of the most important stories you haven't read. Read them one at a time with **→**, then it says "Up to date". |
+| **All stories** | `#/stories` | Everything, Gmail-style: folders (Breaking / Major / Notable), categories, a date filter, sort, and a reading pane. |
+| **Saved** | `#/saved` | Stories you pressed **S** on. A copy is kept, so they stay after leaving the weekly file. |
+| **Notes** | `#/notes` | Private notes that save as you type. Press **N** on any story to add it to a note. |
+| **Settings** | `#/settings` | Preferences, hide sources you don't need, change your password. |
+| **Admin** (admins only) | inside Settings | Turn sources on/off for everyone, change roles, read the audit log. |
+
+Every filter is in the address bar (for example `#/stories?folder=breaking&from=2026-10-01`), so
+**Back**, refresh, bookmarks and Ctrl-click all work.
+
+**Keyboard:** `Ctrl K` or `/` search · `J`/`K` next/previous · `S` save · `N` add to note ·
+`E` read/unread · `O` open article · `C` new note · `?` all shortcuts.
+
+### How stories are labelled
+
+The AI score is never shown. Readers see a label instead:
+
+| Label | Score | Meaning |
+|---|---|---|
+| **Breaking** (red) | 85 and up | Read this today. Also sent to Telegram. |
+| **Major** | 70–84 | Important this week. |
+| **Notable** | 55–69 | Worth a look if it's your area. |
+
+Stories below 55 never reach the website. **Categories** (AI and tech, Legal India, Market,
+Competitors) are guessed from keywords in `frontend/js/stories.js`, because the pipeline doesn't
+send a category yet.
+
+### Where things are stored
+
+| What | Where |
+|---|---|
+| News | `frontend/data.js` (static file) |
+| Accounts, roles | Supabase `auth` + `profile` table |
+| Notes | Supabase `note` table, plus a browser copy so notes work offline |
+| Source on/off for everyone | Supabase `source` table |
+| Admin history | Supabase `audit_log` table |
+| Read/unread, saved stories, hidden sources, preferences, Today's list | Browser storage, per user |
+
+### JavaScript files (`frontend/js/`), in load order
+
+| File | Job |
+|---|---|
+| `config.js` | Supabase URL and public key, category names, score thresholds |
+| `util.js` | HTML escaping, India-time dates, safe browser storage, toasts |
+| `supabase.js` | Every Supabase read/write (`db.*`), with a browser-storage fallback |
+| `stories.js` | Turns `data.js` into stories: label, category, search, the story view |
+| `user-state.js` | Read, saved, hidden sources, preferences, Today's list |
+| `auth.js` | Sign in, create account, reset and set password |
+| `today.js` | The Today screen |
+| `reader.js` | All stories and Saved, including the date filter |
+| `notes.js` | Notes screen and the "Add to note" dialog |
+| `default-sources.js` | The first source list put into Supabase when its table is empty |
+| `settings.js` | Settings and admin screens |
+| `palette.js` | `Ctrl K` search |
+| `app.js` | Starts everything, routes between screens, keyboard, offline banner |
+
+### Design
+
+Colours come from a lawyer's desk: **signature ink** `#1E3570` for anything you can act on,
+**red tape** `#B8282B` only for Breaking, **manila** `#EFE5CC` for things you kept.
+Headlines use *Newsreader*, the interface uses *Public Sans*. Light and dark themes follow
+the laptop's setting. Built for 1366 × 768 laptops first. All tokens are at the top of
+`frontend/css/base.css`.
+
+---
+
+## The pipeline
+
+Each stage is a separate command and can be run alone. Each one only picks up rows the
+previous stage finished, so re-running is always safe.
+
+| Stage | Command | What it does |
+|---|---|---|
+| ingest | `python -m agent.ingest` | Fetches every enabled feed in `sources.py`, cleans URLs so the same article from two feeds counts once, stores new items. A dead feed never stops the run; it's recorded instead. |
+| extract | `python -m agent.extract` | Downloads each article page and pulls out the text. Marks paywalls. |
+| embed | `python -m agent.embed` | Turns each article into a 384-number vector (model `BAAI/bge-small-en-v1.5`, runs locally). |
+| triage | `python -m agent.triage` | Drops obvious noise: job posts, PR, funding fluff, events, listicles. arXiv papers only pass if they have 10+ upvotes on Hugging Face Daily Papers. |
+| score | `python -m agent.score` | Asks the Groq AI model for novelty, impact and relevance (0–25 each), people/companies, topics and one "why it matters" sentence. Cloudflare Workers AI is the backup. |
+| cluster | `python -m agent.cluster` | Groups articles about the same event (very similar text + a shared company or person, within 72 hours). |
+| threads | `python -m agent.threads` | Links stories into ongoing narratives across weeks. |
+| alerts | `python -m agent.alerts` | Sends each new 85+ story to Telegram once. |
+| publish_static | `python -m agent.publish_static` | Writes `frontend/data.js`. |
+| publish | `python -m agent.publish` | Optional Notion digest page. |
+
+Every stage accepts `--dry-run` (show what would happen, write nothing). Most accept `--limit N`.
+Run everything in order with `python -m agent.pipeline` (add `--stage score` to start part-way).
+
+### How the score is made
+
+```
+score = source tier points + novelty (0–25) + impact (0–25) + relevance (0–25)
+
+tier points:  A university / public lab   25
+              B company research lab      22
+              C journal / preprint        20
+              D press                     12
+```
+
+Thresholds live in `agent/config.py` (`SCORE_BREAKING`, `SCORE_MAJOR`, `SCORE_NOTABLE`) and are
+mirrored in `frontend/js/config.js`. Change both together.
+
+### The week
+
+A digest week runs **Sunday 00:00 → Friday 12:00 India time**. News from Friday afternoon is
+picked up by the Saturday addendum. The maths is in `agent/config.py` and tested in
+`scripts/selftest.py`.
+
+---
+
+## Databases
+
+### Neon (pipeline), `sql/schema.sql`
+
+| Table | Holds |
+|---|---|
+| `sources` | One row per feed in `sources.py`, plus health: last success, failures, last error |
+| `raw_items` | Every article ever fetched (deduplicated by clean URL) |
+| `news_memory` | Articles that passed triage: embedding, score, entities, topics, why it matters. Never deleted. |
+| `clusters` | Groups of articles about the same story |
+| `threads` | Ongoing narratives across weeks |
+| `runs` | One row per ingest run (counts, failures). Powers health stats. |
+| `feedback` | Reserved for future reader ratings |
+
+Create once: paste `sql/schema.sql` into Neon's SQL Editor, or `psql "$NEON_DSN" -f sql/schema.sql`.
+
+### Supabase (website), `sql/supabase.sql`
+
+| Table | Holds |
+|---|---|
+| `profile` | Name, email and role (`user` = Member, `admin`) for each account. Created on sign-up by a trigger. |
+| `note` | Notes (HTML), pinned flag, timestamps |
+| `source` | The source list shown in Settings and its on/off switch |
+| `audit_log` | Sign-ins and admin actions |
+| `user_setting` | Exists but unused for now |
+
+---
+
+## Configuration
+
+### Pipeline secrets: `.env` locally, GitHub Secrets in production
+
+| Variable | Needed for | Where to get it |
+|---|---|---|
+| `NEON_DSN` | everything | Neon dashboard → Connection string → *Pooled*. Must end `?sslmode=require`. |
+| `GROQ_API_KEY` | score | <https://console.groq.com/keys> (free) |
+| `CF_ACCOUNT_ID`, `CF_API_TOKEN` | score (backup) | Cloudflare → Workers AI. Optional but recommended. |
+| `TELEGRAM_TOKEN`, `TELEGRAM_CHAT` | alerts, audit, failure notices | Message `@BotFather` → `/newbot`; message your bot once, then open `https://api.telegram.org/bot<TOKEN>/getUpdates` for the chat id |
+| `NOTION_TOKEN`, `NOTION_VERSION`, `NOTION_DS_*` | optional Notion digest | Notion → Integrations. Share each database with the integration. |
+
+Never commit `.env`; it's in `.gitignore`.
+
+### Website: `frontend/js/config.js`
+
+Supabase URL and **anon** key (public by design), category names, competitor names used for
+the Competitors category, score thresholds, and the Today list size.
+
+### Supabase dashboard settings
+
+- **Authentication → URL Configuration → Redirect URLs:** add every address the site runs on
+  (for example `http://localhost:8000` and your live URL). Password-reset links only work for
+  listed addresses.
+- **Authentication → Providers → Email:** if "Confirm email" is on, new accounts must click the
+  email link before signing in. The site says so after sign-up.
+
+---
+
+## Schedules (GitHub Actions)
+
+GitHub cron is in **UTC**; India is UTC+5:30. All times below are India time.
+
+| Workflow | When | Does |
+|---|---|---|
+| `ingest.yml` | every 4 hours (:37 past) | fetch feeds |
+| `publish.yml` | Friday 12:01 | extract → embed → triage → score → cluster → threads → alerts → Notion → **`data.js`** → commit |
+| `addendum.yml` | Saturday 08:00 | process Friday-afternoon news, alerts, Notion add-on |
+| `retention.yml` | daily 03:00 | archive Notion pages older than 30 days |
+| `audit.yml` | Monday 08:30 | source-health report on Telegram |
+| `keepalive.yml` | 1st of the month | tiny commit so GitHub doesn't pause the schedules. **Don't delete it.** |
+
+Each workflow can also be run by hand: Actions tab → pick it → **Run workflow**. A failed run
+sends a Telegram message.
+
+> **The website only gets new stories on Fridays**, when `publish.yml` writes `data.js`. Ingest
+> runs every 4 hours, but scoring waits for Friday. To refresh mid-week, run the publish workflow
+> by hand, or locally: `python -m agent.pipeline --stage extract`.
+
+### Deploying the website
+
+`frontend/` is a plain static folder. Any static host works: Vercel or Netlify (root directory
+`frontend`), or GitHub Pages. Because `publish.yml` commits `data.js`, a host that redeploys on
+push picks up new stories automatically. Add the live URL to Supabase's Redirect URLs.
+
+---
+
+## Common tasks
+
+**Add a feed the pipeline should fetch.** Add a `Source(...)` line to `agent/sources.py` (unique
+`id`, tier A–D, feed URL), then run `python scripts/selftest.py` and
+`python -m agent.ingest --dry-run`. The Settings → Sources screen does *not* add feeds to the
+pipeline (see Known gaps).
+
+**Make someone an admin.** Supabase → Table Editor → `profile` → set `role` to `admin`. After
+that, admins can change roles from Settings → Users.
+
+**Refresh the website's news now.** `python -m agent.publish_static`, then commit
+`frontend/data.js` (or run the publish workflow by hand).
+
+**Change how many stories Today shows.** Each person can choose 3, 5 or 7 in Settings →
+Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
+
+**Change the score thresholds.** `agent/config.py` and `frontend/js/config.js`, together.
+
+**Check everything still works.** `python scripts/selftest.py` and
+`python -m agent.pipeline --dry-run`.
+
+---
+
+## Troubleshooting
+
+| Problem | Likely cause and fix |
+|---|---|
+| Website shows "No stories yet" | `data.js` is empty. Run `python -m agent.publish_static`. |
+| Sign-in says the password doesn't match | Wrong password, or the account was never confirmed. Use "Forgot password?". |
+| Reset link opens the wrong page or errors | The site's address isn't in Supabase Redirect URLs. |
+| A feed always fails | Check `sources.last_error` in Neon or the Monday audit. Some sites block cloud servers (Science, Ars Technica); this is noted in `sources.py`. |
+| `score` fails | Groq key missing or rate-limited. Add the Cloudflare keys as a backup. |
+| First pipeline step is slow | Neon's free plan sleeps when idle and takes a few seconds to wake. `db.connect()` retries once. |
+| Scheduled jobs stopped | GitHub pauses schedules after 60 days without commits. Keep `keepalive.yml`. |
+
+---
+
+## Security notes
+
+- **Row Level Security is off in Supabase.** The website only shows each person their own notes,
+  but anyone holding the public anon key (which is in `config.js`) could read every note and every
+  profile email directly from the database. Before storing anything sensitive, turn RLS on for
+  `note` and `profile` with "owner only" policies.
+- News text from feeds is escaped before it is shown, so a malicious headline can't run code in
+  the page. Pasted text in notes is inserted as plain text.
+- `.env` holds the pipeline secrets and must never be committed.
+
+---
+
+## Known gaps and next steps
+
+1. **The pipeline only fetches AI/research feeds.** `agent/sources.py` has 48 AI, research and
+   tech feeds. The Legal India, Market and Competitor feeds in Settings live only in Supabase and
+   are never fetched, so those categories stay nearly empty. Fix: add them to `sources.py` (with a
+   category), or have ingest read the Supabase `source` table.
+2. **Categories are guessed from keywords.** The scoring step should return a category, and
+   `publish_static.py` should pass it to the website.
+3. **Source names differ** between the pipeline ("NVIDIA Technical Blog") and Settings
+   ("NVIDIA Blog"), so a few on/off switches don't match their stories. Same fix as 1.
+4. **The website only shows the top 12 Major and top 5 Notable stories** (`MAX_ITEMS_PER_DIGEST`
+   and `MAX_MINOR_ITEMS` in `agent/config.py`), plus every Breaking story.
+5. **Eight feeds have no working RSS** (Anthropic, Meta AI, Stanford HAI and others, marked
+   `enabled=False` in `sources.py`). They need RSSHub or a search-based monitor.
+6. **Turn on Row Level Security** in Supabase (see Security notes).

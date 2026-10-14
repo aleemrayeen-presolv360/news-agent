@@ -1,0 +1,222 @@
+/*
+   Base: design tokens, reset, typography and shared controls.
+
+   Palette comes from an advocate's desk:
+   signature ink (actions), red tape (Breaking only), manila (things you kept).
+*/
+
+:root {
+    --paper: #FBFBF9;
+    --surface: #FFFFFF;
+    --panel: #F4F5F3;
+    --text: #16181D;
+    --muted: #596070;
+    --rule: #E2E3E6;
+    --bar: #DCDFE5;
+
+    --ink: #1E3570;
+    --ink-fg: #FFFFFF;
+    --ink-soft: #EDF1FA;
+    --tape: #B8282B;
+    --tape-soft: #FBEDEC;
+    --manila: #EFE5CC;
+    --manila-edge: #D9CAA4;
+    --ok: #2E7D4F;
+    --warn: #9A5E00;
+
+    --cat-tech: #2F6FB0;
+    --cat-legal: #7B3F8C;
+    --cat-market: #2E7D4F;
+    --cat-competitors: #9A5E00;
+
+    --serif: "Newsreader", Georgia, "Times New Roman", serif;
+    --sans: "Public Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+
+    --radius: 8px;
+    --topbar-h: 56px;
+    --shadow-pop: 0 24px 60px -18px rgba(10, 16, 32, 0.4);
+
+    color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --paper: #12151B; --surface: #181C23; --panel: #0F1217; --text: #E8EAEF; --muted: #959CAB;
+        --rule: #262B34; --bar: #2D333E;
+        --ink: #9BB5F5; --ink-fg: #0D1530; --ink-soft: #1A2440;
+        --tape: #FF7A70; --tape-soft: #3A1A19; --manila: #3A3324; --manila-edge: #5A4E33;
+        --ok: #7CC79B; --warn: #E7B35A;
+        --cat-tech: #86B6E3; --cat-legal: #CFA0DD; --cat-market: #7CC79B; --cat-competitors: #E7B35A;
+        color-scheme: dark;
+    }
+}
+
+:root[data-theme="dark"] {
+    --paper: #12151B; --surface: #181C23; --panel: #0F1217; --text: #E8EAEF; --muted: #959CAB;
+    --rule: #262B34; --bar: #2D333E;
+    --ink: #9BB5F5; --ink-fg: #0D1530; --ink-soft: #1A2440;
+    --tape: #FF7A70; --tape-soft: #3A1A19; --manila: #3A3324; --manila-edge: #5A4E33;
+    --ok: #7CC79B; --warn: #E7B35A;
+    --cat-tech: #86B6E3; --cat-legal: #CFA0DD; --cat-market: #7CC79B; --cat-competitors: #E7B35A;
+    color-scheme: dark;
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    font-feature-settings: "tnum" 1;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+h1, h2, h3, h4 { margin: 0; font-family: var(--serif); font-weight: 500; line-height: 1.12; text-wrap: balance; }
+p, ol, ul, dl, dd { margin: 0; }
+img { max-width: 100%; height: auto; }
+a { color: var(--ink); text-underline-offset: 3px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-lg { width: 32px; height: 32px; }
+
+.sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+.skip-link { position: absolute; left: 12px; top: -48px; z-index: 100; background: var(--ink); color: var(--ink-fg); padding: 8px 14px; border-radius: var(--radius); }
+.skip-link:focus { top: 12px; }
+
+.muted { color: var(--muted); }
+kbd {
+    font-family: var(--sans); font-size: 11.5px; line-height: 1.4;
+    border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px;
+    padding: 0 5px; color: var(--muted); background: var(--surface); white-space: nowrap;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 9px 15px; border-radius: var(--radius);
+    border: 1px solid var(--rule); background: var(--surface); color: var(--text);
+    font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.btn:hover { border-color: var(--ink); }
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn-primary { background: var(--ink); border-color: var(--ink); color: var(--ink-fg); font-weight: 600; }
+.btn-primary:hover { filter: brightness(1.12); }
+.btn-big { padding: 13px 24px; font-size: 15.5px; }
+.btn-small { padding: 6px 11px; font-size: 13px; }
+.btn-block { width: 100%; padding: 12px; }
+.btn-danger { color: var(--tape); }
+.btn kbd { background: transparent; color: inherit; border-color: currentColor; opacity: .7; }
+.btn[aria-pressed="true"] { background: var(--ink-soft); border-color: var(--ink); color: var(--ink); }
+
+.link-btn { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-size: inherit; }
+
+.icon-btn {
+    display: inline-grid; place-items: center; width: 34px; height: 34px;
+    border-radius: var(--radius); border: 0; background: transparent; color: var(--muted);
+    transition: background-color .15s ease, color .15s ease;
+}
+.icon-btn:hover { background: var(--ink-soft); color: var(--ink); }
+.icon-btn[aria-current="page"], .icon-btn[aria-pressed="true"] { background: var(--ink-soft); color: var(--ink); }
+
+/* ---------- Form fields ---------- */
+.field { display: grid; gap: 6px; }
+.field label { font-size: 13.5px; font-weight: 600; }
+.field .hint { font-size: 12.5px; color: var(--muted); }
+input[type="text"], input[type="email"], input[type="password"], input[type="url"], input[type="date"], select, textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--radius);
+    background: var(--surface); color: var(--text); font-size: 14.5px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px var(--ink-soft); }
+input[aria-invalid="true"] { border-color: var(--tape); box-shadow: 0 0 0 3px var(--tape-soft); }
+textarea { resize: vertical; }
+.form-error { font-size: 13px; color: var(--tape); min-height: 0; }
+.form-error:empty { display: none; }
+
+.input-with-action { position: relative; }
+.input-with-action input { padding-right: 64px; }
+.input-with-action .link-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; }
+
+/* Segmented control built from radio buttons */
+.segmented { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); }
+.segmented label { position: relative; }
+.segmented input { position: absolute; opacity: 0; inset: 0; }
+.segmented span { display: block; padding: 5px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.segmented input:checked + span { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+.segmented input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+/* Switch: a button with role="switch" */
+.switch {
+    width: 38px; height: 22px; border-radius: 99px; border: 0; padding: 0;
+    background: var(--bar); position: relative; flex: none;
+    transition: background-color .15s ease;
+}
+.switch::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .15s ease;
+}
+.switch[aria-checked="true"] { background: var(--ink); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); }
+.switch:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ---------- Story labels (never numeric scores) ---------- */
+.label { font-weight: 600; font-size: 12.5px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.label-breaking { color: var(--tape); }
+.label-breaking::before { content: ""; width: 7px; height: 7px; background: var(--tape); border-radius: 1px; transform: rotate(45deg); }
+.label-major { color: var(--text); }
+.label-notable { color: var(--muted); font-weight: 500; }
+
+.cat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.cat-tech { background: var(--cat-tech); }
+.cat-legal { background: var(--cat-legal); }
+.cat-market { background: var(--cat-market); }
+.cat-competitors { background: var(--cat-competitors); }
+
+.chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; padding: 3px 10px; border-radius: 99px;
+    border: 1px solid var(--rule); background: var(--surface); color: var(--text); white-space: nowrap;
+}
+button.chip:hover { border-color: var(--ink); }
+.chip[aria-pressed="true"], .chip.is-active { border-color: var(--ink); background: var(--ink-soft); color: var(--ink); font-weight: 500; }
+
+/* ---------- Dialogs ---------- */
+dialog {
+    border: 0; padding: 0; border-radius: 16px; background: var(--surface); color: var(--text);
+    box-shadow: var(--shadow-pop); max-height: calc(100vh - 80px); overscroll-behavior: contain;
+}
+dialog::backdrop { background: rgba(12, 16, 28, .42); }
+.dialog { width: min(540px, calc(100vw - 32px)); padding: 24px; }
+/* Only style display while open: a display rule on a closed <dialog> would show it */
+.dialog[open] { display: grid; gap: 14px; }
+.dialog form { display: grid; gap: 14px; }
+.dialog h2 { font-size: 24px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+
+/* ---------- Toasts ---------- */
+.toast-region { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: grid; gap: 8px; z-index: 50; pointer-events: none; }
+.toast {
+    pointer-events: auto; display: flex; gap: 18px; align-items: center;
+    background: var(--text); color: var(--paper); border-radius: 10px; padding: 12px 16px;
+    font-size: 14px; box-shadow: var(--shadow-pop); max-width: min(560px, calc(100vw - 32px));
+}
+.toast button { background: none; border: 0; color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}

@@ -1,0 +1,50 @@
+# Ingest: pull every source in agent/sources.py into raw_items.
+#
+# CRON IS UTC. GitHub Actions has no timezone setting. IST = UTC+5:30.
+# '7 */4 * * *' fires 00:07 04:07 08:07 ... UTC
+#              =  05:37 09:37 13:37 17:37 21:37 01:37 IST
+# The odd minute is deliberate: GitHub explicitly recommends not scheduling
+# on the hour, because everyone does and the queue backs up.
+#
+# Budget: 6 runs/day x 30 x ~2.5 min = ~450 of 2,000 free minutes.
+
+name: ingest
+
+on:
+  schedule:
+    - cron: '7 */4 * * *'
+  workflow_dispatch:          # lets you run it by hand from the Actions tab
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false   # never cut a run short; they are cheap
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Ingest only fetches feeds and stores them; scoring happens in publish.yml
+      - name: Run ingest
+        run: python -m agent.ingest
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      # The Error Workflow equivalent. A scheduled job that fails silently
+      # is worse than no job, because you keep trusting it.
+      - name: Notify on failure
+        if: failure()
+        run: python -m agent.notify_failure
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT:  ${{ secrets.TELEGRAM_CHAT }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
