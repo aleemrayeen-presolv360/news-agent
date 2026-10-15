@@ -8,8 +8,8 @@ window.digestData = {
         "sources_total": 40,
         "sources_healthy": 35,
         "items_ingested": 876,
-        "major_stories": 154,
-        "notable_stories": 152
+        "major_stories": 186,
+        "notable_stories": 171
     },
     "breaking": [
         {
@@ -35,6 +35,28 @@ window.digestData = {
             "published_at": "2026-09-22T18:00:00+00:00"
         },
         {
+            "headline": "Roundtables: A Conversation With the Creator of AI-Designed Viruses",
+            "score": 96,
+            "source": "MIT Technology Review",
+            "url": "https://technologyreview.com/2026/10/08/1146224/roundtables-a-conversation-with-the-creator-of-ai-designed-viruses",
+            "one_liner": "Friday, October 16, 2026 Can AI design new life forms? In 2025, Stanford University PhD student Samuel King came up with a preliminary answer when he used a generative AI model to propose genetic blue",
+            "topics": [
+                "generative AI",
+                "synthetic biology",
+                "biosecurity",
+                "AI safety",
+                "genetic design"
+            ],
+            "entities": [
+                "Samuel King",
+                "Stanford University",
+                "MIT Technology Review"
+            ],
+            "market_impact": "The demonstration of AI-designed viral blueprints signals an imminent shift in biosecurity risks, potentially driving increased investment in AI safety monitoring, synthetic biology regulation, and defensive biotech infrastructure.",
+            "cluster_count": 1,
+            "published_at": "2026-10-09T00:08:24+00:00"
+        },
+        {
             "headline": "Introducing Mistral Large 4",
             "score": 93,
             "source": "Mistral AI",
@@ -56,28 +78,6 @@ window.digestData = {
             "market_impact": "The release of a 1T-parameter open-weight model from a European vendor significantly challenges US-centric AI dominance, offering enterprises a sovereign, high-performance alternative for sensitive verticals like finance and cybersecurity.",
             "cluster_count": 1,
             "published_at": "2026-10-06T12:00:27+00:00"
-        },
-        {
-            "headline": "Introducing GPT-6.1 Sol",
-            "score": 93,
-            "source": "OpenAI",
-            "url": "https://openai.com/index/introducing-gpt-6-1-sol",
-            "one_liner": "Meet GPT-6.1 Sol: near-Astra intelligence for coding, computer use, and professional work at one-fifth of Astra’s standard API input and output token prices.",
-            "topics": [
-                "LLM",
-                "coding",
-                "computer use",
-                "API pricing",
-                "agentic AI"
-            ],
-            "entities": [
-                "OpenAI",
-                "GPT-6.1 Sol",
-                "Astra"
-            ],
-            "market_impact": "The introduction of a near-frontier model at one-fifth the cost of the standard API significantly lowers the barrier to entry for enterprise automation and high-volume coding tasks, potentially disrupting the current pricing hierarchy in the LLM market.",
-            "cluster_count": 1,
-            "published_at": "2026-09-29T17:00:00+00:00"
         },
         {
             "headline": "Gemini 4 Argon: our next era of frontier intelligence",
@@ -125,6 +125,51 @@ window.digestData = {
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
+            "headline": "Introducing GPT-6.1 Sol",
+            "score": 93,
+            "source": "OpenAI",
+            "url": "https://openai.com/index/introducing-gpt-6-1-sol",
+            "one_liner": "Meet GPT-6.1 Sol: near-Astra intelligence for coding, computer use, and professional work at one-fifth of Astra’s standard API input and output token prices.",
+            "topics": [
+                "LLM",
+                "coding",
+                "computer use",
+                "API pricing",
+                "agentic AI"
+            ],
+            "entities": [
+                "OpenAI",
+                "GPT-6.1 Sol",
+                "Astra"
+            ],
+            "market_impact": "The introduction of a near-frontier model at one-fifth the cost of the standard API significantly lowers the barrier to entry for enterprise automation and high-volume coding tasks, potentially disrupting the current pricing hierarchy in the LLM market.",
+            "cluster_count": 1,
+            "published_at": "2026-09-29T17:00:00+00:00"
+        },
+        {
+            "headline": "DevDay 2026 Recap",
+            "score": 93,
+            "source": "OpenAI",
+            "url": "https://openai.com/index/devday-2026-recap",
+            "one_liner": "Explore more than 20 announcements from OpenAI DevDay 2026, including GPT-6 Astra, ChatGPT, Codex, APIs, security, and new tools for builders.",
+            "topics": [
+                "LLM",
+                "APIs",
+                "Developer Tools",
+                "Security",
+                "Code Generation"
+            ],
+            "entities": [
+                "OpenAI",
+                "GPT-6 Astra",
+                "ChatGPT",
+                "Codex"
+            ],
+            "market_impact": "The release of GPT-6 Astra and expanded developer tools signals a significant shift in enterprise AI adoption, potentially disrupting current coding and automation market leaders.",
+            "cluster_count": 1,
+            "published_at": "2026-09-29T10:00:00+00:00"
+        },
+        {
             "headline": "OpenAI posts 700 maths preprints online: mathematicians are up in arms",
             "score": 91,
             "source": "Nature",
@@ -169,6 +214,26 @@ window.digestData = {
             "published_at": "2026-09-28T19:00:00+00:00"
         },
         {
+            "headline": "Normalizing Trajectory Models",
+            "score": 87,
+            "source": "Apple ML Research",
+            "url": "https://machinelearning.apple.com/research/normalizing-trajectory-models",
+            "one_liner": "Diffusion-based models decompose sampling into many small Gaussian denoising steps, an assumption that breaks down when generation is compressed to a few coarse transitions. Existing few-step methods ",
+            "topics": [
+                "generative models",
+                "normalizing flows",
+                "diffusion models",
+                "likelihood estimation",
+                "few-step sampling"
+            ],
+            "entities": [
+                "Apple ML Research"
+            ],
+            "market_impact": "Offers a theoretically grounded alternative to current few-step diffusion distillation methods, potentially enabling faster, more accurate generative AI inference with better probabilistic guarantees for enterprise applications.",
+            "cluster_count": 1,
+            "published_at": "2026-10-08T00:00:00+00:00"
+        },
+        {
             "headline": "RLTL;DR: Self-Improvement by Internalizing Self-Generated Feedback",
             "score": 87,
             "source": "Apple ML Research",
@@ -192,65 +257,51 @@ window.digestData = {
             "published_at": "2026-10-01T00:00:00+00:00"
         },
         {
-            "headline": "Normalizing Trajectory Models",
+            "headline": "Introducing NV-Reason-CT Open 3D CT VLM for Radiologist Chain-of-Thought Reasoning",
             "score": 87,
-            "source": "Apple ML Research",
-            "url": "https://machinelearning.apple.com/research/normalizing-trajectory-models",
-            "one_liner": "Diffusion-based models decompose sampling into many small Gaussian denoising steps, an assumption that breaks down when generation is compressed to a few coarse transitions. Existing few-step methods ",
+            "source": "NVIDIA Technical Blog",
+            "url": "https://developer.nvidia.com/blog/introducing-nv-reason-ct-open-3d-ct-vlm-for-radiologist-chain-of-thought-reasoning",
+            "one_liner": "Radiology AI has made remarkable strides in detecting abnormalities across chest X-rays, pathology slides, and 2D scans. Yet one of the most clinically rich and...",
             "topics": [
-                "generative models",
-                "normalizing flows",
-                "diffusion models",
-                "likelihood estimation",
-                "few-step sampling"
+                "Vision Language Models",
+                "3D Medical Imaging",
+                "Chain-of-Thought Reasoning",
+                "Radiology AI",
+                "Volumetric Data Processing"
             ],
             "entities": [
-                "Apple ML Research"
+                "NVIDIA",
+                "NV-Reason-CT",
+                "NV-Reason-CXR",
+                "RSNA"
             ],
-            "market_impact": "Offers a theoretically grounded alternative to current few-step diffusion distillation methods, potentially enabling faster, more accurate generative AI inference with better probabilistic guarantees for enterprise applications.",
+            "market_impact": "NVIDIA is establishing a dominant position in the medical AI infrastructure market by providing an open-source foundation model that lowers the barrier for developers to build specialized 3D CT diagnostic tools, potentially accelerating the adoption of AI-assisted radiology in clinical workflows.",
             "cluster_count": 1,
-            "published_at": "2026-10-08T00:00:00+00:00"
+            "published_at": "2026-09-23T22:54:56+00:00"
         },
         {
-            "headline": "Advancing Private AI Compute with secure, server-side memory",
-            "score": 86,
-            "source": "Google DeepMind",
-            "url": "https://deepmind.google/blog/advancing-private-ai-compute-with-secure-server-side-memory",
-            "one_liner": "Introducing private, server-side memory to Private AI Compute for personal AI.",
+            "headline": "Automating coherent long-form video generation",
+            "score": 87,
+            "source": "Google Research",
+            "url": "https://research.google/blog/coherent-long-form-video-generation",
+            "one_liner": "Generative AI",
             "topics": [
-                "privacy-preserving AI",
-                "secure enclaves",
-                "cross-device memory",
-                "encryption",
-                "edge-cloud hybrid"
+                "video generation",
+                "multi-agent systems",
+                "temporal consistency",
+                "world-state tracking",
+                "diffusion models"
             ],
             "entities": [
-                "Google DeepMind",
-                "Private AI Compute"
+                "Google Research",
+                "Gemini",
+                "Veo",
+                "Yale Song",
+                "Yiwen Song"
             ],
-            "market_impact": "This architecture addresses a critical barrier to enterprise and consumer adoption of persistent AI assistants by offering a compliance-ready solution for storing sensitive user data in the cloud without exposing it to the provider.",
+            "market_impact": "This framework significantly reduces the manual labor required for professional-grade AI video production, potentially accelerating the adoption of generative video in commercial storytelling and advertising sectors.",
             "cluster_count": 1,
-            "published_at": "2026-09-23T16:00:57+00:00"
-        },
-        {
-            "headline": "Disrupting a coordinated model-distillation campaign",
-            "score": 86,
-            "source": "OpenAI",
-            "url": "https://openai.com/index/disrupting-a-coordinated-model-distillation-campaign",
-            "one_liner": "Learn how OpenAI disrupted a campaign to extract protected model reasoning and is strengthening defenses against adversarial distillation.",
-            "topics": [
-                "model distillation",
-                "adversarial attacks",
-                "model security",
-                "reasoning extraction",
-                "defense mechanisms"
-            ],
-            "entities": [
-                "OpenAI"
-            ],
-            "market_impact": "Highlights the growing economic and security risk of model theft, potentially driving increased investment in AI security infrastructure and defensive tooling.",
-            "cluster_count": 1,
-            "published_at": "2026-09-30T10:30:00+00:00"
+            "published_at": "2026-09-24T19:40:00+00:00"
         },
         {
             "headline": "Introducing dots",
@@ -297,6 +348,47 @@ window.digestData = {
             "published_at": "2026-09-30T15:03:07+00:00"
         },
         {
+            "headline": "Disrupting a coordinated model-distillation campaign",
+            "score": 86,
+            "source": "OpenAI",
+            "url": "https://openai.com/index/disrupting-a-coordinated-model-distillation-campaign",
+            "one_liner": "Learn how OpenAI disrupted a campaign to extract protected model reasoning and is strengthening defenses against adversarial distillation.",
+            "topics": [
+                "model distillation",
+                "adversarial attacks",
+                "model security",
+                "reasoning extraction",
+                "defense mechanisms"
+            ],
+            "entities": [
+                "OpenAI"
+            ],
+            "market_impact": "Highlights the growing economic and security risk of model theft, potentially driving increased investment in AI security infrastructure and defensive tooling.",
+            "cluster_count": 1,
+            "published_at": "2026-09-30T10:30:00+00:00"
+        },
+        {
+            "headline": "Advancing Private AI Compute with secure, server-side memory",
+            "score": 86,
+            "source": "Google DeepMind",
+            "url": "https://deepmind.google/blog/advancing-private-ai-compute-with-secure-server-side-memory",
+            "one_liner": "Introducing private, server-side memory to Private AI Compute for personal AI.",
+            "topics": [
+                "privacy-preserving AI",
+                "secure enclaves",
+                "cross-device memory",
+                "encryption",
+                "edge-cloud hybrid"
+            ],
+            "entities": [
+                "Google DeepMind",
+                "Private AI Compute"
+            ],
+            "market_impact": "This architecture addresses a critical barrier to enterprise and consumer adoption of persistent AI assistants by offering a compliance-ready solution for storing sensitive user data in the cloud without exposing it to the provider.",
+            "cluster_count": 1,
+            "published_at": "2026-09-23T16:00:57+00:00"
+        },
+        {
             "headline": "The Lattice of Transition Laws",
             "score": 85,
             "source": "HF Daily Papers",
@@ -322,6 +414,28 @@ window.digestData = {
     ],
     "major": [
         {
+            "headline": "Offloaded inference for real-world physical AI robotics",
+            "score": 84,
+            "source": "Microsoft Research",
+            "url": "https://microsoft.com/en-us/research/blog/offloaded-inference-for-real-world-physical-ai-robotics",
+            "one_liner": "Robots are getting smarter, but how can their hardware match that growth? New Microsoft Research findings show that moving AI inference beyond the robot can improve task success, boost efficiency, and",
+            "topics": [
+                "robotics",
+                "edge computing",
+                "inference optimization",
+                "distributed systems",
+                "embodied AI"
+            ],
+            "entities": [
+                "Microsoft Research",
+                "Physical AI Toolchain",
+                "Kubernetes"
+            ],
+            "market_impact": "This research lowers the hardware cost barrier for autonomous robots by enabling the use of cheaper, lighter onboard hardware paired with cloud/edge compute, potentially accelerating the commercial deployment of physical AI in manufacturing and logistics.",
+            "cluster_count": 1,
+            "published_at": "2026-09-23T16:01:36+00:00"
+        },
+        {
             "headline": "Toward provably private learning from federated data",
             "score": 84,
             "source": "Google Research",
@@ -344,26 +458,6 @@ window.digestData = {
             "market_impact": "This advancement strengthens the regulatory and consumer trust foundation for on-device AI, potentially accelerating the adoption of privacy-sensitive ML features in consumer hardware and enterprise applications.",
             "cluster_count": 1,
             "published_at": "2026-10-02T14:57:41+00:00"
-        },
-        {
-            "headline": "Watch: What’s the deal with OpenAI’s massive dump of math papers?",
-            "score": 84,
-            "source": "Science News",
-            "url": "https://science.org/content/article/watch-what-s-deal-openai-s-massive-dump-math-papers",
-            "one_liner": "The landmark release of 722 papers targeting 372 unsolved problems draws amazement—and criticism",
-            "topics": [
-                "AI for Science",
-                "Mathematical Reasoning",
-                "Large Language Models",
-                "Automated Theorem Proving",
-                "Research Automation"
-            ],
-            "entities": [
-                "OpenAI"
-            ],
-            "market_impact": "This release signals a shift in AI capabilities from general chat to specialized scientific discovery, potentially accelerating R&D cycles in mathematics and related fields while raising questions about the validation and reliability of AI-generated proofs.",
-            "cluster_count": 2,
-            "published_at": "2026-10-07T06:15:06+00:00"
         },
         {
             "headline": "Function-preserving watermarking of AI-generated proteins",
@@ -412,24 +506,24 @@ window.digestData = {
             "published_at": "2026-09-30T00:00:00+00:00"
         },
         {
-            "headline": "&#8216;Pure insanity&#8217;: Mathematicians will need years to make sense of OpenAI&#8217;s latest drop",
-            "score": 83,
-            "source": "The Verge AI",
-            "url": "https://theverge.com/ai-artificial-intelligence/1008726/openai-mathematics-solutions-chaos",
-            "one_liner": "\"Staggering.\" \"Overwhelming.\" \"Unprecedented.\" \"Surreal.\" \"Pure insanity.\" Those were among the descriptions more than three dozen mathematicians reached for in conversations with The Verge as they tr",
+            "headline": "Watch: What’s the deal with OpenAI’s massive dump of math papers?",
+            "score": 84,
+            "source": "Science News",
+            "url": "https://science.org/content/article/watch-what-s-deal-openai-s-massive-dump-math-papers",
+            "one_liner": "The landmark release of 722 papers targeting 372 unsolved problems draws amazement—and criticism",
             "topics": [
                 "AI for Science",
-                "Mathematics",
-                "Automated Reasoning",
-                "LLM Capabilities",
+                "Mathematical Reasoning",
+                "Large Language Models",
+                "Automated Theorem Proving",
                 "Research Automation"
             ],
             "entities": [
                 "OpenAI"
             ],
-            "market_impact": "Demonstrates a potential paradigm shift where AI systems can autonomously generate and verify complex mathematical proofs, potentially accelerating scientific discovery and reducing the time-to-insight in research-heavy industries.",
-            "cluster_count": 1,
-            "published_at": "2026-10-09T19:09:44+00:00"
+            "market_impact": "This release signals a shift in AI capabilities from general chat to specialized scientific discovery, potentially accelerating R&D cycles in mathematics and related fields while raising questions about the validation and reliability of AI-generated proofs.",
+            "cluster_count": 2,
+            "published_at": "2026-10-07T06:15:06+00:00"
         },
         {
             "headline": "OpenAI Is Pissing Off a Bunch of Mathematicians—Again",
@@ -456,6 +550,26 @@ window.digestData = {
             "published_at": "2026-10-06T17:28:33+00:00"
         },
         {
+            "headline": "&#8216;Pure insanity&#8217;: Mathematicians will need years to make sense of OpenAI&#8217;s latest drop",
+            "score": 83,
+            "source": "The Verge AI",
+            "url": "https://theverge.com/ai-artificial-intelligence/1008726/openai-mathematics-solutions-chaos",
+            "one_liner": "\"Staggering.\" \"Overwhelming.\" \"Unprecedented.\" \"Surreal.\" \"Pure insanity.\" Those were among the descriptions more than three dozen mathematicians reached for in conversations with The Verge as they tr",
+            "topics": [
+                "AI for Science",
+                "Mathematics",
+                "Automated Reasoning",
+                "LLM Capabilities",
+                "Research Automation"
+            ],
+            "entities": [
+                "OpenAI"
+            ],
+            "market_impact": "Demonstrates a potential paradigm shift where AI systems can autonomously generate and verify complex mathematical proofs, potentially accelerating scientific discovery and reducing the time-to-insight in research-heavy industries.",
+            "cluster_count": 1,
+            "published_at": "2026-10-09T19:09:44+00:00"
+        },
+        {
             "headline": "OpenAI drops another batch of mathematical breakthroughs",
             "score": 83,
             "source": "The Verge AI",
@@ -478,28 +592,27 @@ window.digestData = {
             "published_at": "2026-10-06T23:26:38+00:00"
         },
         {
-            "headline": "The Machines that Make the Machines",
+            "headline": "Does better work always mean better workers?",
             "score": 82,
-            "source": "NVIDIA Technical Blog",
-            "url": "https://developer.nvidia.com/blog/the-machines-that-make-the-machines",
-            "one_liner": "How we taught robots to assemble GB300 tester trays and what it taught us about robot learning, mechanical intelligence, and good old-fashioned engineering The...",
+            "source": "Google Research",
+            "url": "https://research.google/blog/does-better-work-always-mean-better-workers",
+            "one_liner": "",
             "topics": [
-                "robotics",
-                "robot learning",
-                "manufacturing automation",
-                "manipulation",
-                "hardware assembly"
+                "AI & Economy",
+                "Human-AI Interaction",
+                "Skill Acquisition",
+                "Field Experiments",
+                "Professional Services"
             ],
             "entities": [
-                "NVIDIA",
-                "Foxconn",
-                "NVIDIA Seattle Robotics Lab",
-                "GB300",
-                "Isaac"
+                "Google Research",
+                "David Autor",
+                "Tanya Rodchenko",
+                "National Bureau of Economic Research"
             ],
-            "market_impact": "Demonstrates a viable path for automating high-precision, high-value AI hardware assembly, potentially reducing labor costs and scaling production capacity for next-generation AI infrastructure.",
+            "market_impact": "The findings suggest that AI integration in professional services may widen the skill gap between senior and junior staff, potentially altering workforce development strategies and long-term talent value in industries like law and consulting.",
             "cluster_count": 1,
-            "published_at": "2026-10-07T18:21:03+00:00"
+            "published_at": "2026-10-07T20:19:57+00:00"
         },
         {
             "headline": "How DOCA GPUNetIO Unifies GPU-Initiated Networking Across the NVIDIA Software Stack",
@@ -526,75 +639,52 @@ window.digestData = {
             "published_at": "2026-10-06T19:07:02+00:00"
         },
         {
-            "headline": "The Mathocalypse",
+            "headline": "The Machines that Make the Machines",
             "score": 82,
-            "source": "Hacker News 100+",
-            "url": "https://scottaaronson.blog/?p=10169",
-            "one_liner": "Article URL: https://scottaaronson.blog/?p=10169 Comments URL: https://news.ycombinator.com/item?id=49997718 Points: 234 # Comments: 261",
+            "source": "NVIDIA Technical Blog",
+            "url": "https://developer.nvidia.com/blog/the-machines-that-make-the-machines",
+            "one_liner": "How we taught robots to assemble GB300 tester trays and what it taught us about robot learning, mechanical intelligence, and good old-fashioned engineering The...",
             "topics": [
-                "formal verification",
-                "complexity theory",
-                "AI-generated proofs",
-                "Lean",
-                "optimization"
+                "robotics",
+                "robot learning",
+                "manufacturing automation",
+                "manipulation",
+                "hardware assembly"
             ],
             "entities": [
-                "OpenAI",
-                "Dana Moshkovitz",
-                "Subhash Khot",
-                "Timothy Gowers",
-                "Edward Witten"
+                "NVIDIA",
+                "Foxconn",
+                "NVIDIA Seattle Robotics Lab",
+                "GB300",
+                "Isaac"
             ],
-            "market_impact": "The release of 372 verified mathematical breakthroughs, including a proof of the Unique Games Conjecture, signals a paradigm shift where AI can autonomously solve open-ended, high-level theoretical problems, potentially disrupting industries reliant on complex optimization and formal verification.",
+            "market_impact": "Demonstrates a viable path for automating high-precision, high-value AI hardware assembly, potentially reducing labor costs and scaling production capacity for next-generation AI infrastructure.",
             "cluster_count": 1,
-            "published_at": "2026-10-07T19:33:40+00:00"
+            "published_at": "2026-10-07T18:21:03+00:00"
         },
         {
-            "headline": "Does better work always mean better workers?",
+            "headline": "Add Runtime Controls to AI Agents with NVIDIA OpenShell",
             "score": 82,
-            "source": "Google Research",
-            "url": "https://research.google/blog/does-better-work-always-mean-better-workers",
-            "one_liner": "",
-            "topics": [
-                "AI & Economy",
-                "Human-AI Interaction",
-                "Skill Acquisition",
-                "Field Experiments",
-                "Professional Services"
-            ],
-            "entities": [
-                "Google Research",
-                "David Autor",
-                "Tanya Rodchenko",
-                "National Bureau of Economic Research"
-            ],
-            "market_impact": "The findings suggest that AI integration in professional services may widen the skill gap between senior and junior staff, potentially altering workforce development strategies and long-term talent value in industries like law and consulting.",
-            "cluster_count": 1,
-            "published_at": "2026-10-07T20:19:57+00:00"
-        },
-        {
-            "headline": "The Agent Said It Was Done. The Database Disagreed.",
-            "score": 80,
-            "source": "Hugging Face",
-            "url": "https://huggingface.co/blog/microsoft/thinkingbox",
-            "one_liner": "",
+            "source": "NVIDIA Technical Blog",
+            "url": "https://developer.nvidia.com/blog/add-runtime-controls-to-ai-agents-with-nvidia-openshell",
+            "one_liner": "AI agents can be given a goal, write code, use tools, and keep working as new information becomes available. This opens the door to applications that...",
             "topics": [
                 "AI Agents",
-                "Benchmarking",
-                "Stateful Workflows",
-                "LLM Evaluation",
-                "MCP"
+                "Runtime Security",
+                "Sandboxing",
+                "Policy Enforcement",
+                "Physical AI"
             ],
             "entities": [
-                "Microsoft",
-                "Hugging Face",
-                "ThinkingBox",
-                "OpenEnv",
-                "Tommy Guy"
+                "NVIDIA",
+                "Cadence",
+                "Slack",
+                "Codex",
+                "Claude Code"
             ],
-            "market_impact": "Introduces a rigorous standard for evaluating AI agents in enterprise settings by focusing on actual backend state changes rather than just tool call syntax, potentially shifting procurement criteria for agentic AI solutions.",
+            "market_impact": "NVIDIA is establishing a critical infrastructure layer for enterprise AI adoption by providing a standardized, open-source security runtime that enables safe deployment of autonomous agents in high-stakes environments like chip design and robotics.",
             "cluster_count": 1,
-            "published_at": "2026-10-03T22:56:48+00:00"
+            "published_at": "2026-09-28T08:55:00+00:00"
         }
     ],
     "notable": [
@@ -646,6 +736,30 @@ window.digestData = {
             "published_at": "2026-10-07T15:45:00+00:00"
         },
         {
+            "headline": "Nous Research confirms it hit $1.5B valuation, launches AI agents for business users",
+            "score": 68,
+            "source": "TechCrunch AI",
+            "url": "https://techcrunch.com/2026/10/07/nous-research-confirms-it-hit-1-5b-valuation-launches-ai-agents-for-business-users",
+            "one_liner": "The developer of Hermes Agent raised a $90 million Series B.",
+            "topics": [
+                "AI Agents",
+                "Open Source LLMs",
+                "Enterprise AI",
+                "Venture Capital",
+                "Multi-step Workflows"
+            ],
+            "entities": [
+                "Nous Research",
+                "Hermes Agent",
+                "Nvidia",
+                "Robot Ventures",
+                "Union Square Ventures"
+            ],
+            "market_impact": "The $1.5B valuation and pivot to enterprise-grade, private AI agents signal a maturing market where open-source foundations are being commercialized for high-value B2B workflows, intensifying competition in the agentic AI space.",
+            "cluster_count": 1,
+            "published_at": "2026-10-07T20:48:45+00:00"
+        },
+        {
             "headline": "Microsoft releases new Nvidia-chip AI PCs with revamped Windows 11",
             "score": 68,
             "source": "TechCrunch AI",
@@ -670,48 +784,26 @@ window.digestData = {
             "published_at": "2026-10-07T20:22:37+00:00"
         },
         {
-            "headline": "US proposes $100,000 charge for international students to do post-graduate work",
+            "headline": "AI-powered medical devices must be tested in real-world settings",
             "score": 68,
-            "source": "Nature",
-            "url": "https://nature.com/articles/d41586-026-02921-7",
-            "one_liner": "Nature, Published online: 08 October 2026; doi:10.1038/d41586-026-02921-7 Proposed rule would choke off a crucial STEM talent pipeline, policy specialists say",
+            "source": "Nature: machine learning",
+            "url": "https://nature.com/articles/d41586-026-03046-7",
+            "one_liner": "",
             "topics": [
-                "STEM policy",
-                "talent pipeline",
-                "international education",
-                "regulation"
+                "medical AI",
+                "regulation",
+                "clinical deployment",
+                "generative AI",
+                "diagnostic imaging"
             ],
             "entities": [
-                "US Government",
-                "Nature"
+                "OpenAI",
+                "FDA",
+                "ChatGPT"
             ],
-            "market_impact": "The proposed fee could significantly reduce the flow of international STEM graduates into the US tech and research sectors, potentially tightening the labor market for AI and engineering roles.",
+            "market_impact": "The FDA's regulatory framework for generative AI medical devices will determine the pace of market entry and compliance costs for healthcare AI startups and established medical device manufacturers.",
             "cluster_count": 1,
-            "published_at": "2026-10-08T00:00:00+00:00"
-        },
-        {
-            "headline": "Nous Research confirms it hit $1.5B valuation, launches AI agents for business users",
-            "score": 68,
-            "source": "TechCrunch AI",
-            "url": "https://techcrunch.com/2026/10/07/nous-research-confirms-it-hit-1-5b-valuation-launches-ai-agents-for-business-users",
-            "one_liner": "The developer of Hermes Agent raised a $90 million Series B.",
-            "topics": [
-                "AI Agents",
-                "Open Source LLMs",
-                "Enterprise AI",
-                "Venture Capital",
-                "Multi-step Workflows"
-            ],
-            "entities": [
-                "Nous Research",
-                "Hermes Agent",
-                "Nvidia",
-                "Robot Ventures",
-                "Union Square Ventures"
-            ],
-            "market_impact": "The $1.5B valuation and pivot to enterprise-grade, private AI agents signal a maturing market where open-source foundations are being commercialized for high-value B2B workflows, intensifying competition in the agentic AI space.",
-            "cluster_count": 1,
-            "published_at": "2026-10-07T20:48:45+00:00"
+            "published_at": "2026-09-29T00:00:00+00:00"
         }
     ]
 };
