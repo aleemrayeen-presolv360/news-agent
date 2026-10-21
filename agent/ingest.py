@@ -25,7 +25,9 @@ from datetime import datetime, timedelta, timezone
 import feedparser
 import httpx
 
-from .config import FEED_CONCURRENCY, FEED_TIMEOUT, MAX_ITEM_AGE_DAYS, USER_AGENT
+from .config import (
+    FEED_CONCURRENCY, FEED_TIMEOUT, FIRST_FETCH_HOURS, MAX_ITEM_AGE_DAYS, USER_AGENT,
+)
 from .normalize import normalize_entry, normalize_hf_paper
 from .sources import Source, enabled_sources
 
@@ -77,6 +79,23 @@ async def _fetch_one(client: httpx.AsyncClient, source: Source,
     return FetchResult(source, rows)
 
 
+FIRST_FETCH_REASON = f"first_fetch_older_than_{FIRST_FETCH_HOURS}h"
+
+
+def split_first_fetch(rows: list[dict], first_ids: set[str],
+                      now: datetime) -> tuple[list[dict], list[dict]]:
+    """Rows to process, and rows from first-time sources too old to process.
+
+    A source seen for the first time only contributes its last FIRST_FETCH_HOURS;
+    the rest is returned separately so it can be stored as already seen.
+    """
+    cutoff = now - timedelta(hours=FIRST_FETCH_HOURS)
+    keep, seen = [], []
+    for r in rows:
+        (seen if r["source_id"] in first_ids and r["published_at"] < cutoff else keep).append(r)
+    return keep, seen
+
+
 async def fetch_all(sources: list[Source]) -> list[FetchResult]:
     sem = asyncio.Semaphore(FEED_CONCURRENCY)
     headers = {
@@ -118,8 +137,20 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
     from . import db
     with db.connect() as conn:
         db.sync_sources(conn)
-        new_urls = db.insert_items(conn, all_rows)
+        first_ids = db.first_fetch_source_ids(conn) & {r.source.id for r in ok}
+        keep, seen = split_first_fetch(all_rows, first_ids, datetime.now(timezone.utc))
+        new_urls = db.insert_items(conn, keep)
+        # After the real rows, so an article another feed also carries is processed normally
+        db.insert_items(conn, seen, skip_reason=FIRST_FETCH_REASON)
         stats["items_new"] = len(new_urls)
+        if first_ids:
+            stats["detail"]["first_fetch"] = {
+                "sources": sorted(first_ids),
+                "kept": sum(r["source_id"] in first_ids for r in keep),
+                "stored_as_seen": len(seen),
+            }
+            print(f"ingest: first fetch for {', '.join(sorted(first_ids))}: "
+                  f"kept the last {FIRST_FETCH_HOURS}h, {len(seen)} older items stored as seen")
         for r in ok:
             db.mark_source_result(conn, r.source.id, ok=True, newest_item=r.newest)
         for r in failed:

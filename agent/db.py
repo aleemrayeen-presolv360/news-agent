@@ -58,12 +58,22 @@ def sync_sources(conn) -> None:
         )
 
 
-def insert_items(conn, rows: Sequence[dict]) -> list[str]:
+def first_fetch_source_ids(conn) -> set[str]:
+    """Sources that have never been fetched successfully (just added, or never working)."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT id FROM sources WHERE last_success_at IS NULL")
+        return {row["id"] for row in cur.fetchall()}
+
+
+def insert_items(conn, rows: Sequence[dict], skip_reason: str | None = None) -> list[str]:
     """Insert new items, ignoring ones we already have.
 
     The UNIQUE(url_canonical) constraint plus ON CONFLICT DO NOTHING is the
     real dedup guarantee. RETURNING gives us exactly which rows were new,
     so the caller can hand just those to the enrich stage.
+
+    With skip_reason the rows are stored as already triaged and rejected, so
+    they are remembered (never "new" again) but never processed.
     """
     if not rows:
         return []
@@ -80,8 +90,11 @@ def insert_items(conn, rows: Sequence[dict]) -> list[str]:
             """
             INSERT INTO raw_items
                 (url_canonical, url_original, title, source_id,
-                 published_at, feed_summary)
-            SELECT * FROM unnest(
+                 published_at, feed_summary, rules_pass, rules_reason)
+            SELECT *,
+                   CASE WHEN %s::text IS NULL THEN NULL ELSE false END,
+                   %s::text
+            FROM unnest(
                 %s::text[], %s::text[], %s::text[],
                 %s::text[], %s::timestamptz[], %s::text[]
             )
@@ -89,6 +102,8 @@ def insert_items(conn, rows: Sequence[dict]) -> list[str]:
             RETURNING url_canonical
             """,
             (
+                skip_reason,
+                skip_reason,
                 [r["url_canonical"] for r in deduped.values()],
                 [r["url_original"] for r in deduped.values()],
                 [r["title"] for r in deduped.values()],

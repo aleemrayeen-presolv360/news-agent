@@ -30,6 +30,7 @@ from agent.sources import (  # noqa: E402
 from agent.extract import _extract_text, _PAYWALL_SIGNALS  # noqa: E402
 from agent.config import DOMAINS  # noqa: E402
 from agent.publish_static import item_to_dict, split_by_label  # noqa: E402
+from agent.ingest import split_first_fetch  # noqa: E402
 from agent.triage import check_arxiv_gate  # noqa: E402
 import agent.score as score_mod  # noqa: E402
 
@@ -291,6 +292,25 @@ check("website gets domain and category",
           {**row, "score_breakdown": {"domain": "business"}},
           {**row, "score_breakdown": None}])],
       [("space", "tech"), ("legal_india", "legal"), ("business", "market"), (None, None)])
+
+# ------------------------------------------------------------ first fetch
+print("\nfirst fetch")
+
+_now = datetime(2026, 10, 21, 12, 0, tzinfo=timezone.utc)
+_rows = [
+    {"source_id": "new_feed", "published_at": datetime(2026, 10, 21, 1, 0, tzinfo=timezone.utc)},   # 11h old
+    {"source_id": "new_feed", "published_at": datetime(2026, 10, 19, 12, 0, tzinfo=timezone.utc)},  # 2 days old
+    {"source_id": "old_feed", "published_at": datetime(2026, 10, 10, 12, 0, tzinfo=timezone.utc)},  # 11 days old
+]
+_keep, _seen = split_first_fetch(_rows, {"new_feed"}, _now)
+check("new source keeps its last 24h", [r["published_at"].day for r in _keep if r["source_id"] == "new_feed"], [21])
+check("new source's older items stored as seen", [r["published_at"].day for r in _seen], [19])
+check("known sources unaffected", [r["source_id"] for r in _keep if r["published_at"].day == 10], ["old_feed"])
+check("no first-time sources: everything kept", len(split_first_fetch(_rows, set(), _now)[0]), 3)
+
+check("source ids are unique", len({s.id for s in SOURCES}), len(SOURCES))
+check("Google News feeds are encoded and limited to 7 days",
+      all(" " not in s.url and "when%3A7d" in s.url for s in SOURCES if "news.google.com" in s.url), True)
 
 js_config = (Path(__file__).resolve().parent.parent / "frontend/js/config.js").read_text(encoding="utf-8")
 js_domains = re.search(r"DOMAINS:\s*\{(.*?)\}", js_config, re.S).group(1)

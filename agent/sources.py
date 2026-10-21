@@ -15,6 +15,16 @@ than silently pretending they do not exist.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from urllib.parse import quote
+
+
+def _google_news(query: str) -> str:
+    """A Google News search feed (India edition), last 7 days only."""
+    return ("https://news.google.com/rss/search?hl=en-IN&gl=IN&ceid=IN:en&q="
+            + quote(f"{query} when:7d"))
+
+
+_GN_NOTE = "Google News search; links are redirects, so it is scored from the headline"
 
 
 @dataclass(frozen=True)
@@ -144,6 +154,64 @@ SOURCES: list[Source] = [
            note="RSS deprecated - get via GDELT instead"),
     Source("bloomberg", "Bloomberg Tech", "D", enabled=False,
            note="robots-disallowed - get via GDELT instead"),
+
+    # ---------------------------------------------------- Beyond AI (Oct 2026)
+    # Every domain the scorer knows (see DOMAINS in config.py). Feeds were tested
+    # live on 21 Oct 2026; ~items/day is from that test. Total ~150/day, chosen so
+    # scoring (~250/day on Groq's free tier) keeps up.
+    # EVs and mobility
+    Source("electrek", "Electrek", "D", url="https://electrek.co/feed/", note="~16/day"),
+    Source("insideevs", "InsideEVs", "D", url="https://insideevs.com/rss/news/all/"),
+    Source("tc_transport", "TechCrunch Transportation", "D",
+           url="https://techcrunch.com/category/transportation/feed/"),
+    Source("verge_transport", "The Verge Transportation", "D",
+           url="https://www.theverge.com/rss/transportation/index.xml"),
+    # Space
+    Source("spacenews", "SpaceNews", "D", url="https://spacenews.com/feed/"),
+    Source("nasa", "NASA", "B", url="https://www.nasa.gov/news-release/feed/",
+           note="tier B not A: ~9 press releases/day, most minor"),
+    # Health, energy, chips, security, robotics, science
+    Source("endpoints", "Endpoints News", "D", url="https://endpts.com/feed/"),
+    Source("canary", "Canary Media", "D", url="https://www.canarymedia.com/rss.rss"),
+    Source("utilitydive", "Utility Dive", "D", url="https://www.utilitydive.com/feeds/news/"),
+    Source("eetimes", "EE Times", "D", url="https://www.eetimes.com/feed/"),
+    Source("thehackernews", "The Hacker News", "D",
+           url="https://feeds.feedburner.com/TheHackersNews", note="~16/day"),
+    Source("krebs", "Krebs on Security", "D", url="https://krebsonsecurity.com/feed/"),
+    Source("robotreport", "The Robot Report", "D", url="https://www.therobotreport.com/feed/"),
+    Source("quanta", "Quanta Magazine", "D", url="https://www.quantamagazine.org/feed/"),
+    Source("sciencedaily", "ScienceDaily (tech)", "D",
+           url="https://www.sciencedaily.com/rss/top/technology.xml"),
+    # India: tech, legal, market
+    Source("et_tech", "ET Tech", "D",
+           url="https://economictimes.indiatimes.com/tech/rssfeeds/13357270.cms", note="~14/day"),
+    Source("medianama", "MediaNama", "D", url="https://www.medianama.com/feed/"),
+    Source("barandbench", "Bar & Bench", "D", url="https://www.barandbench.com/feed"),
+    Source("scc_online", "SCC Online Blog", "D", url="https://www.scconline.com/blog/feed"),
+    Source("gn_dispute_india", "Dispute resolution India (Google News)", "D",
+           url=_google_news('arbitration OR mediation OR "online dispute resolution" OR IBC '
+                            'OR SARFAESI OR "debt recovery tribunal" india'),
+           note=_GN_NOTE),
+    Source("economic_times", "Economic Times", "D",
+           url="https://economictimes.indiatimes.com/rssfeedsdefault.cms"),
+    Source("inc42", "Inc42", "D", url="https://inc42.com/feed/"),
+    Source("gn_startups_india", "Startup funding India (Google News)", "D",
+           url=_google_news("startup funding india"), note=_GN_NOTE),
+    Source("gn_fintech_india", "Fintech India (Google News)", "D",
+           url=_google_news("fintech india"), note=_GN_NOTE),
+    # Competitors: one search per group of names, not one per company
+    Source("gn_odr_competitors", "ODR competitors (Google News)", "D",
+           url=_google_news('"Jupitice" OR "Webnyay" OR "SMART ODR" OR "CADRE ODR" OR "JustAct" '
+                            'OR "WeVaad" OR "Sama ODR" OR "adrEdge" OR "Presolv360"'),
+           note=_GN_NOTE),
+    Source("gn_legaltech_india", "Legal tech India (Google News)", "D",
+           url=_google_news('"Credgenics" OR "SpotDraft" OR "Legistify" OR "CaseMine" OR "NearLaw" '
+                            'OR legaltech india'),
+           note=_GN_NOTE),
+    Source("gn_legaltech_global", "Legal tech global (Google News)", "D",
+           url=_google_news('"Clio" legal OR "Smokeball" OR "PracticePanther" OR "LegalZoom" '
+                            'OR "Harvey AI" legal'),
+           note=_GN_NOTE),
 ]
 
 

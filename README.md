@@ -81,7 +81,7 @@ python -m venv .venv
 pip install -r requirements.txt
 copy .env.example .env            # macOS/Linux: cp .env.example .env, then fill it in
 
-python scripts/selftest.py        # offline tests, should end "49 passed, 0 failed"
+python scripts/selftest.py        # offline tests, should end "63 passed, 0 failed"
 python -m agent.ingest --dry-run  # fetch every feed, write nothing, print a report
 python -m agent.pipeline          # run every stage for real (needs .env filled in)
 ```
@@ -94,7 +94,7 @@ python -m agent.pipeline          # run every stage for real (needs .env filled 
 news-agent/
 ├── agent/                   Python pipeline (one file per stage)
 │   ├── config.py            settings, score thresholds, IST week window, env helper
-│   ├── sources.py           the feed list the pipeline fetches (48 entries, 40 enabled)
+│   ├── sources.py           the feed list the pipeline fetches (75 entries, 67 enabled)
 │   ├── normalize.py         clean URLs and feed entries, so duplicates collapse
 │   ├── db.py                Neon connection, inserts, source health
 │   ├── ingest.py            stage 1: fetch feeds → raw_items
@@ -213,7 +213,7 @@ previous stage finished, so re-running is always safe.
 
 | Stage | Command | What it does |
 |---|---|---|
-| ingest | `python -m agent.ingest` | Fetches every enabled feed in `sources.py`, cleans URLs so the same article from two feeds counts once, stores new items. A dead feed never stops the run; it's recorded instead. |
+| ingest | `python -m agent.ingest` | Fetches every enabled feed in `sources.py`, cleans URLs so the same article from two feeds counts once, stores new items. A dead feed never stops the run; it's recorded instead. A source's first successful fetch keeps only its last 24 hours (`FIRST_FETCH_HOURS`); older items are stored as already seen, so a new source never queues weeks of old news. |
 | triage | `python -m agent.triage` | Runs first, on everything (it only reads titles, so it's free). Drops obvious noise: job posts, PR, funding fluff, events, listicles. arXiv papers only pass if they have 10+ upvotes on Hugging Face Daily Papers; without this, papers (about 88% of what's fetched) would queue ahead of news. |
 | extract | `python -m agent.extract` | Downloads the page of each article that passed triage in the last 14 days (`PROCESS_DAYS`) and pulls out the text. Marks paywalls. |
 | embed | `python -m agent.embed` | Turns each article into a 384-number vector (model `BAAI/bge-small-en-v1.5`, runs locally). |
@@ -346,8 +346,10 @@ stories automatically.
 
 **Add a feed the pipeline should fetch.** Add a `Source(...)` line to `agent/sources.py` (unique
 `id`, tier A–D, feed URL), then run `python scripts/selftest.py` and
-`python -m agent.ingest --dry-run`. The Settings → Sources screen does *not* add feeds to the
-pipeline (see Known gaps).
+`python -m agent.ingest --dry-run`. Check how many items a day it publishes first: scoring keeps
+up with about 250 a day on the free tier, and about 210 already arrive. For a topic without a good
+feed, use `_google_news("search words")` in `sources.py`. On its first fetch the source brings in
+its last 24 hours. The Settings → Sources screen does *not* add feeds to the pipeline (see Known gaps).
 
 **Make someone an admin.** Supabase → Table Editor → `profile` → set `role` to `admin`. After
 that, admins can change roles from Settings → Users.
@@ -393,10 +395,12 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
 
 ## Known gaps and next steps
 
-1. **The pipeline only fetches AI/research feeds.** `agent/sources.py` has 48 AI, research and
-   tech feeds. The Legal India, Market and Competitor feeds in Settings live only in Supabase and
-   are never fetched, so those categories stay nearly empty. Fix: add them to `sources.py` (with a
-   category), or have ingest read the Supabase `source` table.
+1. **Settings → Sources doesn't control the pipeline.** `agent/sources.py` (67 enabled feeds across
+   AI, EVs, space, health, energy, chips, security, robotics, science, Indian tech, Legal India,
+   market and competitors) is what gets fetched. The Supabase `source` list only hides stories by
+   source name. Many feeds in it were tested on 21 Oct 2026 and don't work (LiveLaw, Mondaq, India
+   Kanoon, Financial Express, Entrackr, VCCircle and others), and some publish too much to score
+   for free (Business Today, CNBC TV18, Tax Guru), so they were left out.
 2. **Older stories have no domain.** Stories scored before the domain was added are categorised
    by keywords until they leave the 30-day window.
 3. **Source names differ** between the pipeline ("NVIDIA Technical Blog") and Settings

@@ -45,6 +45,11 @@ def env(key: str, default: str | None = None, *, required: bool = False) -> str:
 # Guards against a feed that suddenly republishes its whole archive.
 MAX_ITEM_AGE_DAYS = 21
 
+# A source's first successful fetch only keeps this much of its feed. Older
+# items are stored as already seen, so adding a source shows its last day of
+# news instead of queueing weeks of back catalogue ahead of today's stories.
+FIRST_FETCH_HOURS = 24
+
 # Per-feed network timeout, seconds.
 FEED_TIMEOUT = 20.0
 
