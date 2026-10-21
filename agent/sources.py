@@ -147,6 +147,12 @@ SOURCES: list[Source] = [
 ]
 
 
+# Research-paper feeds. They outnumber news about 10 to 1, so later stages
+# handle news first and papers after (see score.py).
+ARXIV_SOURCES = ("arxiv_ai", "arxiv_lg", "arxiv_cl")
+PAPER_SOURCES = ARXIV_SOURCES + ("hf_papers",)
+
+
 def enabled_sources() -> list[Source]:
     return [s for s in SOURCES if s.enabled and s.url]
 

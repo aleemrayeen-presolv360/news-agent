@@ -61,8 +61,24 @@ USER_AGENT = (
 SCORE_BREAKING = 85   # immediate Telegram alert, any day/hour
 SCORE_MAJOR = 70      # headline section; below this a week is "no big news"
 SCORE_NOTABLE = 55    # collapsed toggle
-MAX_ITEMS_PER_DIGEST = 12
-MAX_MINOR_ITEMS = 5
+MAX_ITEMS_PER_DIGEST = 12   # Notion digest only; the website shows everything
+MAX_MINOR_ITEMS = 5         # Notion digest only
+
+# The domain the scoring model puts each story in, and the website category
+# (group) it belongs to. Keep in step with DOMAINS in frontend/js/config.js.
+DOMAINS = {
+    "ai": "tech", "chips": "tech", "mobility": "tech", "space": "tech",
+    "health": "tech", "energy": "tech", "robotics": "tech", "fintech": "tech",
+    "security": "tech", "consumer": "tech", "science": "tech", "policy": "tech",
+    "legal_india": "legal", "business": "market", "other": "tech",
+}
+
+# Only articles published in the last PROCESS_DAYS are downloaded and scored,
+# so an old backlog never crowds out this week's news.
+PROCESS_DAYS = 14
+
+# How far back frontend/data.js goes.
+WEBSITE_DAYS = 30
 
 # Embedding model — 384-dim, 67 MB, MIT licence.
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"

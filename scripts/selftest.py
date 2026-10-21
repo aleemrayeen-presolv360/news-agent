@@ -9,9 +9,12 @@ Covers the two things most likely to be quietly wrong:
 
 from __future__ import annotations
 
+import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -21,8 +24,14 @@ from agent.config import IST, addendum_window, week_window  # noqa: E402
 from agent.normalize import (  # noqa: E402
     canonical_url, clean_text, normalize_entry, normalize_hf_paper,
 )
-from agent.sources import SOURCES, by_id, enabled_sources  # noqa: E402
+from agent.sources import (  # noqa: E402
+    ARXIV_SOURCES, PAPER_SOURCES, SOURCES, by_id, enabled_sources,
+)
 from agent.extract import _extract_text, _PAYWALL_SIGNALS  # noqa: E402
+from agent.config import DOMAINS  # noqa: E402
+from agent.publish_static import item_to_dict, split_by_label  # noqa: E402
+from agent.triage import check_arxiv_gate  # noqa: E402
+import agent.score as score_mod  # noqa: E402
 
 PASS, FAIL = 0, 0
 
@@ -190,6 +199,103 @@ check("text extracted from normal article", text2 is not None and len(text2) > 5
 
 # Test paywall signals list
 check("paywall signals defined", len(_PAYWALL_SIGNALS) > 5, True)
+
+# ------------------------------------------------------------ funnel
+print("\nfunnel")
+
+check("every arXiv feed is a paper source",
+      {s.id for s in SOURCES if s.id.startswith("arxiv")} <= set(ARXIV_SOURCES), True)
+check("paper sources all exist in the source list",
+      all(by_id(sid) for sid in PAPER_SOURCES), True)
+check("triage gates every arXiv source",
+      [check_arxiv_gate(sid, "u", None, {})[0] for sid in ARXIV_SOURCES], [False] * len(ARXIV_SOURCES))
+check("triage lets news through the arXiv gate",
+      check_arxiv_gate("techcrunch_ai", "u", None, {})[0], True)
+
+groups = split_by_label([{"score": s} for s in (97, 85, 84, 70, 69, 55, 54, 10)])
+check("website groups: 85+ breaking", [i["score"] for i in groups["breaking"]], [97, 85])
+check("website groups: 70-84 major", [i["score"] for i in groups["major"]], [84, 70])
+check("website groups: 55-69 notable", [i["score"] for i in groups["notable"]], [69, 55])
+many = split_by_label([{"score": 75}] * 40 + [{"score": 60}] * 20)
+check("website groups are not capped", (len(many["major"]), len(many["notable"])), (40, 20))
+
+# ------------------------------------------------------------ groq rate limits
+print("\ngroq rate limits")
+
+
+class _FakeResp:
+    def __init__(self, status, retry_after=None):
+        self.status_code = status
+        self.headers = {"retry-after": retry_after} if retry_after else {}
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+    def json(self):
+        return {"choices": [{"message": {"content": "ok"}}]}
+
+
+def _fake_groq(responses):
+    """Run _call_groq against canned responses; returns (result or error, sleeps)."""
+    queue, sleeps = list(responses), []
+    score_mod._groq_exhausted = False
+    with mock.patch.object(score_mod.httpx, "post", lambda *a, **k: queue.pop(0)), \
+         mock.patch.object(score_mod.time, "sleep", sleeps.append), \
+         mock.patch.dict(os.environ, {"GROQ_API_KEY": "test"}):
+        try:
+            return score_mod._call_groq("p"), sleeps
+        except Exception as e:  # noqa: BLE001
+            return type(e).__name__, sleeps
+
+
+check("waits out a per-minute 429, then succeeds",
+      _fake_groq([_FakeResp(429, "7"), _FakeResp(200)]), ("ok", [8.0]))
+check("daily quota gone: gives up at once, no waiting",
+      _fake_groq([_FakeResp(429, "3600")]), ("GroqQuotaExhausted", []))
+try:  # flag is still set from the call above; no request may be made now
+    with mock.patch.object(score_mod.httpx, "post", side_effect=AssertionError("called Groq")):
+        score_mod._call_groq("p")
+    skipped = "called"
+except score_mod.GroqQuotaExhausted:
+    skipped = "skipped"
+check("after daily quota is gone, later calls skip Groq", skipped, "skipped")
+score_mod._groq_exhausted = False
+
+# ------------------------------------------------------------ domains
+print("\ndomains")
+
+parsed = score_mod._parse_score_response(
+    '{"domain": "Mobility", "novelty": 30, "impact": 10, "relevance": 15}', "D")
+check("domain read case-insensitively", parsed["domain"], "mobility")
+check("dimension scores capped at 25", parsed["score"], 12 + 25 + 10 + 15)
+check("unknown domain becomes other",
+      score_mod._parse_score_response('{"domain": "sports", "novelty": 1}', "A")["domain"], "other")
+check("missing domain becomes other",
+      score_mod._parse_score_response('{"novelty": 1}', "A")["domain"], "other")
+
+
+def _domain_for(title, domain):
+    return score_mod._result({"id": 1, "title": title}, {**parsed, "domain": domain}).domain
+
+
+check("legal_india kept for Indian courts", _domain_for("Delhi High Court rules on ODR", "legal_india"), "legal_india")
+check("legal_india dropped for a US court case", _domain_for("Judge dismisses lawsuit in Boston", "legal_india"), "other")
+
+row = {"headline": "h", "score": 70, "source_name": "s", "source_url": "u", "one_liner": "o",
+       "topics": [], "entities": [], "market_impact": None, "cluster_count": 1, "published_at": None}
+check("website gets domain and category",
+      [(d["domain"], d["category"]) for d in map(item_to_dict, [
+          {**row, "score_breakdown": {"domain": "space"}},
+          {**row, "score_breakdown": {"domain": "legal_india"}},
+          {**row, "score_breakdown": {"domain": "business"}},
+          {**row, "score_breakdown": None}])],
+      [("space", "tech"), ("legal_india", "legal"), ("business", "market"), (None, None)])
+
+js_config = (Path(__file__).resolve().parent.parent / "frontend/js/config.js").read_text(encoding="utf-8")
+js_domains = re.search(r"DOMAINS:\s*\{(.*?)\}", js_config, re.S).group(1)
+check("website config names every domain but other",
+      set(re.findall(r"^\s*(\w+):", js_domains, re.M)), set(DOMAINS) - {"other"})
 
 print(f"\n{'=' * 50}\n  {PASS} passed, {FAIL} failed\n{'=' * 50}")
 print(f"  enabled sources : {len(enabled_sources())}")

@@ -4,6 +4,10 @@ Two-stage filter before expensive LLM scoring:
 1. Rules gate: regex filters kill obvious noise (job posts, press releases)
 2. arXiv gate: only pass arXiv papers with HF Daily Papers upvotes >= threshold
 
+Runs first, straight after ingest: it only reads titles and feed summaries,
+costs nothing, and stops thousands of arXiv papers from being downloaded,
+embedded and queued ahead of news. So it normally runs with no --limit.
+
     python -m agent.triage                # triage unprocessed items
     python -m agent.triage --dry-run      # test rules without DB
     python -m agent.triage --limit 50     # only process 50 items
@@ -14,6 +18,8 @@ from __future__ import annotations
 import argparse
 import re
 from dataclasses import dataclass
+
+from .sources import ARXIV_SOURCES
 
 # ---------------------------------------------------------------- rules gate
 
@@ -110,7 +116,7 @@ def check_arxiv_gate(source_id: str, url: str, feed_summary: str | None,
     This filters ~300 papers/day down to ~10-20 that the community cares about.
     """
     # Non-arXiv sources always pass this gate
-    if source_id not in ("arxiv_ai", "arxiv_lg", "arxiv_cl"):
+    if source_id not in ARXIV_SOURCES:
         return True, "not_arxiv"
     
     # Check if this paper has HF upvotes

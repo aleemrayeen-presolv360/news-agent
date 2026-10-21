@@ -31,14 +31,14 @@ and tells you why.
 ```
  News feeds (RSS)                  Python pipeline (agent/)                     Website (frontend/)
  ────────────────                  ────────────────────────                     ───────────────────
- OpenAI, MIT, arXiv,   ──every──▶  ingest ─▶ extract ─▶ embed ─▶ triage           index.html + js/ + css/
- TechCrunch, Nature …    4 hours            │                                       │
-                                            ▼                                       │ reads
-                              Friday:  score (Groq AI) ─▶ cluster ─▶ threads        ▼
-                                            │                                  frontend/data.js
-                                            ├─▶ alerts (Telegram, score ≥ 85)        ▲
-                                            ├─▶ publish (Notion page, optional)      │
-                                            └─▶ publish_static ──────── writes ──────┘
+ OpenAI, MIT, arXiv,   ──every──▶  ingest                                       index.html + js/ + css/
+ TechCrunch, Nature …    4 hours     │                                                  │
+                                     ▼                                                  │ reads
+                  Daily 07:00:  triage ─▶ extract ─▶ embed ─▶ score (Groq AI)           ▼
+                                     │      ─▶ cluster ─▶ threads                 frontend/data.js
+                                     ├─▶ alerts (Telegram, score ≥ 85)                  ▲
+                                     └─▶ publish_static ─────────────── writes ─────────┘
+                  Friday 12:01: same, plus publish (Notion page, optional)
 
  Storage:  Neon Postgres + pgvector  →  all articles, scores, embeddings (pipeline only)
            Supabase                  →  sign-in, notes, source switches, audit log (website only)
@@ -57,8 +57,11 @@ when offline.
 
 ## Quick start
 
-### See the website (2 minutes)
+### See the website
 
+**Live site:** <https://news-agent.atlair.app/>
+
+Or run locally:
 ```bash
 cd frontend
 python -m http.server 8000
@@ -78,7 +81,7 @@ python -m venv .venv
 pip install -r requirements.txt
 copy .env.example .env            # macOS/Linux: cp .env.example .env, then fill it in
 
-python scripts/selftest.py        # offline tests, should end "38 passed, 0 failed"
+python scripts/selftest.py        # offline tests, should end "49 passed, 0 failed"
 python -m agent.ingest --dry-run  # fetch every feed, write nothing, print a report
 python -m agent.pipeline          # run every stage for real (needs .env filled in)
 ```
@@ -156,9 +159,13 @@ The AI score is never shown. Readers see a label instead:
 | **Major** | 70–84 | Important this week. |
 | **Notable** | 55–69 | Worth a look if it's your area. |
 
-Stories below 55 never reach the website. **Categories** (AI and tech, Legal India, Market,
-Competitors) are guessed from keywords in `frontend/js/stories.js`, because the pipeline doesn't
-send a category yet.
+Stories below 55 never reach the website. The scoring model puts each story in a **domain**
+(AI, Chips and computing, EVs and mobility, Space, Health and biotech, Energy and climate, Robotics,
+Fintech, Cybersecurity, Gadgets and internet, Science, Tech policy, Legal India, Business), shown on
+the story. Each domain belongs to one of four **categories** used for filters and colours: Tech and
+science, Legal India, Market (Business) and Competitors (found by company name, `COMPETITORS` in
+`frontend/js/config.js`). Stories scored before domains existed are guessed from keywords. The
+domain list lives in `agent/config.py` and `frontend/js/config.js`; change both together.
 
 ### Where things are stored
 
@@ -207,14 +214,14 @@ previous stage finished, so re-running is always safe.
 | Stage | Command | What it does |
 |---|---|---|
 | ingest | `python -m agent.ingest` | Fetches every enabled feed in `sources.py`, cleans URLs so the same article from two feeds counts once, stores new items. A dead feed never stops the run; it's recorded instead. |
-| extract | `python -m agent.extract` | Downloads each article page and pulls out the text. Marks paywalls. |
+| triage | `python -m agent.triage` | Runs first, on everything (it only reads titles, so it's free). Drops obvious noise: job posts, PR, funding fluff, events, listicles. arXiv papers only pass if they have 10+ upvotes on Hugging Face Daily Papers; without this, papers (about 88% of what's fetched) would queue ahead of news. |
+| extract | `python -m agent.extract` | Downloads the page of each article that passed triage in the last 14 days (`PROCESS_DAYS`) and pulls out the text. Marks paywalls. |
 | embed | `python -m agent.embed` | Turns each article into a 384-number vector (model `BAAI/bge-small-en-v1.5`, runs locally). |
-| triage | `python -m agent.triage` | Drops obvious noise: job posts, PR, funding fluff, events, listicles. arXiv papers only pass if they have 10+ upvotes on Hugging Face Daily Papers. |
-| score | `python -m agent.score` | Asks the Groq AI model for novelty, impact and relevance (0–25 each), people/companies, topics and one "why it matters" sentence. Cloudflare Workers AI is the backup. |
+| score | `python -m agent.score` | Asks the Groq AI model for the story's domain and for novelty, impact and relevance (0–25 each, judged within that domain, so an EV or space story competes fairly with AI), people/companies, topics and one "why it matters" sentence. News is scored before papers. Groq's free tier allows 1,000 calls a day and 8,000 tokens a minute (about 11 calls), so the scorer waits when Groq asks it to. Cloudflare Workers AI is the backup. |
 | cluster | `python -m agent.cluster` | Groups articles about the same event (very similar text + a shared company or person, within 72 hours). |
 | threads | `python -m agent.threads` | Links stories into ongoing narratives across weeks. |
-| alerts | `python -m agent.alerts` | Sends each new 85+ story to Telegram once. |
-| publish_static | `python -m agent.publish_static` | Writes `frontend/data.js`. |
+| alerts | `python -m agent.alerts` | Sends each new 85+ story from the last 3 days to Telegram once. |
+| publish_static | `python -m agent.publish_static` | Writes `frontend/data.js`: every story scored 55+ from the last 30 days (`WEBSITE_DAYS`). |
 | publish | `python -m agent.publish` | Optional Notion digest page. |
 
 Every stage accepts `--dry-run` (show what would happen, write nothing). Most accept `--limit N`.
@@ -291,9 +298,9 @@ the Competitors category, score thresholds, and the Today list size.
 
 ### Supabase dashboard settings
 
-- **Authentication → URL Configuration → Redirect URLs:** add every address the site runs on
-  (for example `http://localhost:8000` and your live URL). Password-reset links only work for
-  listed addresses.
+- **Authentication → URL Configuration → Redirect URLs:** add every address the site runs on.
+  Currently configured: `https://news-agent.atlair.app` and `http://localhost:8000`.
+  Password-reset links only work for listed addresses.
 - **Authentication → Providers → Email:** if "Confirm email" is on, new accounts must click the
   email link before signing in. The site says so after sign-up.
 
@@ -306,7 +313,8 @@ GitHub cron is in **UTC**; India is UTC+5:30. All times below are India time.
 | Workflow | When | Does |
 |---|---|---|
 | `ingest.yml` | every 4 hours (:37 past) | fetch feeds |
-| `publish.yml` | Friday 12:01 | extract → embed → triage → score → cluster → threads → alerts → Notion → **`data.js`** → commit |
+| `daily.yml` | every day 07:01 | triage → extract → embed → score (up to 250) → cluster → threads → alerts → **`data.js`** → commit |
+| `publish.yml` | Friday 12:01 | the same (score up to 150) → **`data.js`** → commit → Notion digest |
 | `addendum.yml` | Saturday 08:00 | process Friday-afternoon news, alerts, Notion add-on |
 | `retention.yml` | daily 03:00 | archive Notion pages older than 30 days |
 | `audit.yml` | Monday 08:30 | source-health report on Telegram |
@@ -315,15 +323,22 @@ GitHub cron is in **UTC**; India is UTC+5:30. All times below are India time.
 Each workflow can also be run by hand: Actions tab → pick it → **Run workflow**. A failed run
 sends a Telegram message.
 
-> **The website only gets new stories on Fridays**, when `publish.yml` writes `data.js`. Ingest
-> runs every 4 hours, but scoring waits for Friday. To refresh mid-week, run the publish workflow
-> by hand, or locally: `python -m agent.pipeline --stage extract`.
+> **The website gets new stories every morning**, when `daily.yml` writes `data.js`. Feeds are
+> fetched every 4 hours, but scoring runs once a day: Groq's free tier allows about 11 scoring calls
+> a minute, and time spent waiting on it counts against the 2,000 free Actions minutes. To refresh
+> sooner, run the daily workflow by hand, or locally: `python -m agent.pipeline --stage triage`.
 
 ### Deploying the website
 
-`frontend/` is a plain static folder. Any static host works: Vercel or Netlify (root directory
-`frontend`), or GitHub Pages. Because `publish.yml` commits `data.js`, a host that redeploys on
-push picks up new stories automatically. Add the live URL to Supabase's Redirect URLs.
+**Current deployment:** <https://news-agent.atlair.app/> (hosted on Atlair)
+
+`frontend/` is a plain static folder. Any static host works: Vercel, Netlify, Atlair, or GitHub
+Pages. Because `daily.yml` and `publish.yml` commit `data.js`, a host that redeploys on push picks up new
+stories automatically.
+
+**Supabase URL Configuration** (already done):
+- Site URL: `https://news-agent.atlair.app`
+- Redirect URLs: `https://news-agent.atlair.app`, `http://localhost:8000`
 
 ---
 
@@ -382,12 +397,12 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
    tech feeds. The Legal India, Market and Competitor feeds in Settings live only in Supabase and
    are never fetched, so those categories stay nearly empty. Fix: add them to `sources.py` (with a
    category), or have ingest read the Supabase `source` table.
-2. **Categories are guessed from keywords.** The scoring step should return a category, and
-   `publish_static.py` should pass it to the website.
+2. **Older stories have no domain.** Stories scored before the domain was added are categorised
+   by keywords until they leave the 30-day window.
 3. **Source names differ** between the pipeline ("NVIDIA Technical Blog") and Settings
    ("NVIDIA Blog"), so a few on/off switches don't match their stories. Same fix as 1.
-4. **The website only shows the top 12 Major and top 5 Notable stories** (`MAX_ITEMS_PER_DIGEST`
-   and `MAX_MINOR_ITEMS` in `agent/config.py`), plus every Breaking story.
+4. **Scoring is slow on the free tier.** Groq allows about 11 scoring calls a minute, so the daily
+   run scores at most 250. A big jump in feeds needs more runs a day or a second model.
 5. **Eight feeds have no working RSS** (Anthropic, Meta AI, Stanford HAI and others, marked
    `enabled=False` in `sources.py`). They need RSSHub or a search-based monitor.
 6. **Turn on Row Level Security** in Supabase (see Security notes).

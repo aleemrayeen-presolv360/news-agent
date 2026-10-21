@@ -13,9 +13,9 @@ import argparse
 
 STAGES = [
     ("ingest", "agent.ingest"),
+    ("triage", "agent.triage"),    # first: free, and stops papers crowding out news
     ("extract", "agent.extract"),
     ("embed", "agent.embed"),
-    ("triage", "agent.triage"),
     ("score", "agent.score"),
     ("cluster", "agent.cluster"),
     ("threads", "agent.threads"),
@@ -53,7 +53,7 @@ def run(dry_run: bool = False, stage: str | None = None, limit: int | None = Non
             kwargs = {}
             if dry_run:
                 kwargs["dry_run"] = True
-            if limit and name in ("ingest", "extract", "embed", "triage", "score"):
+            if limit and name in ("ingest", "extract", "embed", "score"):
                 kwargs["limit"] = limit
 
             result = mod.run(**kwargs)

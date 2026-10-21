@@ -7,7 +7,9 @@ Scoring rubric:
 - Source authority: A=25, B=22, C=20, D=12
 - Novelty: 0-25 (is this genuinely new?)
 - Impact: 0-25 (how significant?)
-- Relevance: 0-25 (AI/ML/deep-tech focus?)
+- Relevance: 0-25 (should a tech-aware reader know this?)
+All three are judged within the story's domain (AI, EVs, space, ...), which
+the model also returns and which is stored in score_breakdown->'domain'.
 
     python -m agent.score                # score unscored items
     python -m agent.score --dry-run      # test scoring without DB
@@ -19,12 +21,14 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import time
 from dataclasses import dataclass
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from .config import env, SCORE_BREAKING, SCORE_MAJOR, SCORE_NOTABLE
+from .config import env, DOMAINS, PROCESS_DAYS, SCORE_BREAKING, SCORE_MAJOR, SCORE_NOTABLE
+from .sources import PAPER_SOURCES
 
 # Source tier scores
 TIER_SCORES = {"A": 25, "B": 22, "C": 20, "D": 12}
@@ -48,19 +52,24 @@ class ScoreResult:
     topics: list[str]
     market_impact: str | None
     error: str | None
+    domain: str = "other"
 
 
-SCORING_PROMPT = """You are a tech news analyst scoring articles for an AI/ML weekly digest.
+SCORING_PROMPT = """You score news for News Intel, a briefing read by the team at an Indian legal-tech company. They follow important developments across ALL of technology and science, plus Indian legal and business news.
 
-Score this article on three dimensions (0-25 each):
-- NOVELTY: Is this genuinely new? (0=old news rehashed, 25=world-first announcement)
-- IMPACT: How significant? (0=trivial, 25=industry-changing)
-- RELEVANCE: AI/ML/deep-tech focus? (0=tangential, 25=core AI research)
+First pick the DOMAIN, one id:
+ai (AI and machine learning), chips (semiconductors, computing hardware, data centres), mobility (EVs, cars, flying cars, drones, transport), space, health (medicine, biotech), energy (energy, batteries, climate tech), robotics, fintech (payments, banking tech, crypto), security (cybersecurity, privacy breaches), consumer (phones, gadgets, apps, internet platforms), science (other research), policy (tech regulation and government action outside India), legal_india (ONLY India: Indian law, courts, regulators, arbitration, mediation, ODR; a court case in another country takes the domain of its subject, or other), business (companies, deals, markets, earnings), other.
+
+Then score three dimensions, 0-25 each, judged WITHIN that domain. An equally big EV, space or biotech story gets the same scores as an AI story. Never add points just because AI is mentioned.
+- NOVELTY: 0 = rehash or opinion on old news, 10 = incremental update, 18 = notable first, 25 = world first.
+- IMPACT: 0 = trivial, 10 = matters to specialists, 18 = changes things for a whole industry, 25 = changes the field.
+- RELEVANCE: should a tech-aware reader know this? 0 = not about technology, science, business or Indian law (sport, celebrity, lifestyle, general politics), 8 = niche, 15 = solid news, 20 = widely discussed, 25 = must know.
+Use the whole range; most articles land between 8 and 18 on each.
 
 Also extract:
-- ENTITIES: Key companies, labs, people, models mentioned (max 5)
-- TOPICS: Technical topics covered (max 5, e.g., "transformers", "robotics", "LLM")
-- MARKET_IMPACT: One sentence on business/market implications (or "none" if purely academic)
+- ENTITIES: key companies, organisations, people, products (max 5)
+- TOPICS: specific topics covered (max 5, e.g. "solid-state batteries", "LLM", "satellite launch")
+- MARKET_IMPACT: one sentence on why it matters for business or users (or "none" if purely academic)
 
 Article:
 Title: {title}
@@ -68,7 +77,7 @@ Source: {source_name} (Tier {tier})
 Summary: {summary}
 
 Respond in JSON only:
-{{"novelty": <0-25>, "impact": <0-25>, "relevance": <0-25>, "entities": [...], "topics": [...], "market_impact": "..."}}"""
+{{"domain": "<id>", "novelty": <0-25>, "impact": <0-25>, "relevance": <0-25>, "entities": [...], "topics": [...], "market_impact": "..."}}"""
 
 
 def _parse_score_response(text: str, tier: str) -> dict:
@@ -97,9 +106,12 @@ def _parse_score_response(text: str, tier: str) -> dict:
     # Total score = tier + novelty + impact + relevance
     tier_score = TIER_SCORES.get(tier, 12)
     total = tier_score + novelty + impact + relevance
-    
+
+    domain = str(data.get("domain") or "").strip().lower()
+
     return {
         "score": total,
+        "domain": domain if domain in DOMAINS else "other",
         "novelty": novelty,
         "impact": impact,
         "relevance": relevance,
@@ -109,24 +121,58 @@ def _parse_score_response(text: str, tier: str) -> dict:
     }
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-def _call_groq(prompt: str) -> str:
-    """Call Groq API with retry."""
+# Groq's free tier for GROQ_MODEL (from its x-ratelimit headers, Oct 2026):
+# 1,000 requests/day and 8,000 tokens/minute. A scoring call is ~1,000 tokens,
+# so the minute limit is hit after ~8 calls. Waiting it out keeps scoring on
+# Groq instead of falling back to the weaker Cloudflare model.
+# Article text sent per call. 2,000 chars = ~890 tokens a call, 1,200 = ~690: about
+# 11 calls a minute instead of 9. The headline and opening carry the news anyway.
+SUMMARY_CHARS = 1200
+GROQ_MAX_WAIT = 65         # seconds; a longer retry-after means the daily quota is gone
+_groq_exhausted = False     # set once the daily quota is gone, so the rest of the run skips Groq
+
+
+class GroqQuotaExhausted(RuntimeError):
+    pass
+
+
+def _call_groq(prompt: str, attempts: int = 4) -> str:
+    """Call Groq, waiting out per-minute rate limits."""
+    global _groq_exhausted
+    if _groq_exhausted:
+        raise GroqQuotaExhausted("daily quota used up earlier in this run")
     api_key = env("GROQ_API_KEY", required=True)
-    
-    resp = httpx.post(
-        GROQ_URL,
-        headers={"Authorization": f"Bearer {api_key}"},
-        json={
-            "model": GROQ_MODEL,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-            "max_tokens": 500,
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+
+    for attempt in range(attempts):
+        try:
+            resp = httpx.post(
+                GROQ_URL,
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={
+                    "model": GROQ_MODEL,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.1,
+                    "max_tokens": 500,
+                },
+                timeout=30,
+            )
+        except httpx.TransportError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(2 ** attempt)
+            continue
+
+        if resp.status_code == 429:
+            wait = float(resp.headers.get("retry-after") or 10)
+            if wait > GROQ_MAX_WAIT:
+                _groq_exhausted = True
+                raise GroqQuotaExhausted(f"daily quota used up (retry-after {wait:.0f}s)")
+            if attempt < attempts - 1:
+                time.sleep(wait + 1)
+                continue
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
+    raise RuntimeError("unreachable")
 
 
 @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=5))
@@ -148,48 +194,54 @@ def _call_cloudflare(prompt: str) -> str:
     return resp.json()["result"]["response"]
 
 
+# Indian legal news nearly always names India or an Indian institution. The
+# small scoring model sometimes files any court case under legal_india, so the
+# domain is only kept when one of these appears.
+_INDIA_HINT = re.compile(
+    r"\b(india|indian|bharat|delhi|mumbai|bengaluru|bangalore|chennai|kolkata|hyderabad"
+    r"|sebi|rbi|nclt|nclat|meity|niti aayog|lok sabha|rajya sabha|high court|supreme court of india"
+    r"|crore|lakh|rupees?|inr)\b",
+    re.I,
+)
+
+
+def _result(item: dict, parsed: dict) -> ScoreResult:
+    domain = parsed["domain"]
+    text = f"{item['title']} {item.get('article_text') or item.get('feed_summary') or ''}"
+    if domain == "legal_india" and not _INDIA_HINT.search(text):
+        domain = "other"
+    return ScoreResult(
+        item_id=item["id"],
+        score=parsed["score"],
+        novelty=parsed["novelty"],
+        impact=parsed["impact"],
+        relevance=parsed["relevance"],
+        entities=parsed["entities"],
+        topics=parsed["topics"],
+        market_impact=parsed["market_impact"],
+        error=None,
+        domain=domain,
+    )
+
+
 def score_item(item: dict) -> ScoreResult:
     """Score a single item using Groq (with CF fallback)."""
     prompt = SCORING_PROMPT.format(
         title=item["title"],
         source_name=item["source_name"],
         tier=item["tier"],
-        summary=(item.get("article_text") or item.get("feed_summary") or "")[:2000],
+        summary=(item.get("article_text") or item.get("feed_summary") or "")[:SUMMARY_CHARS],
     )
-    
+
     # Try Groq first
     try:
-        response = _call_groq(prompt)
-        parsed = _parse_score_response(response, item["tier"])
-        return ScoreResult(
-            item_id=item["id"],
-            score=parsed["score"],
-            novelty=parsed["novelty"],
-            impact=parsed["impact"],
-            relevance=parsed["relevance"],
-            entities=parsed["entities"],
-            topics=parsed["topics"],
-            market_impact=parsed["market_impact"],
-            error=None,
-        )
+        return _result(item, _parse_score_response(_call_groq(prompt), item["tier"]))
     except Exception as e:  # noqa: BLE001
         groq_error = str(e)
-    
+
     # Fallback to Cloudflare
     try:
-        response = _call_cloudflare(prompt)
-        parsed = _parse_score_response(response, item["tier"])
-        return ScoreResult(
-            item_id=item["id"],
-            score=parsed["score"],
-            novelty=parsed["novelty"],
-            impact=parsed["impact"],
-            relevance=parsed["relevance"],
-            entities=parsed["entities"],
-            topics=parsed["topics"],
-            market_impact=parsed["market_impact"],
-            error=None,
-        )
+        return _result(item, _parse_score_response(_call_cloudflare(prompt), item["tier"]))
     except Exception as e:  # noqa: BLE001
         return ScoreResult(
             item_id=item["id"],
@@ -205,7 +257,7 @@ def score_item(item: dict) -> ScoreResult:
 
 
 def get_unscored_items(conn, limit: int | None = None) -> list[dict]:
-    """Get items that passed triage but haven't been scored."""
+    """Get recent items that passed triage but haven't been scored. News first, papers after."""
     with conn.cursor() as cur:
         query = """
             SELECT r.id, r.title, r.article_text, r.feed_summary,
@@ -215,11 +267,12 @@ def get_unscored_items(conn, limit: int | None = None) -> list[dict]:
             JOIN news_memory m ON r.id = m.id
             WHERE r.rules_pass = true
               AND m.score IS NULL
-            ORDER BY r.published_at DESC
+              AND r.published_at >= now() - make_interval(days => %s)
+            ORDER BY (r.source_id = ANY(%s)), r.published_at DESC
         """
         if limit:
             query += f" LIMIT {limit}"
-        cur.execute(query)
+        cur.execute(query, (PROCESS_DAYS, list(PAPER_SOURCES)))
         return cur.fetchall()
 
 
@@ -237,6 +290,7 @@ def update_scores(conn, results: list[ScoreResult]) -> dict:
                 "novelty": r.novelty,
                 "impact": r.impact,
                 "relevance": r.relevance,
+                "domain": r.domain,
             }
             
             cur.execute(

@@ -1,6 +1,6 @@
 /*
    Today: the morning hearing.
-   A short list picked from this week's stories, read one at a time, ending with "Up to date".
+   A short list picked from the last few days' stories, read one at a time, ending with "Up to date".
 
    Routes:  #/today        list (or the finished screen)
             #/today/3      story 3 of the list
@@ -19,12 +19,21 @@ const Today = {
 
     // ---------- Building today's list ----------
 
-    /** Highest-ranked unread stories first; keep one Legal India story if the user asked for it. */
+    /** Published in the last TODAY_DAYS (stories without a date count as recent). */
+    isRecent(story) {
+        return !story.publishedAt || new Date(story.publishedAt).getTime() >= Date.now() - CONFIG.TODAY_DAYS * 86400000;
+    },
+
+    /**
+     * Highest-ranked unread stories from the last TODAY_DAYS first (older ones only if there
+     * aren't enough); keep one Legal India story if the user asked for it.
+     */
     buildIds() {
         const prefs = UserState.prefs();
         const count = Number(prefs.dailyCount) || CONFIG.DAILY_COUNT_DEFAULT;
         const candidates = [...Stories.visible()].sort((a, b) =>
-            (UserState.isRead(a.id) - UserState.isRead(b.id)) || (b.score - a.score)
+            (UserState.isRead(a.id) - UserState.isRead(b.id)) ||
+            (this.isRecent(b) - this.isRecent(a)) || (b.score - a.score)
         );
 
         const picks = candidates.slice(0, count);
@@ -71,7 +80,7 @@ const Today = {
         this.el.innerHTML = `
             <div class="empty-state">
                 <h1>No stories yet</h1>
-                <p>The news pipeline hasn't published any stories this week. New stories arrive every 4 hours.</p>
+                <p>The news pipeline hasn't published any stories yet. New stories arrive every morning.</p>
                 <a class="btn" href="#/settings/sources">Check your sources</a>
             </div>`;
     },
@@ -82,16 +91,16 @@ const Today = {
         const started = this.session.heard.length > 0;
         const startAt = nextIndex === -1 ? 1 : nextIndex + 1;
         const stats = Stories.stats();
-        const all = Stories.visible();
-        const breaking = all.filter(s => s.label === 'breaking').length;
-        const readCount = all.filter(s => UserState.isRead(s.id)).length;
+        const recent = Stories.visible().filter(s => this.isRecent(s));
+        const breaking = recent.filter(s => s.label === 'breaking').length;
+        const readCount = recent.filter(s => UserState.isRead(s.id)).length;
         const prefs = UserState.prefs();
 
         this.el.innerHTML = `
             <div class="today">
                 <div>
                     <h1>${stories.length === 1 ? '1 story needs you today' : `${stories.length} stories need you today`}</h1>
-                    <p class="today-sub">${Util.esc(Util.weekdayDate())}. Picked from this week's stories.</p>
+                    <p class="today-sub">${Util.esc(Util.weekdayDate())}. Picked from the last ${CONFIG.TODAY_DAYS} days.</p>
                     <div class="today-start">
                         <a class="btn btn-primary btn-big" href="#/today/${startAt}" id="today-start">
                             ${started ? `Continue with story ${startAt}` : 'Start with story 1'}<kbd>Enter</kbd>
@@ -110,8 +119,8 @@ const Today = {
                 </div>
                 <div class="side-stack">
                     <section class="side-box">
-                        <h2>This week so far</h2>
-                        <p>${all.length} stories worth reading, ${breaking} of them breaking. You've read ${readCount}.</p>
+                        <h2>Last ${CONFIG.TODAY_DAYS} days</h2>
+                        <p>${recent.length} stories worth reading, ${breaking} of them breaking. You've read ${readCount}.</p>
                     </section>
                     <section class="side-box">
                         <h2>How this list is chosen</h2>

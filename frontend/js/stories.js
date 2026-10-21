@@ -33,11 +33,12 @@ const Stories = {
             entities: item.entities || [],
             coverage: Number(item.cluster_count) || 1,
             publishedAt: item.published_at || null,
-            score: Number(item.score) || 0
+            score: Number(item.score) || 0,
+            domain: CONFIG.DOMAINS[item.domain] ? item.domain : null
         };
         story.label = this.labelFor(story.score);
-        story.category = this.categoryFor(story);
-        story.searchText = Util.normalize([headline, story.source, story.summary, ...story.topics, ...story.entities].join(' '));
+        story.category = this.categoryFor(story, item.category);
+        story.searchText = Util.normalize([headline, story.source, story.summary, CONFIG.DOMAINS[story.domain] || '', ...story.topics, ...story.entities].join(' '));
         return story;
     },
 
@@ -66,13 +67,15 @@ const Stories = {
     },
 
     /**
-     * The pipeline doesn't send a category yet, so it's inferred from the text.
+     * Competitors are found by name. Otherwise the pipeline's category is used; stories scored
+     * before the pipeline sent one are guessed from the text.
      * Whole words only, so "impact" doesn't count as "act" and "record" doesn't count as "CORD".
      */
-    categoryFor(story) {
+    categoryFor(story, fromPipeline) {
         const text = `${story.headline} ${story.topics.join(' ')} ${story.entities.join(' ')}`;
         const word = name => new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
         if (CONFIG.COMPETITORS.some(name => word(name).test(text))) return 'competitors';
+        if (CONFIG.CATEGORIES[fromPipeline]) return fromPipeline;
         if (/\b(law|legal|court|courts|regulation|regulator|compliance|act|policy|gdpr|litigation|arbitration|mediation|judgment|tribunal)\b/i.test(text)) return 'legal';
         if (/\b(market|markets|stock|stocks|funding|valuation|ipo|investment|billion|million|revenue)\b/i.test(text)) return 'market';
         return 'tech';
@@ -130,8 +133,12 @@ const Stories = {
         return `<span class="label label-${story.label}">${this.labelText(story.label)}</span>`;
     },
 
+    /** The category's dot, named by the finer domain when there is one ("EVs and mobility"). */
     categoryHtml(story) {
-        return `<span class="cat-dot cat-${story.category}" aria-hidden="true"></span>${Util.esc(CONFIG.CATEGORIES[story.category])}`;
+        const name = story.category !== 'competitors' && story.domain
+            ? CONFIG.DOMAINS[story.domain]
+            : CONFIG.CATEGORIES[story.category];
+        return `<span class="cat-dot cat-${story.category}" aria-hidden="true"></span>${Util.esc(name)}`;
     },
 
     coverageText(story) {

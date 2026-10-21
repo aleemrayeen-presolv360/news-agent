@@ -4,7 +4,8 @@
 # CRON IS UTC. IST = UTC+5:30.
 # '31 6 * * 5' = Friday 06:31 UTC = Friday 12:01 IST
 #
-# Budget: 4 runs/month x ~8 min = ~32 of 2,000 free minutes.
+# Budget: 4 runs/month x ~20 min = ~80 of 2,000 free minutes.
+# The website is refreshed every morning by daily.yml; this run adds the Notion digest.
 
 name: publish
 
@@ -24,7 +25,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -40,24 +41,26 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      # Run the full pipeline for any items that need processing
+      # Run the full pipeline for any items that need processing.
+      # Triage first and unlimited: it only reads titles, costs nothing, and
+      # stops thousands of arXiv papers queueing ahead of news.
+      - name: Triage items
+        run: python -m agent.triage
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
       - name: Extract articles
-        run: python -m agent.extract --limit 200
+        run: python -m agent.extract --limit 400
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Generate embeddings
-        run: python -m agent.embed --limit 200
-        env:
-          NEON_DSN: ${{ secrets.NEON_DSN }}
-
-      - name: Triage items
-        run: python -m agent.triage --limit 500
+        run: python -m agent.embed --limit 400
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Score items
-        run: python -m agent.score --limit 100
+        run: python -m agent.score --limit 150   # daily.yml does most of the scoring
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -92,7 +95,9 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add frontend/data.js
-          git diff --staged --quiet || git commit -m "chore: update weekly digest data [skip ci]"
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: update weekly digest data [skip ci]"
+          git pull --rebase
           git push
 
       # Optional: skips itself when the NOTION_TOKEN secret isn't set

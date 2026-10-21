@@ -14,9 +14,15 @@ import argparse
 from . import telegram
 from .config import SCORE_BREAKING
 
+ALERT_MAX_AGE_DAYS = 3
+
 
 def get_unalerted_breaking(conn) -> list[dict]:
-    """Get breaking news items that haven't been alerted yet."""
+    """Get recent breaking news items that haven't been alerted yet.
+
+    Only the last ALERT_MAX_AGE_DAYS: when a backlog gets scored late, old stories
+    still reach the website but don't arrive on Telegram as "breaking".
+    """
     with conn.cursor() as cur:
         cur.execute("""
             SELECT m.id, m.headline, m.one_liner, m.source_url, m.source_name,
@@ -24,8 +30,9 @@ def get_unalerted_breaking(conn) -> list[dict]:
             FROM news_memory m
             WHERE m.score >= %s
               AND m.alerted_at IS NULL
+              AND m.published_at >= now() - make_interval(days => %s)
             ORDER BY m.score DESC
-        """, (SCORE_BREAKING,))
+        """, (SCORE_BREAKING, ALERT_MAX_AGE_DAYS))
         return cur.fetchall()
 
 

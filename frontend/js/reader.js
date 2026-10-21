@@ -185,7 +185,7 @@ const Reader = {
             return `<div class="empty-state"><h2>Nothing saved yet</h2><p>Press S or "Save" on any story to keep it here. Saved stories stay even after they leave the weekly list.</p><a class="btn" href="#/today">Go to Today</a></div>`;
         }
         if (!this.baseStories().length) {
-            return `<div class="empty-state"><h2>No stories yet</h2><p>New stories arrive every 4 hours.</p></div>`;
+            return `<div class="empty-state"><h2>No stories yet</h2><p>New stories arrive every morning.</p></div>`;
         }
         return `<div class="empty-state"><h2>No stories match these filters</h2><p>Try a wider date range or another category.</p><a class="btn" href="${this.link({ from: null, to: null, cat: null, q: null, folder: null, story: null })}">Clear all filters</a></div>`;
     },

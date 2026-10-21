@@ -37,7 +37,7 @@ const Settings = {
             .map(s => s.name);
     },
 
-    /** Stories this week from a source. Matched by name, since the pipeline doesn't send source ids. */
+    /** Stories from a source in data.js (the last 30 days). Matched by name, since the pipeline doesn't send source ids. */
     storyCount(source) {
         return Stories.fromSource(source.name).length;
     },
@@ -166,7 +166,7 @@ const Settings = {
         if (!rows.length) return `<p class="empty-state">No sources match.</p>`;
         return `
             <table>
-                <thead><tr><th scope="col">Source</th><th scope="col">Category</th><th scope="col">This week</th><th scope="col">Show me</th></tr></thead>
+                <thead><tr><th scope="col">Source</th><th scope="col">Category</th><th scope="col">Last 30 days</th><th scope="col">Show me</th></tr></thead>
                 <tbody>${rows.map(s => {
                     const isHidden = hidden.has(String(s.id));
                     const globallyOff = s.enabled === false;
@@ -241,7 +241,7 @@ const Settings = {
         return `
             <div class="settings-head">
                 <h1>Sources</h1>
-                <span class="muted">The pipeline checks feeds every 4 hours.</span>
+                <span class="muted">The pipeline checks feeds every 4 hours and updates the site every morning.</span>
                 <button type="button" class="btn btn-primary btn-small right" data-open="source-dialog"><svg class="icon"><use href="#i-plus"/></svg>Add source</button>
             </div>
             <div class="summary">
@@ -259,7 +259,7 @@ const Settings = {
         if (!rows.length) return `<p class="empty-state">No sources match.</p>`;
         return `
             <table>
-                <thead><tr><th scope="col">Source</th><th scope="col">Category</th><th scope="col">This week</th><th scope="col">Status</th><th scope="col">On for everyone</th></tr></thead>
+                <thead><tr><th scope="col">Source</th><th scope="col">Category</th><th scope="col">Last 30 days</th><th scope="col">Status</th><th scope="col">On for everyone</th></tr></thead>
                 <tbody>${rows.map(s => {
                     const on = s.enabled !== false;
                     const n = this.storyCount(s);

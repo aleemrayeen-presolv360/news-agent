@@ -13,13 +13,13 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: addendum
+  group: publish   # shared with daily.yml and publish.yml, so two scorers never share Groq quota
   cancel-in-progress: false
 
 jobs:
   addendum:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -35,24 +35,24 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      # Process any Friday afternoon items
+      # Process any Friday afternoon items. Triage first and unlimited (see publish.yml).
+      - name: Triage items
+        run: python -m agent.triage
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
       - name: Extract articles
-        run: python -m agent.extract --limit 50
+        run: python -m agent.extract --limit 100
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Generate embeddings
-        run: python -m agent.embed --limit 50
-        env:
-          NEON_DSN: ${{ secrets.NEON_DSN }}
-
-      - name: Triage items
-        run: python -m agent.triage --limit 100
+        run: python -m agent.embed --limit 100
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Score items
-        run: python -m agent.score --limit 30
+        run: python -m agent.score --limit 100
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}

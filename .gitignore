@@ -14,3 +14,6 @@ dry_run_output.json
 
 # Local backups of removed or replaced files (not part of the app)
 _backup/
+
+# Temp file publish_static.py writes before swapping in data.js
+frontend/data.js.tmp

@@ -1,0 +1,108 @@
+# Daily: score yesterday's news and refresh the website data (frontend/data.js).
+#
+# CRON IS UTC. IST = UTC+5:30.
+# '31 1 * * *' = 01:31 UTC = 07:01 IST, every day, so the site is fresh each morning.
+#
+# Why daily: Groq's free tier allows ~11 scoring calls a minute (8,000 tokens/min),
+# so one weekly run can't keep up with ~60 new articles a day. Notion stays weekly
+# (publish.yml, Friday).
+#
+# Budget: 30 runs/month x ~30 min = ~900 of 2,000 free minutes. Waiting on Groq's
+# rate limit is billed, so --limit on the score step is the main dial.
+
+name: daily
+
+on:
+  schedule:
+    - cron: '31 1 * * *'
+  workflow_dispatch:
+
+# Same group as publish.yml: the two never run at once or race to push data.js
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/fastembed
+          key: fastembed-bge-small-en-v1.5
+
+      - run: pip install -r requirements.txt
+
+      - name: Triage items
+        run: python -m agent.triage
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Extract articles
+        run: python -m agent.extract --limit 300
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Generate embeddings
+        run: python -m agent.embed --limit 300
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Score items
+        run: python -m agent.score --limit 250
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+
+      - name: Cluster stories
+        run: python -m agent.cluster
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Detect threads
+        run: python -m agent.threads
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Send breaking alerts
+        run: python -m agent.alerts
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+
+      - name: Generate static frontend data
+        run: python -m agent.publish_static
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Commit and push data.js
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add frontend/data.js
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: daily website data [skip ci]"
+          git pull --rebase
+          git push
+
+      - name: Notify on failure
+        if: failure()
+        run: python -m agent.notify_failure
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

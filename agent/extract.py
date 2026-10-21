@@ -17,7 +17,7 @@ from dataclasses import dataclass
 import httpx
 import trafilatura
 
-from .config import FEED_TIMEOUT, USER_AGENT
+from .config import FEED_TIMEOUT, PROCESS_DAYS, USER_AGENT
 
 # Patterns that indicate a paywall or login wall
 _PAYWALL_SIGNALS = (
@@ -112,18 +112,20 @@ async def extract_batch(urls: list[str], concurrency: int = 5) -> list[ExtractRe
 
 
 def get_unextracted_items(conn, limit: int | None = None) -> list[dict]:
-    """Get items that need text extraction."""
+    """Get recent items that passed triage and still need text extraction."""
     with conn.cursor() as cur:
         query = """
             SELECT id, url_canonical, url_original, title, feed_summary
             FROM raw_items
             WHERE article_text IS NULL
               AND paywalled = false
+              AND rules_pass IS TRUE
+              AND published_at >= now() - make_interval(days => %s)
             ORDER BY published_at DESC
         """
         if limit:
             query += f" LIMIT {limit}"
-        cur.execute(query)
+        cur.execute(query, (PROCESS_DAYS,))
         return cur.fetchall()
 
 

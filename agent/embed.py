@@ -67,7 +67,7 @@ def get_unembedded_items(conn, limit: int | None = None) -> list[dict]:
             FROM raw_items r
             LEFT JOIN news_memory m ON r.id = m.id
             WHERE m.id IS NULL
-              AND r.rules_pass IS NOT FALSE
+              AND r.rules_pass IS TRUE
               AND (r.article_text IS NOT NULL OR r.feed_summary IS NOT NULL)
             ORDER BY r.published_at DESC
         """
