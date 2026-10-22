@@ -38,13 +38,3 @@ jobs:
         run: python -m agent.ingest
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
-
-      # The Error Workflow equivalent. A scheduled job that fails silently
-      # is worse than no job, because you keep trusting it.
-      - name: Notify on failure
-        if: failure()
-        run: python -m agent.notify_failure
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT:  ${{ secrets.TELEGRAM_CHAT }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

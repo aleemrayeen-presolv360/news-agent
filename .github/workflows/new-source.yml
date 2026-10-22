@@ -71,8 +71,6 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}   # optional fallback
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}       # scoring-budget warning
-          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
 
       - name: Cluster stories
         run: python -m agent.cluster
@@ -93,11 +91,3 @@ jobs:
           git commit -m "chore: website data after a source change [skip ci]"
           git pull --rebase
           git push
-
-      - name: Notify on failure
-        if: failure()
-        run: python -m agent.notify_failure
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

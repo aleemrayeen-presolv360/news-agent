@@ -365,11 +365,11 @@ check("failing sources back off for a day",
       ("consecutive_failures >=" in _c.cur.sql[0][0], _c.cur.sql[0][1]), (True, (3, 24)))
 
 _ok = {"scored": 200, "failed": 0, "cerebras": 0, "cloudflare": 0}
-check("no warning on a healthy run", score_mod.quota_warning(_ok, 600, False, 40), None)
-check("warns when Groq runs low", "only 90 Groq calls" in score_mod.quota_warning(_ok, 90, False, 40), True)
-check("warns when the quota ran out", "ran out" in score_mod.quota_warning(_ok, 0, True, 40), True)
+check("no warning on a healthy run", score_mod.budget_warnings(_ok, 600, False), [])
+check("warns when Groq runs low", "Only 90 Groq calls" in score_mod.budget_warnings(_ok, 90, False)[0], True)
+check("warns when the quota ran out", "ran out" in score_mod.budget_warnings(_ok, 0, True)[0], True)
 check("warns on fallback scores",
-      "Cloudflare 3" in score_mod.quota_warning({**_ok, "cloudflare": 3}, 600, False, 40), True)
+      "Cloudflare 3" in score_mod.budget_warnings({**_ok, "cloudflare": 3}, 600, False)[0], True)
 
 for _fn in (get_unextracted_items, get_unembedded_items):
     _c = _FakeConn()

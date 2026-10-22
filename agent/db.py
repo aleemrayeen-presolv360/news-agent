@@ -221,7 +221,7 @@ def record_run(conn, job: str, stats: dict, *, ok: bool) -> None:
 
 
 def unhealthy_sources(conn, *, fail_threshold: int = 3, stale_days: int = 14):
-    """Sources that look broken. Feeds the Monday audit and the footer."""
+    """Sources that look broken. Feeds the website's pipeline health panel."""
     with conn.cursor() as cur:
         cur.execute(
             """

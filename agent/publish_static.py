@@ -1,6 +1,6 @@
 """Write frontend/data.js, the only news file the News Intel website reads.
 
-Runs after scoring in the Friday publish workflow (and can be run by hand).
+Runs after scoring in the daily, Friday and new-source workflows (and can be run by hand).
 The website has no API: it loads this file directly.
 
     python -m agent.publish_static              # generate data.js
@@ -69,6 +69,55 @@ def get_run_stats(conn, window) -> dict:
               AND finished_at < %s
         """, (window.start, window.end))
         return cur.fetchone()
+
+
+INGEST_LATE_HOURS = 10   # no feed fetch for this long means GitHub skipped or failed ingests
+
+
+def get_health(conn) -> dict:
+    """Pipeline health for the website, which is the only place problems are shown."""
+    from .db import unhealthy_sources
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT max(finished_at) AS last_at,
+                   count(*) FILTER (WHERE finished_at > now() - interval '24 hours') AS runs_24h
+            FROM runs WHERE job = 'ingest'
+        """)
+        ingest = cur.fetchone()
+        cur.execute("SELECT finished_at, detail FROM runs WHERE job = 'score' ORDER BY finished_at DESC LIMIT 1")
+        score = cur.fetchone()
+
+    broken = [s for s in unhealthy_sources(conn) if not s["id"].startswith("trend_")]
+    failing = [s["name"] for s in broken if s["consecutive_failures"] >= 3]
+    quiet = [s["name"] for s in broken if s["consecutive_failures"] < 3]
+    detail = (score or {}).get("detail") or {}
+
+    warnings = []
+    last_ingest = ingest["last_at"]
+    if last_ingest is None or (datetime.now(IST) - last_ingest).total_seconds() > INGEST_LATE_HOURS * 3600:
+        warnings.append(f"Feeds haven't been fetched for over {INGEST_LATE_HOURS} hours. "
+                        "Check the ingest workflow in GitHub Actions.")
+    warnings += detail.get("warnings") or []
+    # Failing feeds are listed in the health panel, not warned about: some sites block GitHub
+    # for good, and a banner that never goes away stops being read
+
+    def iso(value):
+        return value.astimezone(IST).isoformat(timespec="seconds") if value else None
+
+    return {
+        "last_ingest_at": iso(last_ingest),
+        "ingest_runs_24h": ingest["runs_24h"] or 0,
+        "last_score": {
+            "at": iso(score["finished_at"]),
+            "scored": detail.get("scored", 0),
+            "waiting": detail.get("waiting"),
+            "groq_remaining": detail.get("groq_remaining"),
+        } if score else None,
+        "failing_sources": failing,
+        "quiet_sources": quiet,
+        "warnings": warnings,
+    }
 
 
 NEW_SOURCE_DAYS = 2   # how long Settings shows "Added today" for a source
@@ -147,6 +196,7 @@ def generate_data(conn, window) -> dict:
             "notable_stories": len(groups["notable"]),
         },
         "new_sources": get_new_sources(conn),
+        "health": get_health(conn),
         **{label: [item_to_dict(i) for i in group] for label, group in groups.items()},
     }
 

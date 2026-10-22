@@ -28,6 +28,18 @@ const UserState = {
         Util.save(this._key('read'), list.slice(-2000));
     },
 
+    // ---------- Dismissed notices (Breaking banners) ----------
+
+    isNoticeDismissed(id) {
+        return Util.load(this._key('dismissed_notices'), []).includes(id);
+    },
+
+    dismissNotice(id) {
+        const list = Util.load(this._key('dismissed_notices'), []).filter(x => x !== id);
+        list.push(id);
+        Util.save(this._key('dismissed_notices'), list.slice(-200));
+    },
+
     // ---------- Saved ----------
     // A full copy of the story is kept, so saved stories survive after they leave the weekly data file.
 

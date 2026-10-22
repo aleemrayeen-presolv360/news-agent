@@ -63,7 +63,7 @@ USER_AGENT = (
 )
 
 # Scoring thresholds (score = source tier points + novelty + impact + relevance).
-SCORE_BREAKING = 85   # immediate Telegram alert, any day/hour
+SCORE_BREAKING = 85   # Breaking: red label, and a banner on the website until read
 SCORE_MAJOR = 70      # headline section; below this a week is "no big news"
 SCORE_NOTABLE = 55    # collapsed toggle
 MAX_ITEMS_PER_DIGEST = 12   # Notion digest only; the website shows everything

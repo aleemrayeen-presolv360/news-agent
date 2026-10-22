@@ -272,6 +272,7 @@ const Settings = {
                 <div><strong>${this.sources.length - off}</strong>on for everyone</div>
                 <div><span class="status status-off"></span><strong>${off}</strong>turned off</div>
             </div>
+            ${Notices.healthHtml()}
             ${this.newSourcesCallout()}
             ${this.sourceToolbarHtml()}
             <div class="table-wrap" id="source-table">${this.adminSourcesTable()}</div>

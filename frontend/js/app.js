@@ -36,6 +36,7 @@ const App = {
         Notes.init();
         Settings.init();
         Palette.init();
+        Notices.init();
         this.bindGlobal();
 
         window.addEventListener('hashchange', () => this.route());
@@ -49,6 +50,7 @@ const App = {
                 Reader.invalidate();
                 this.route();
             }
+            Notices.render();
             this.updateCounts();
         });
     },
@@ -102,6 +104,7 @@ const App = {
         if (view === 'stories' || view === 'saved') Reader.render(view, params);
         if (view === 'notes') await Notes.render(parts);
         if (view === 'settings') await Settings.render(parts);
+        Notices.render();   // after the view, which may have marked a story read
 
         if (viewChanged) {
             window.scrollTo(0, 0);

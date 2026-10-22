@@ -99,3 +99,15 @@ main { min-height: 0; outline: none; }
     .topnav .count { display: none; }
     .search-trigger kbd { display: none; }
 }
+
+/* Notices: Breaking stories, stale news and pipeline problems (the site is the only notifier) */
+.notice-bar { display: grid; border-bottom: 1px solid var(--rule); background: var(--surface); }
+.notice { display: flex; gap: 12px; align-items: center; padding: 9px 24px; font-size: 13.5px; }
+.notice + .notice { border-top: 1px solid var(--rule); }
+.notice-text { min-width: 0; flex: 1; }
+a.notice-text { color: var(--text); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+a.notice-text:hover { text-decoration: underline; }
+.notice-more { white-space: nowrap; font-size: 13px; }
+.notice-close { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 6px; font-size: 13px; }
+.notice-close:hover { background: var(--panel); color: var(--text); }
+@media (max-width: 700px) { .notice { padding: 9px 16px; } }

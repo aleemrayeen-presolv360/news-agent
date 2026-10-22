@@ -19,7 +19,6 @@ STAGES = [
     ("score", "agent.score"),
     ("cluster", "agent.cluster"),
     ("threads", "agent.threads"),
-    ("alerts", "agent.alerts"),
     ("publish_static", "agent.publish_static"),  # website data first, so it never waits on Notion
     ("publish", "agent.publish"),                # optional Notion digest; needs NOTION_* settings
 ]

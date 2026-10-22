@@ -37,7 +37,7 @@ and tells you why.
                   Daily 07:01:  trends ─▶ ingest ─▶ triage ─▶ extract ─▶ embed          ▼
                                      │      ─▶ score (Groq AI)
                                      │      ─▶ cluster ─▶ threads                 frontend/data.js
-                                     ├─▶ alerts (Telegram, score ≥ 85)                  ▲
+                                     │                                                  ▲
                                      └─▶ publish_static ─────────────── writes ─────────┘
                   Friday 12:01: same, plus publish (Notion page, optional)
 
@@ -106,15 +106,11 @@ news-agent/
 │   ├── trends.py            daily: pick trending topics and watch them through Google News
 │   ├── cluster.py           stage 6: group coverage of the same story
 │   ├── threads.py           stage 7: link stories into ongoing narratives across weeks
-│   ├── alerts.py            Telegram message for every new story scored 85+
 │   ├── publish_static.py    writes frontend/data.js (what the website shows)
 │   ├── publish.py           optional weekly digest page in Notion
 │   ├── addendum.py          optional Saturday "late breaking" add-on to the Notion page
 │   ├── retention.py         optional: archive Notion pages older than 30 days
-│   ├── audit.py             Monday source-health report on Telegram
 │   ├── pipeline.py          run all stages in order (for local runs)
-│   ├── notify_failure.py    Telegram message when a scheduled job fails
-│   ├── telegram.py          shared Telegram sender
 │   └── notion.py            shared Notion client
 ├── frontend/                the website (static files, deploy this folder)
 │   ├── index.html           every screen and dialog lives here
@@ -157,7 +153,7 @@ The AI score is never shown. Readers see a label instead:
 
 | Label | Score | Meaning |
 |---|---|---|
-| **Breaking** (red) | 85 and up | Read this today. Also sent to Telegram. |
+| **Breaking** (red) | 85 and up | Read this today. A banner at the top of the site shows it until you read or dismiss it. |
 | **Major** | 70–84 | Important this week. |
 | **Notable** | 55–69 | Worth a look if it's your area. |
 
@@ -169,6 +165,21 @@ science, Legal India, Market (Business) and Competitors (found by company name, 
 `frontend/js/config.js`). Stories scored before domains existed (before 21 Oct 2026) are guessed
 from keywords, with AI as the fallback since scoring was AI-only then. The domain list lives in
 `agent/config.py` and `frontend/js/config.js`; change both together.
+
+### Notices (the website is the only notifier)
+
+The pipeline sends no Telegram, email or chat alerts. Everything shows on the site, in a bar under the top bar
+(`frontend/js/notices.js`):
+
+- **Breaking stories** from the last 3 days that you haven't read. The browser tab title counts them
+  too, for example "(2) Today · News Intel". Opening the story or pressing ✕ clears it.
+- **News is out of date**, when `data.js` is more than 30 hours old. That means the daily workflow
+  failed or didn't run, so it doubles as the failure alert.
+- **For admins: the pipeline needs a look**, when the last run reported a problem (feeds not fetched
+  for 10+ hours, Groq quota low or used up, a backup model used, stories that couldn't be scored).
+  Settings → Sources has a **Pipeline health** panel with the details, plus feeds that keep failing.
+
+The pipeline writes this into `data.js` as `health` (`publish_static.py`).
 
 A **Trending** tag marks stories that came from a trend watch or that 3+ of our sources carried.
 
@@ -203,6 +214,7 @@ than 2 of the slots, so one busy domain can't fill the list.
 | `default-sources.js` | The first source list put into Supabase when its table is empty |
 | `settings.js` | Settings and admin screens |
 | `palette.js` | `Ctrl K` search |
+| `notices.js` | The notice bar (Breaking, out-of-date news, pipeline problems) and the Pipeline health panel |
 | `app.js` | Starts everything, routes between screens, keyboard, offline banner |
 
 ### Design
@@ -226,10 +238,9 @@ previous stage finished, so re-running is always safe.
 | triage | `python -m agent.triage` | Runs first, on everything (it only reads titles, so it's free). Drops obvious noise: job posts, PR, funding fluff, events, listicles. arXiv papers only pass if they have 10+ upvotes on Hugging Face Daily Papers; without this, papers (about 88% of what's fetched) would queue ahead of news. |
 | extract | `python -m agent.extract` | Downloads the page of each article that passed triage in the last 14 days (`PROCESS_DAYS`), news before papers, and pulls out the text. Marks paywalls. A failed download (sites that block bots, Google News links) is stored as empty text, so it's tried once and then scored from its feed summary. |
 | embed | `python -m agent.embed` | Turns each article from the last 14 days into a 384-number vector (model `BAAI/bge-small-en-v1.5`, runs locally), news before papers. |
-| score | `python -m agent.score` | Asks the Groq AI model for the story's domain and for novelty, impact and relevance (0–25 each, judged within that domain, so an EV or space story competes fairly with AI), people/companies, topics and one "why it matters" sentence. News is scored before papers. Groq's free tier allows 1,000 calls a day and 8,000 tokens a minute (about 11 calls), so the scorer waits when Groq asks it to. Backups: Cerebras (same Qwen family, only if `CEREBRAS_API_KEY` is set), then Cloudflare Workers AI. Each score records which model made it. Every run saves its usage to the `runs` table and sends a Telegram warning when fewer than 150 Groq calls are left, the quota runs out, a backup model was used, or items failed. `--ingested-within-hours N` scores only what was just fetched. |
+| score | `python -m agent.score` | Asks the Groq AI model for the story's domain and for novelty, impact and relevance (0–25 each, judged within that domain, so an EV or space story competes fairly with AI), people/companies, topics and one "why it matters" sentence. News is scored before papers. Groq's free tier allows 1,000 calls a day and 8,000 tokens a minute (about 11 calls), so the scorer waits when Groq asks it to. Backups: Cerebras (same Qwen family, only if `CEREBRAS_API_KEY` is set), then Cloudflare Workers AI. Each score records which model made it. Every run saves its usage and any warnings (fewer than 150 Groq calls left, quota used up, a backup model used, items failed) to the `runs` table; the website shows them to admins. `--ingested-within-hours N` scores only what was just fetched. |
 | cluster | `python -m agent.cluster` | Groups articles about the same event (very similar text + a shared company or person, within 72 hours). |
 | threads | `python -m agent.threads` | Links stories into ongoing narratives across weeks. |
-| alerts | `python -m agent.alerts` | Sends each new 85+ story from the last 3 days to Telegram once. |
 | publish_static | `python -m agent.publish_static` | Writes `frontend/data.js`: every story scored 55+ from the last 30 days (`WEBSITE_DAYS`). |
 | publish | `python -m agent.publish` | Optional Notion digest page. |
 | trends | `python -m agent.trends` | Daily, before ingest. Reads Google Trends (India, US) and the names 3+ of our sources mention in a day. One Groq call keeps the newsworthy ones and writes a 2–5 word search (it never writes feed links). Each becomes a trend watch for 5 days: a last-day Google News search, 8 items a fetch. Up to 3 new a day, 8 at once. |
@@ -298,7 +309,6 @@ Create once: paste `sql/schema.sql` into Neon's SQL Editor, or `psql "$NEON_DSN"
 | `GROQ_API_KEY` | score | <https://console.groq.com/keys> (free) |
 | `CF_ACCOUNT_ID`, `CF_API_TOKEN` | score (last backup) | Cloudflare → Workers AI. Optional but recommended. |
 | `CEREBRAS_API_KEY` | score (first backup) | <https://cloud.cerebras.ai> (free). Optional. `CEREBRAS_MODEL` overrides the default `qwen-3.8-27b`. |
-| `TELEGRAM_TOKEN`, `TELEGRAM_CHAT` | alerts, audit, failure notices | Message `@BotFather` → `/newbot`; message your bot once, then open `https://api.telegram.org/bot<TOKEN>/getUpdates` for the chat id |
 | `NOTION_TOKEN`, `NOTION_VERSION`, `NOTION_DS_*` | optional Notion digest | Notion → Integrations. Share each database with the integration. |
 
 Never commit `.env`; it's in `.gitignore`.
@@ -325,16 +335,16 @@ GitHub cron is in **UTC**; India is UTC+5:30. All times below are India time.
 | Workflow | When | Does |
 |---|---|---|
 | `ingest.yml` | every 4 hours (:37 past) | fetch feeds |
-| `daily.yml` | every day 07:01, catch-up 09:01 | trends → ingest → triage → extract (800) → embed (1000) → score (up to 250) → cluster → threads → alerts → **`data.js`** → commit. The 09:01 run stops at once if 07:01 already refreshed the site. |
+| `daily.yml` | every day 07:01, catch-up 09:01 | trends → ingest → triage → extract (800) → embed (1000) → score (up to 250) → cluster → threads → **`data.js`** (with pipeline health) → commit. The 09:01 run stops at once if 07:01 already refreshed the site. |
 | `new-source.yml` | when `agent/sources.py` changes on `main` | ingest (new sources keep their last 24 hours) → score what was just fetched → **`data.js`** → commit, so a new source is on the site in about 10 minutes |
 | `publish.yml` | Friday 12:01 | the same (score up to 150) → **`data.js`** → commit → Notion digest |
-| `addendum.yml` | Saturday 08:00 | process Friday-afternoon news, alerts, Notion add-on |
+| `addendum.yml` | Saturday 08:00 | process Friday-afternoon news, Notion add-on |
 | `retention.yml` | daily 03:00 | archive Notion pages older than 30 days |
-| `audit.yml` | Monday 08:30 | source-health report on Telegram |
 | `keepalive.yml` | 1st of the month | tiny commit so GitHub doesn't pause the schedules. **Don't delete it.** |
 
-Each workflow can also be run by hand: Actions tab → pick it → **Run workflow**. A failed run
-sends a Telegram message.
+Each workflow can also be run by hand: Actions tab → pick it → **Run workflow**. A failed daily run
+shows on the website as "News is out of date" the next day; GitHub also emails the repo owner about
+failed runs (GitHub → Settings → Notifications → Actions).
 
 > **The website gets new stories every morning**, when `daily.yml` writes `data.js`. Feeds are
 > fetched every 4 hours, but scoring runs once a day: Groq's free tier allows about 11 scoring calls
@@ -391,9 +401,9 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
 | Website shows "No stories yet" | `data.js` is empty. Run `python -m agent.publish_static`. |
 | Sign-in says the password doesn't match | Wrong password, or the account was never confirmed. Use "Forgot password?". |
 | Reset link opens the wrong page or errors | The site's address isn't in Supabase Redirect URLs. |
-| A feed always fails | Check `sources.last_error` in Neon or the Monday audit. Some sites block cloud servers (MIT News and Cambridge return 403 from GitHub but work from a laptop; VentureBeat only serves known feed readers). After 3 failures a feed is retried once a day. |
+| A feed always fails | See Settings → Sources → Pipeline health, or `sources.last_error` in Neon. Some sites block cloud servers (MIT News and Cambridge return 403 from GitHub but work from a laptop; VentureBeat only serves known feed readers). After 3 failures a feed is retried once a day. |
 | `score` fails | Groq key missing or rate-limited. Add the Cerebras and/or Cloudflare keys as backups. |
-| Telegram "Scoring budget" message | Groq's daily calls ran low or out. Lower `--limit` on the score step in `daily.yml`, add `CEREBRAS_API_KEY`, or remove a busy feed. |
+| "The news pipeline needs a look" (admins) | Read Settings → Sources → Pipeline health. For Groq warnings: the daily calls ran low or out. Lower `--limit` on the score step in `daily.yml`, add `CEREBRAS_API_KEY`, or remove a busy feed. |
 | First pipeline step is slow | Neon's free plan sleeps when idle and takes a few seconds to wake. `db.connect()` retries once. |
 | Scheduled jobs stopped | GitHub pauses schedules after 60 days without commits. Keep `keepalive.yml`. |
 

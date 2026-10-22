@@ -136,7 +136,7 @@ SUMMARY_CHARS = 1200
 GROQ_MAX_WAIT = 65         # seconds; a longer retry-after means the daily quota is gone
 _groq_exhausted = False     # set once the daily quota is gone, so the rest of the run skips Groq
 _groq_remaining: int | None = None   # daily requests left, from Groq's last response
-GROQ_WARN_REMAINING = 150   # Telegram warning when fewer daily calls than this are left
+GROQ_WARN_REMAINING = 150   # the website warns admins when fewer daily calls than this are left
 
 
 class GroqQuotaExhausted(RuntimeError):
@@ -458,42 +458,36 @@ def run(dry_run: bool = False, limit: int | None = None, ingested_hours: int | N
         f"groq calls left today={_groq_remaining if _groq_remaining is not None else '?'}"
     )
 
-    # Kept in Neon so usage can be compared across days (the runner is wiped after each run)
+    # Kept in Neon (the runner is wiped after each run); publish_static shows the warnings
+    # on the website's pipeline health panel
+    warnings = budget_warnings(total_stats, _groq_remaining, _groq_exhausted)
     with db.connect() as conn:
         waiting = len(get_unscored_items(conn))
         db.record_run(conn, "score", {"detail": {
-            **total_stats, "waiting": waiting,
+            **total_stats, "waiting": waiting, "warnings": warnings,
             "groq_remaining": _groq_remaining, "groq_exhausted": _groq_exhausted,
         }}, ok=True)
     print(f"score: {waiting} items still waiting")
-
-    warning = quota_warning(total_stats, _groq_remaining, _groq_exhausted, waiting)
-    if warning:
-        from . import telegram
-        if not telegram.send(warning):
-            print(warning)
+    for w in warnings:
+        print(f"score: warning: {w}")
 
     return 0
 
 
-def quota_warning(stats: dict, groq_remaining: int | None, groq_exhausted: bool,
-                  waiting: int) -> str | None:
-    """Telegram text when the free LLM budget is running out, else None."""
+def budget_warnings(stats: dict, groq_remaining: int | None, groq_exhausted: bool) -> list[str]:
+    """Plain-English problems with the free LLM budget in this run, if any."""
     problems = []
     if groq_exhausted:
-        problems.append("Groq's daily quota ran out during the run")
+        problems.append("Groq's free daily quota ran out during scoring")
     elif groq_remaining is not None and groq_remaining < GROQ_WARN_REMAINING:
-        problems.append(f"only {groq_remaining} Groq calls left today")
+        problems.append(f"Only {groq_remaining} Groq calls were left for the day")
     fallback = stats.get("cerebras", 0) + stats.get("cloudflare", 0)
     if fallback:
-        problems.append(f"{fallback} items scored by a fallback model "
+        problems.append(f"{fallback} stories were scored by a backup model "
                         f"(Cerebras {stats.get('cerebras', 0)}, Cloudflare {stats.get('cloudflare', 0)})")
     if stats.get("failed"):
-        problems.append(f"{stats['failed']} items could not be scored")
-    if not problems:
-        return None
-    return ("⚠️ <b>Scoring budget</b>\n" + "\n".join(f"• {p}" for p in problems)
-            + f"\n\n{stats.get('scored', 0)} scored this run, {waiting} still waiting.")
+        problems.append(f"{stats['failed']} stories could not be scored")
+    return problems
 
 
 def main() -> int:

@@ -59,15 +59,6 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}   # optional fallback
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}       # scoring-budget warning
-          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
-
-      - name: Send breaking alerts
-        run: python -m agent.alerts
-        env:
-          NEON_DSN: ${{ secrets.NEON_DSN }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
 
       - name: Publish addendum
         run: python -m agent.addendum
@@ -76,11 +67,3 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_VERSION: ${{ secrets.NOTION_VERSION }}
           NOTION_DS_WEEKS: ${{ secrets.NOTION_DS_WEEKS }}
-
-      - name: Notify on failure
-        if: failure()
-        run: python -m agent.notify_failure
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
