@@ -3,7 +3,7 @@
 
 window.digestData = {
     "week_label": "Week 42 - 18-23 Oct 2026",
-    "generated_at": "2026-10-22T13:48:03+05:30",
+    "generated_at": "2026-10-22T15:11:39+05:30",
     "stats": {
         "sources_total": 67,
         "sources_healthy": 62,
@@ -121,6 +121,28 @@ window.digestData = {
             "added_at": "2026-10-22T01:31:53+05:30"
         }
     ],
+    "health": {
+        "last_ingest_at": "2026-10-22T13:41:36+05:30",
+        "ingest_runs_24h": 5,
+        "last_score": {
+            "at": "2026-10-22T13:48:02+05:30",
+            "scored": 8,
+            "waiting": 501,
+            "groq_remaining": 821
+        },
+        "failing_sources": [
+            "Cambridge",
+            "MIT News (AI)",
+            "MIT CSAIL",
+            "MIT News",
+            "VentureBeat AI"
+        ],
+        "quiet_sources": [
+            "Berkeley BAIR",
+            "CMU ML Blog"
+        ],
+        "warnings": []
+    },
     "breaking": [
         {
             "headline": "Introducing GPT-6 Sol and Luna",
@@ -144,6 +166,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-22T18:00:00+00:00"
         },
         {
@@ -168,6 +191,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T00:08:24+00:00"
         },
         {
@@ -193,6 +217,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T12:00:27+00:00"
         },
         {
@@ -218,6 +243,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T10:00:00+00:00"
         },
         {
@@ -242,6 +268,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -267,6 +294,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T20:01:45+00:00"
         },
         {
@@ -291,6 +319,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T17:00:00+00:00"
         },
         {
@@ -317,6 +346,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -343,6 +373,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-16T18:11:34+00:00"
         },
         {
@@ -365,6 +396,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T19:00:00+00:00"
         },
         {
@@ -390,6 +422,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T22:54:56+00:00"
         },
         {
@@ -415,6 +448,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T00:00:00+00:00"
         },
         {
@@ -441,6 +475,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-24T19:40:00+00:00"
         },
         {
@@ -463,6 +498,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -489,6 +525,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T08:56:55+00:00"
         },
         {
@@ -515,6 +552,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T15:03:07+00:00"
         },
         {
@@ -537,6 +575,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T00:00:00+00:00"
         },
         {
@@ -559,6 +598,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T10:30:00+00:00"
         },
         {
@@ -582,6 +622,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T16:00:57+00:00"
         },
         {
@@ -607,6 +648,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:00:00+00:00"
         }
     ],
@@ -631,6 +673,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T06:15:06+00:00"
         },
         {
@@ -655,6 +698,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T16:01:36+00:00"
         },
         {
@@ -679,6 +723,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T00:00:00+00:00"
         },
         {
@@ -705,6 +750,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T14:57:41+00:00"
         },
         {
@@ -731,6 +777,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T00:00:00+00:00"
         },
         {
@@ -755,6 +802,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T23:26:38+00:00"
         },
         {
@@ -777,6 +825,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T19:09:44+00:00"
         },
         {
@@ -803,6 +852,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T17:28:33+00:00"
         },
         {
@@ -829,6 +879,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T08:55:00+00:00"
         },
         {
@@ -854,6 +905,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:19:57+00:00"
         },
         {
@@ -880,6 +932,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T15:25:14+00:00"
         },
         {
@@ -906,6 +959,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T18:21:03+00:00"
         },
         {
@@ -932,6 +986,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T19:07:02+00:00"
         },
         {
@@ -958,6 +1013,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T19:33:40+00:00"
         },
         {
@@ -984,6 +1040,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T14:00:02+00:00"
         },
         {
@@ -1010,6 +1067,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-03T22:56:48+00:00"
         },
         {
@@ -1036,6 +1094,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T12:45:31+00:00"
         },
         {
@@ -1062,6 +1121,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T04:01:31+00:00"
         },
         {
@@ -1088,6 +1148,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T13:00:00+00:00"
         },
         {
@@ -1114,6 +1175,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T18:38:27+00:00"
         },
         {
@@ -1139,6 +1201,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-24T16:00:00+00:00"
         },
         {
@@ -1165,6 +1228,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T19:57:04+00:00"
         },
         {
@@ -1189,6 +1253,7 @@ window.digestData = {
             "domain": "science",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:00:00+00:00"
         },
         {
@@ -1212,6 +1277,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T00:00:00+00:00"
         },
         {
@@ -1238,6 +1304,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T16:00:00+00:00"
         },
         {
@@ -1264,6 +1331,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T00:00:00+00:00"
         },
         {
@@ -1288,6 +1356,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:33:47+00:00"
         },
         {
@@ -1311,6 +1380,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T12:00:00+00:00"
         },
         {
@@ -1333,6 +1403,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T00:35:25+00:00"
         },
         {
@@ -1356,6 +1427,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T16:15:00+00:00"
         },
         {
@@ -1380,6 +1452,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:00:00+00:00"
         },
         {
@@ -1406,6 +1479,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T00:00:00+00:00"
         },
         {
@@ -1431,6 +1505,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T20:00:00+00:00"
         },
         {
@@ -1456,6 +1531,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -1482,6 +1558,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T08:30:00+00:00"
         },
         {
@@ -1506,6 +1583,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -1531,6 +1609,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T12:00:00+00:00"
         },
         {
@@ -1555,6 +1634,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-24T16:20:39+00:00"
         },
         {
@@ -1581,6 +1661,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T20:00:00+00:00"
         },
         {
@@ -1607,6 +1688,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T19:13:02+00:00"
         },
         {
@@ -1633,6 +1715,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T15:05:11+00:00"
         },
         {
@@ -1656,6 +1739,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T20:00:00+00:00"
         },
         {
@@ -1682,6 +1766,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -1705,6 +1790,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:00:00+00:00"
         },
         {
@@ -1730,6 +1816,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T00:00:00+00:00"
         },
         {
@@ -1753,6 +1840,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:00:00+00:00"
         },
         {
@@ -1777,6 +1865,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T01:54:03+00:00"
         },
         {
@@ -1803,6 +1892,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T20:00:00+00:00"
         },
         {
@@ -1829,6 +1919,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:00:00+00:00"
         },
         {
@@ -1855,6 +1946,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -1880,6 +1972,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T16:00:00+00:00"
         },
         {
@@ -1903,6 +1996,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T10:00:00+00:00"
         },
         {
@@ -1928,6 +2022,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:00:00+00:00"
         },
         {
@@ -1953,6 +2048,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T15:36:00+00:00"
         },
         {
@@ -1978,6 +2074,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:00:00+00:00"
         },
         {
@@ -2001,6 +2098,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -2025,6 +2123,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -2047,6 +2146,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T16:00:00+00:00"
         },
         {
@@ -2070,6 +2170,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:00:00+00:00"
         },
         {
@@ -2095,6 +2196,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -2120,6 +2222,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T14:00:26+00:00"
         },
         {
@@ -2146,6 +2249,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -2169,6 +2273,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T14:15:00+00:00"
         },
         {
@@ -2194,6 +2299,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T15:19:50+00:00"
         },
         {
@@ -2220,6 +2326,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-04T20:00:00+00:00"
         },
         {
@@ -2246,6 +2353,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T16:54:33+00:00"
         },
         {
@@ -2269,6 +2377,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T12:00:00+00:00"
         },
         {
@@ -2295,6 +2404,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T20:00:00+00:00"
         },
         {
@@ -2320,6 +2430,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T00:00:00+00:00"
         },
         {
@@ -2346,6 +2457,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T07:00:00+00:00"
         },
         {
@@ -2372,6 +2484,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T09:00:00+00:00"
         },
         {
@@ -2398,6 +2511,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T13:59:58+00:00"
         },
         {
@@ -2424,6 +2538,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T21:47:38+00:00"
         },
         {
@@ -2447,6 +2562,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-22T12:00:00+00:00"
         },
         {
@@ -2473,6 +2589,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:00:00+00:00"
         },
         {
@@ -2497,6 +2614,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T13:07:00+00:00"
         },
         {
@@ -2520,6 +2638,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T19:36:56+00:00"
         },
         {
@@ -2545,6 +2664,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:00:00+00:00"
         },
         {
@@ -2570,6 +2690,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T00:00:00+00:00"
         },
         {
@@ -2594,6 +2715,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-16T20:59:01+00:00"
         },
         {
@@ -2619,6 +2741,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:00:00+00:00"
         },
         {
@@ -2643,6 +2766,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T15:24:38+00:00"
         },
         {
@@ -2667,6 +2791,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T20:00:00+00:00"
         },
         {
@@ -2689,6 +2814,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T00:00:00+00:00"
         },
         {
@@ -2711,6 +2837,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-10T14:41:16+00:00"
         },
         {
@@ -2735,6 +2862,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T00:00:00+00:00"
         },
         {
@@ -2761,6 +2889,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T20:00:00+00:00"
         },
         {
@@ -2785,6 +2914,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-10T06:00:31+00:00"
         },
         {
@@ -2808,6 +2938,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T00:00:00+00:00"
         },
         {
@@ -2831,6 +2962,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T00:00:00+00:00"
         },
         {
@@ -2855,6 +2987,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T00:00:00+00:00"
         },
         {
@@ -2881,6 +3014,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -2907,6 +3041,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T00:00:00+00:00"
         },
         {
@@ -2930,6 +3065,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T00:00:00+00:00"
         },
         {
@@ -2956,6 +3092,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T20:00:00+00:00"
         },
         {
@@ -2981,6 +3118,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:26:30+00:00"
         },
         {
@@ -3007,6 +3145,7 @@ window.digestData = {
             "domain": "health",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:23:53+00:00"
         },
         {
@@ -3032,6 +3171,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T08:30:00+00:00"
         },
         {
@@ -3058,6 +3198,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -3081,6 +3222,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-26T00:00:00+00:00"
         },
         {
@@ -3103,6 +3245,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -3125,6 +3268,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T11:35:00+00:00"
         },
         {
@@ -3147,6 +3291,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T14:12:37+00:00"
         },
         {
@@ -3172,6 +3317,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T21:08:00+00:00"
         },
         {
@@ -3195,6 +3341,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:00:00+00:00"
         },
         {
@@ -3218,6 +3365,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:00:00+00:00"
         },
         {
@@ -3240,6 +3388,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T13:21:03+00:00"
         },
         {
@@ -3266,6 +3415,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T01:00:00+00:00"
         },
         {
@@ -3291,6 +3441,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T00:00:00+00:00"
         },
         {
@@ -3316,6 +3467,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T20:00:00+00:00"
         },
         {
@@ -3342,6 +3494,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T18:25:49+00:00"
         },
         {
@@ -3365,6 +3518,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T18:23:06+00:00"
         },
         {
@@ -3390,6 +3544,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T20:00:00+00:00"
         },
         {
@@ -3416,6 +3571,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T20:00:00+00:00"
         },
         {
@@ -3441,6 +3597,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T20:00:00+00:00"
         },
         {
@@ -3465,6 +3622,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -3490,6 +3648,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T00:00:00+00:00"
         },
         {
@@ -3513,6 +3672,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -3535,6 +3695,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T15:20:29+00:00"
         },
         {
@@ -3559,6 +3720,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T08:21:27+00:00"
         },
         {
@@ -3583,6 +3745,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-04T20:00:00+00:00"
         },
         {
@@ -3609,6 +3772,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-24T15:00:00+00:00"
         },
         {
@@ -3635,6 +3799,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T13:15:23+00:00"
         },
         {
@@ -3661,6 +3826,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T20:54:59+00:00"
         },
         {
@@ -3685,6 +3851,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T15:57:59+00:00"
         },
         {
@@ -3711,6 +3878,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T18:35:09+00:00"
         },
         {
@@ -3737,6 +3905,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:00:42+00:00"
         },
         {
@@ -3761,6 +3930,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T00:00:00+00:00"
         },
         {
@@ -3785,6 +3955,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T21:30:00+00:00"
         },
         {
@@ -3808,6 +3979,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-04T20:00:00+00:00"
         },
         {
@@ -3834,6 +4006,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T14:00:00+00:00"
         },
         {
@@ -3860,6 +4033,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T00:00:00+00:00"
         },
         {
@@ -3884,6 +4058,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-26T20:00:00+00:00"
         },
         {
@@ -3906,6 +4081,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T15:00:00+00:00"
         },
         {
@@ -3932,6 +4108,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T14:26:19+00:00"
         },
         {
@@ -3955,6 +4132,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T10:00:00+00:00"
         },
         {
@@ -3978,6 +4156,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T20:00:00+00:00"
         },
         {
@@ -4001,6 +4180,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T10:00:00+00:00"
         },
         {
@@ -4027,6 +4207,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-22T17:16:28+00:00"
         },
         {
@@ -4053,6 +4234,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-16T17:00:00+00:00"
         },
         {
@@ -4077,6 +4259,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T15:00:00+00:00"
         },
         {
@@ -4102,6 +4285,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:00:00+00:00"
         },
         {
@@ -4128,6 +4312,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T16:00:00+00:00"
         },
         {
@@ -4152,6 +4337,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T12:00:00+00:00"
         },
         {
@@ -4175,6 +4361,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T19:58:03+00:00"
         },
         {
@@ -4198,6 +4385,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:00:00+00:00"
         },
         {
@@ -4223,6 +4411,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T12:00:00+00:00"
         },
         {
@@ -4249,6 +4438,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T16:40:36+00:00"
         },
         {
@@ -4275,6 +4465,7 @@ window.digestData = {
             "domain": "health",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:30:00+00:00"
         },
         {
@@ -4301,6 +4492,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T00:00:00+00:00"
         },
         {
@@ -4327,6 +4519,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T18:56:43+00:00"
         },
         {
@@ -4353,6 +4546,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:00:20+00:00"
         },
         {
@@ -4375,6 +4569,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T23:24:14+00:00"
         },
         {
@@ -4401,6 +4596,7 @@ window.digestData = {
             "domain": "space",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:35:38+00:00"
         },
         {
@@ -4427,6 +4623,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:00:00+00:00"
         },
         {
@@ -4449,6 +4646,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T00:00:00+00:00"
         },
         {
@@ -4472,6 +4670,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -4497,6 +4696,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-04T20:00:00+00:00"
         },
         {
@@ -4521,6 +4721,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-12T00:00:00+00:00"
         },
         {
@@ -4547,6 +4748,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-24T20:00:00+00:00"
         },
         {
@@ -4569,6 +4771,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -4594,6 +4797,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T00:00:00+00:00"
         },
         {
@@ -4620,6 +4824,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-25T00:00:00+00:00"
         },
         {
@@ -4646,6 +4851,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T14:40:52+00:00"
         },
         {
@@ -4670,6 +4876,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -4696,6 +4903,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T19:10:42+00:00"
         },
         {
@@ -4721,6 +4929,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T00:00:00+00:00"
         },
         {
@@ -4744,6 +4953,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:00:00+00:00"
         },
         {
@@ -4767,6 +4977,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T00:00:00+00:00"
         },
         {
@@ -4789,6 +5000,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T00:00:00+00:00"
         },
         {
@@ -4815,6 +5027,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T02:40:51+00:00"
         },
         {
@@ -4839,6 +5052,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -4862,6 +5076,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:00:00+00:00"
         },
         {
@@ -4887,6 +5102,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -4911,6 +5127,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:00:00+00:00"
         },
         {
@@ -4937,6 +5154,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-03T20:00:00+00:00"
         },
         {
@@ -4960,6 +5178,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T00:41:28+00:00"
         },
         {
@@ -4984,6 +5203,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -5008,6 +5228,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-03T20:00:00+00:00"
         },
         {
@@ -5032,6 +5253,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T20:00:00+00:00"
         },
         {
@@ -5057,6 +5279,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:00:00+00:00"
         },
         {
@@ -5083,6 +5306,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T00:00:00+00:00"
         },
         {
@@ -5106,6 +5330,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -5128,6 +5353,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T03:21:00+00:00"
         },
         {
@@ -5154,6 +5380,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T15:26:07+00:00"
         },
         {
@@ -5179,6 +5406,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-16T19:00:00+00:00"
         },
         {
@@ -5201,6 +5429,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:00:00+00:00"
         },
         {
@@ -5224,6 +5453,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T00:00:00+00:00"
         },
         {
@@ -5246,6 +5476,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T21:29:50+00:00"
         },
         {
@@ -5270,6 +5501,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T20:00:00+00:00"
         },
         {
@@ -5292,6 +5524,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T14:51:08+00:00"
         },
         {
@@ -5315,6 +5548,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T17:30:53+00:00"
         },
         {
@@ -5341,6 +5575,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T17:59:12+00:00"
         },
         {
@@ -5367,6 +5602,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -5389,6 +5625,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:00:00+00:00"
         },
         {
@@ -5413,6 +5650,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T19:10:51+00:00"
         },
         {
@@ -5438,6 +5676,7 @@ window.digestData = {
             "domain": "health",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T17:00:05+00:00"
         },
         {
@@ -5464,6 +5703,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T06:00:00+00:00"
         },
         {
@@ -5488,6 +5728,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:10:00+00:00"
         },
         {
@@ -5514,6 +5755,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T18:01:57+00:00"
         },
         {
@@ -5540,6 +5782,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T00:01:30+00:00"
         },
         {
@@ -5564,6 +5807,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-27T22:00:00+00:00"
         },
         {
@@ -5590,6 +5834,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T17:59:27+00:00"
         },
         {
@@ -5616,6 +5861,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T05:00:00+00:00"
         },
         {
@@ -5639,6 +5885,7 @@ window.digestData = {
             "domain": "robotics",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T20:33:09+00:00"
         },
         {
@@ -5665,6 +5912,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T19:26:41+00:00"
         },
         {
@@ -5691,6 +5939,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-22T13:00:00+00:00"
         },
         {
@@ -5715,6 +5964,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T02:24:17+00:00"
         },
         {
@@ -5741,6 +5991,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T18:20:20+00:00"
         },
         {
@@ -5766,6 +6017,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T17:45:13+00:00"
         },
         {
@@ -5792,6 +6044,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T16:00:00+00:00"
         },
         {
@@ -5816,6 +6069,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:57:34+00:00"
         }
     ],
@@ -5843,6 +6097,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T16:00:00+00:00"
         },
         {
@@ -5866,6 +6121,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T19:14:01+00:00"
         },
         {
@@ -5889,6 +6145,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T21:58:03+00:00"
         },
         {
@@ -5914,6 +6171,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T19:30:00+00:00"
         },
         {
@@ -5940,6 +6198,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T15:45:00+00:00"
         },
         {
@@ -5966,6 +6225,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T19:30:00+00:00"
         },
         {
@@ -5991,6 +6251,7 @@ window.digestData = {
             "domain": "policy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T03:30:14+00:00"
         },
         {
@@ -6016,6 +6277,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T14:00:00+00:00"
         },
         {
@@ -6042,6 +6304,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T18:51:42+00:00"
         },
         {
@@ -6068,6 +6331,7 @@ window.digestData = {
             "domain": "policy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:20:40+00:00"
         },
         {
@@ -6094,6 +6358,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:22:37+00:00"
         },
         {
@@ -6118,6 +6383,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T00:00:00+00:00"
         },
         {
@@ -6140,6 +6406,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T21:30:02+00:00"
         },
         {
@@ -6166,6 +6433,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:48:45+00:00"
         },
         {
@@ -6191,6 +6459,7 @@ window.digestData = {
             "domain": "health",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T15:14:07+00:00"
         },
         {
@@ -6217,6 +6486,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-22T03:00:44+00:00"
         },
         {
@@ -6242,6 +6512,7 @@ window.digestData = {
             "domain": "chips",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T17:34:38+00:00"
         },
         {
@@ -6268,6 +6539,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T02:16:19+00:00"
         },
         {
@@ -6291,6 +6563,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:47:06+00:00"
         },
         {
@@ -6316,6 +6589,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T02:09:19+00:00"
         },
         {
@@ -6340,6 +6614,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-22T00:17:54+00:00"
         },
         {
@@ -6364,6 +6639,7 @@ window.digestData = {
             "domain": "policy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T23:32:08+00:00"
         },
         {
@@ -6386,6 +6662,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T20:34:04+00:00"
         },
         {
@@ -6408,6 +6685,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -6433,6 +6711,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T22:18:57+00:00"
         },
         {
@@ -6457,6 +6736,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T22:17:21+00:00"
         },
         {
@@ -6480,6 +6760,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T14:48:20+00:00"
         },
         {
@@ -6504,6 +6785,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:57:43+00:00"
         },
         {
@@ -6528,6 +6810,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T21:41:29+00:00"
         },
         {
@@ -6552,6 +6835,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T01:05:14+00:00"
         },
         {
@@ -6578,6 +6862,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T14:21:08+00:00"
         },
         {
@@ -6604,6 +6889,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T15:00:00+00:00"
         },
         {
@@ -6630,6 +6916,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T16:13:47+00:00"
         },
         {
@@ -6653,6 +6940,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:20:52+00:00"
         },
         {
@@ -6676,6 +6964,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T01:00:00+00:00"
         },
         {
@@ -6698,6 +6987,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T00:00:00+00:00"
         },
         {
@@ -6721,6 +7011,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T12:00:00+00:00"
         },
         {
@@ -6746,6 +7037,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-24T07:00:00+00:00"
         },
         {
@@ -6771,6 +7063,7 @@ window.digestData = {
             "domain": "space",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:17:58+00:00"
         },
         {
@@ -6795,6 +7088,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T07:00:00+00:00"
         },
         {
@@ -6819,6 +7113,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T21:00:00+00:00"
         },
         {
@@ -6843,6 +7138,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T09:26:51+00:00"
         },
         {
@@ -6869,6 +7165,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T11:00:00+00:00"
         },
         {
@@ -6893,6 +7190,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T01:39:37+00:00"
         },
         {
@@ -6916,6 +7214,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T13:00:00+00:00"
         },
         {
@@ -6941,6 +7240,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T14:30:00+00:00"
         },
         {
@@ -6967,6 +7267,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T13:00:36+00:00"
         },
         {
@@ -6993,6 +7294,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:00:30+00:00"
         },
         {
@@ -7018,6 +7320,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:51:24+00:00"
         },
         {
@@ -7040,6 +7343,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -7066,6 +7370,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:35:20+00:00"
         },
         {
@@ -7088,6 +7393,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -7114,6 +7420,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T13:49:48+00:00"
         },
         {
@@ -7139,6 +7446,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T16:00:00+00:00"
         },
         {
@@ -7163,6 +7471,7 @@ window.digestData = {
             "domain": "policy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T01:52:03+00:00"
         },
         {
@@ -7188,6 +7497,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T17:35:36+00:00"
         },
         {
@@ -7210,6 +7520,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T16:00:00+00:00"
         },
         {
@@ -7236,6 +7547,7 @@ window.digestData = {
             "domain": "legal_india",
             "category": "legal",
             "cluster_count": 3,
+            "trending": true,
             "published_at": "2026-10-21T17:27:47+00:00"
         },
         {
@@ -7262,6 +7574,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-25T15:58:22+00:00"
         },
         {
@@ -7285,6 +7598,7 @@ window.digestData = {
             "domain": "other",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T17:00:00+00:00"
         },
         {
@@ -7306,6 +7620,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -7332,6 +7647,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-10T15:01:08+00:00"
         },
         {
@@ -7355,6 +7671,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-16T17:08:38+00:00"
         },
         {
@@ -7378,6 +7695,7 @@ window.digestData = {
             "domain": "space",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T00:00:16+00:00"
         },
         {
@@ -7400,6 +7718,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T12:54:31+00:00"
         },
         {
@@ -7424,6 +7743,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:57:55+00:00"
         },
         {
@@ -7448,6 +7768,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T18:30:02+00:00"
         },
         {
@@ -7472,6 +7793,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T00:00:00+00:00"
         },
         {
@@ -7494,6 +7816,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:04:26+00:00"
         },
         {
@@ -7520,6 +7843,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-25T00:00:00+00:00"
         },
         {
@@ -7546,6 +7870,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T12:10:00+00:00"
         },
         {
@@ -7572,6 +7897,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -7595,6 +7921,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T12:00:00+00:00"
         },
         {
@@ -7621,6 +7948,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -7646,6 +7974,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -7669,6 +7998,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -7694,6 +8024,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -7719,6 +8050,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T00:00:00+00:00"
         },
         {
@@ -7744,6 +8076,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -7767,6 +8100,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T17:46:05+00:00"
         },
         {
@@ -7792,6 +8126,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T19:53:20+00:00"
         },
         {
@@ -7814,6 +8149,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:37:49+00:00"
         },
         {
@@ -7840,6 +8176,7 @@ window.digestData = {
             "domain": "fintech",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:38:30+00:00"
         },
         {
@@ -7865,6 +8202,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:37:17+00:00"
         },
         {
@@ -7889,6 +8227,7 @@ window.digestData = {
             "domain": "space",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T15:50:44+00:00"
         },
         {
@@ -7913,6 +8252,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T15:48:56+00:00"
         },
         {
@@ -7939,6 +8279,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T18:00:19+00:00"
         },
         {
@@ -7962,6 +8303,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T22:32:50+00:00"
         },
         {
@@ -7988,6 +8330,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T20:27:41+00:00"
         },
         {
@@ -8012,6 +8355,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:55:15+00:00"
         },
         {
@@ -8036,6 +8380,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T16:00:00+00:00"
         },
         {
@@ -8058,6 +8403,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T19:43:50+00:00"
         },
         {
@@ -8083,6 +8429,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:20:52+00:00"
         },
         {
@@ -8107,6 +8454,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T20:01:09+00:00"
         },
         {
@@ -8131,6 +8479,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T14:00:08+00:00"
         },
         {
@@ -8153,6 +8502,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -8174,6 +8524,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-10T00:18:32+00:00"
         },
         {
@@ -8200,6 +8551,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T14:00:00+00:00"
         },
         {
@@ -8225,6 +8577,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T18:01:32+00:00"
         },
         {
@@ -8251,6 +8604,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T18:45:00+00:00"
         },
         {
@@ -8277,6 +8631,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T16:35:00+00:00"
         },
         {
@@ -8303,6 +8658,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-16T18:32:35+00:00"
         },
         {
@@ -8327,6 +8683,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T00:00:00+00:00"
         },
         {
@@ -8353,6 +8710,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-26T00:00:00+00:00"
         },
         {
@@ -8379,6 +8737,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T17:48:38+00:00"
         },
         {
@@ -8405,6 +8764,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T19:56:50+00:00"
         },
         {
@@ -8431,6 +8791,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T18:01:20+00:00"
         },
         {
@@ -8457,6 +8818,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T13:01:00+00:00"
         },
         {
@@ -8482,6 +8844,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-16T17:52:24+00:00"
         },
         {
@@ -8508,6 +8871,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T17:00:47+00:00"
         },
         {
@@ -8531,6 +8895,7 @@ window.digestData = {
             "domain": "policy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:48:02+00:00"
         },
         {
@@ -8556,6 +8921,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:35:00+00:00"
         },
         {
@@ -8578,6 +8944,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T11:58:07+00:00"
         },
         {
@@ -8602,6 +8969,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-25T16:00:00+00:00"
         },
         {
@@ -8626,6 +8994,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T10:35:00+00:00"
         },
         {
@@ -8652,6 +9021,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-24T17:54:03+00:00"
         },
         {
@@ -8675,6 +9045,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T19:52:20+00:00"
         },
         {
@@ -8699,6 +9070,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T18:27:00+00:00"
         },
         {
@@ -8723,6 +9095,7 @@ window.digestData = {
             "domain": "energy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T22:33:44+00:00"
         },
         {
@@ -8747,6 +9120,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T14:58:18+00:00"
         },
         {
@@ -8770,6 +9144,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T14:19:00+00:00"
         },
         {
@@ -8796,6 +9171,7 @@ window.digestData = {
             "domain": "chips",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T15:02:15+00:00"
         },
         {
@@ -8820,6 +9196,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T07:22:22+00:00"
         },
         {
@@ -8844,12 +9221,13 @@ window.digestData = {
             "domain": "chips",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:53:59+00:00"
         },
         {
-            "headline": "Banks remain responsible for risks even when services outsourced to fintechs: RBI Deputy Governor - Devdiscourse",
+            "headline": "Banks remain responsible for risks even when services outsourced to fintechs: RBI Deputy Governor",
             "score": 62,
-            "source": "Fintech India (Google News)",
+            "source": "Devdiscourse",
             "url": "https://news.google.com/rss/articles/CBMi6gFBVV95cUxNTFBORHRoVl8yMG1nbHVEQVp1Yk8tWGVuRzJBZjRvM2Q3VDdWREdoWHVFdUxyM1RIemQ3SnQtUDBTRDBiMlI1RmRXNHYyN3paTG5vSnU2cS1Ha3EtSGdyQ1lCUDNHS2loa2FxdUZQWnhNYzJ3U1RLSDFnX1RnRkszTmFZa2xxWWV1V3dpdEJpLWRNOXU0cXVHRlZGdlNxNFhVbDkwdXc3RklwQlZOQWJPQjJyRW9Wdms1blVJQU94QWcwek1rWHFPSWI0aktXVno4OVcwRmY4QmxaTDBJSWhTeHdLNUN2ME9vdWfSAeoBQVVfeXFMTUxQTkR0aFZfMjBtZ2x1REFadWJPLVhlbkcyQWY0bzNkN1Q3VkRHaFh1RXVMcjNUSHpkN0p0LVAwU0QwYjJSNUZkVzR2Mjd6Wkxub0p1NnEtR2txLUhnckNZQlAzR0tpaGthcXVGUFp4TWMyd1NUS0gxZ19UZ0ZLM05hWWtscVlldVd3aXRCaS1kTTl1NHF1R0ZWRnZTcTRYVWw5MHV3N0ZJcEJWTkFiT0IyckVvVnZrNW5VSUFPeEFnMHpNa1hxT0liNGpLV1Z6ODlXMEZmOEJsWkwwSUloU3h3SzVDdjBPb3Vn?oc=5",
             "one_liner": "Banks remain responsible for risks even when services outsourced to fintechs: RBI Deputy Governor Devdiscourse",
             "topics": [
@@ -8868,6 +9246,7 @@ window.digestData = {
             "domain": "fintech",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T12:51:14+00:00"
         },
         {
@@ -8890,6 +9269,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:00:43+00:00"
         },
         {
@@ -8911,6 +9291,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T00:25:05+00:00"
         },
         {
@@ -8937,6 +9318,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T12:10:00+00:00"
         },
         {
@@ -8963,6 +9345,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T20:00:00+00:00"
         },
         {
@@ -8989,12 +9372,13 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T18:30:57+00:00"
         },
         {
-            "headline": "SBI Data Leak: 3,897 Customer Records Found on Dark Web - Convergence Now",
+            "headline": "SBI Data Leak: 3,897 Customer Records Found on Dark Web",
             "score": 62,
-            "source": "Fintech India (Google News)",
+            "source": "Convergence Now",
             "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQMjhMdVJZU3BORU80R1FzVU1rd3FickxvXzlQVXBJQWxGeklYUkJUWWMzd1JTQmcyMHdwZ19xTjdzOVV6dEh1RGxZdTdSUkY4Qmo0a0ZpbExhb3RMNzhqUWIwcHhPMnRLblQtdFhteElQVGZtSXhvS19ncDVEV3N0bERLSjFLYXB0MUNNU2JwbkMzQTdOb0M0OXJuS2Q0dw?oc=5",
             "one_liner": "SBI Data Leak: 3,897 Customer Records Found on Dark Web Convergence Now",
             "topics": [
@@ -9011,6 +9395,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T15:04:43+00:00"
         },
         {
@@ -9035,6 +9420,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T16:00:00+00:00"
         },
         {
@@ -9057,6 +9443,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:56:34+00:00"
         },
         {
@@ -9081,6 +9468,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:00:00+00:00"
         },
         {
@@ -9105,6 +9493,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-28T20:00:00+00:00"
         },
         {
@@ -9131,6 +9520,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T18:00:00+00:00"
         },
         {
@@ -9157,6 +9547,7 @@ window.digestData = {
             "domain": "space",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:46:19+00:00"
         },
         {
@@ -9183,6 +9574,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T22:00:00+00:00"
         },
         {
@@ -9208,6 +9600,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T18:13:29+00:00"
         },
         {
@@ -9234,6 +9627,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T00:56:00+00:00"
         },
         {
@@ -9256,6 +9650,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T20:00:00+00:00"
         },
         {
@@ -9282,12 +9677,13 @@ window.digestData = {
             "domain": "fintech",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T19:02:06+00:00"
         },
         {
-            "headline": "Goldman Sachs: PE Funding in Indian AI Startups Triples Since 2024, IPO Pipeline Could Add $100 Billion in Market Capitalisation - Indian Startup Times",
+            "headline": "Goldman Sachs: PE Funding in Indian AI Startups Triples Since 2024, IPO Pipeline Could Add $100 Billion in Market Capitalisation",
             "score": 62,
-            "source": "Startup funding India (Google News)",
+            "source": "Indian Startup Times",
             "url": "https://news.google.com/rss/articles/CBMi-gFBVV95cUxOWWxXTnhwc3l4Y25sbmNGNVBjRjAzWUlHUVA0ZFZDRUpLc3cxQlp4bmE4UzdSOHczNGNMSTNocTl4dHhKbjZVbzRxWUFmNDZQNV9teWpXbVkxUUNXekxFUkNRWS1SY1BhMVQ0aE9FZ01kSFNlWXo5Q1R6cXBJX2RDd2RfQm5qblhQOFdfNjVqc3pFOXZ5d0t1ZlBjRlFaYjJ3UEhOd05id0lDRm5zWG11SkozWGlxbGU1bDMtUDhobDAzV1JhSklzSnl3dXE1NUQwVGxVeDAzQ3ExLUQtR1hDY3k3bmJKQUZ1TTFSWlhEMk85REhlMVVkUERR?oc=5",
             "one_liner": "Goldman Sachs: PE Funding in Indian AI Startups Triples Since 2024, IPO Pipeline Could Add $100 Billion in Market Capitalisation Indian Startup Times",
             "topics": [
@@ -9304,6 +9700,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:13:03+00:00"
         },
         {
@@ -9326,6 +9723,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T19:06:20+00:00"
         },
         {
@@ -9351,12 +9749,13 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T03:20:22+00:00"
         },
         {
-            "headline": "Banks remain responsible for risks even when services outsourced to fintechs: RBI Deputy Governor - India's News.Net",
+            "headline": "Banks remain responsible for risks even when services outsourced to fintechs: RBI Deputy Governor",
             "score": 62,
-            "source": "Fintech India (Google News)",
+            "source": "India's News.Net",
             "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxOTEJqd1k5UFRYVnA3bzA2M0xkdUFMOGdrSS1Fcng5ZlBSMEFWd1l6YmNubm1uX3lkRy1JLUozRldOa1RoWllLbkVrWGNfdW4zOXpsRFZ4Z3BSTkpCeTd6NWdzVExraXIwaUFnMEg2VEdXSmhkZFJsSk5Iakx5TjVJWmFKTHlJc1hDQ0V2RWpPUnZyQl8xenZsTkdUS0ZPbFFka0YzczRZU1dFRFZVUDluRHA2OFZ5QWNyTEgxTVZ5U2xiN3R6ZzE3OHRBdmVfQU5aS3lrVQ?oc=5",
             "one_liner": "Banks remain responsible for risks even when services outsourced to fintechs: RBI Deputy Governor India's News.Net",
             "topics": [
@@ -9374,6 +9773,7 @@ window.digestData = {
             "domain": "fintech",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T14:14:49+00:00"
         },
         {
@@ -9397,6 +9797,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-03T20:00:00+00:00"
         },
         {
@@ -9423,6 +9824,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T21:14:19+00:00"
         },
         {
@@ -9447,6 +9849,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T11:53:34+00:00"
         },
         {
@@ -9471,6 +9874,7 @@ window.digestData = {
             "domain": "space",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T15:05:08+00:00"
         },
         {
@@ -9495,6 +9899,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T08:17:32+00:00"
         },
         {
@@ -9520,6 +9925,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:05:00+00:00"
         },
         {
@@ -9541,6 +9947,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T12:10:00+00:00"
         },
         {
@@ -9563,6 +9970,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-25T07:00:00+00:00"
         },
         {
@@ -9586,6 +9994,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T20:22:31+00:00"
         },
         {
@@ -9608,6 +10017,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T09:00:00+00:00"
         },
         {
@@ -9633,6 +10043,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T21:17:39+00:00"
         },
         {
@@ -9656,6 +10067,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T00:00:00+00:00"
         },
         {
@@ -9682,6 +10094,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T16:00:00+00:00"
         },
         {
@@ -9703,6 +10116,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T17:00:00+00:00"
         },
         {
@@ -9729,6 +10143,7 @@ window.digestData = {
             "domain": "consumer",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:00:00+00:00"
         },
         {
@@ -9754,6 +10169,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T00:00:00+00:00"
         },
         {
@@ -9776,6 +10192,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T23:39:41+00:00"
         },
         {
@@ -9801,6 +10218,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T10:35:00+00:00"
         },
         {
@@ -9827,6 +10245,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:00:37+00:00"
         },
         {
@@ -9852,6 +10271,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T10:35:00+00:00"
         },
         {
@@ -9874,6 +10294,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T06:00:00+00:00"
         },
         {
@@ -9898,6 +10319,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T19:12:16+00:00"
         },
         {
@@ -9923,6 +10345,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T21:17:00+00:00"
         },
         {
@@ -9947,6 +10370,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T00:00:00+00:00"
         },
         {
@@ -9971,6 +10395,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -9994,6 +10419,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-12T10:00:03+00:00"
         },
         {
@@ -10016,6 +10442,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-11T00:00:00+00:00"
         },
         {
@@ -10039,6 +10466,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T21:35:07+00:00"
         },
         {
@@ -10062,6 +10490,7 @@ window.digestData = {
             "domain": "robotics",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:19:00+00:00"
         },
         {
@@ -10086,6 +10515,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:00:00+00:00"
         },
         {
@@ -10111,6 +10541,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-24T18:12:53+00:00"
         },
         {
@@ -10136,6 +10567,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-10T14:00:38+00:00"
         },
         {
@@ -10158,6 +10590,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T12:00:00+00:00"
         },
         {
@@ -10180,6 +10613,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T02:00:00+00:00"
         },
         {
@@ -10203,6 +10637,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -10227,6 +10662,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T00:00:00+00:00"
         },
         {
@@ -10251,6 +10687,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -10273,6 +10710,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -10297,6 +10735,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T00:00:00+00:00"
         },
         {
@@ -10318,6 +10757,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T09:00:00+00:00"
         },
         {
@@ -10343,6 +10783,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T00:00:00+00:00"
         },
         {
@@ -10364,6 +10805,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T00:00:00+00:00"
         },
         {
@@ -10386,6 +10828,7 @@ window.digestData = {
             "domain": "health",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T23:19:30+00:00"
         },
         {
@@ -10408,6 +10851,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T16:56:42+00:00"
         },
         {
@@ -10431,6 +10875,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T04:45:22+00:00"
         },
         {
@@ -10455,6 +10900,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T01:06:29+00:00"
         },
         {
@@ -10479,6 +10925,7 @@ window.digestData = {
             "domain": "energy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T22:37:53+00:00"
         },
         {
@@ -10504,6 +10951,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T22:39:50+00:00"
         },
         {
@@ -10527,6 +10975,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-10T19:50:00+00:00"
         },
         {
@@ -10553,6 +11002,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T01:48:56+00:00"
         },
         {
@@ -10576,6 +11026,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-10T18:52:07+00:00"
         },
         {
@@ -10601,6 +11052,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T02:30:40+00:00"
         },
         {
@@ -10624,6 +11076,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T03:03:23+00:00"
         },
         {
@@ -10647,6 +11100,7 @@ window.digestData = {
             "domain": "chips",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T20:47:47+00:00"
         },
         {
@@ -10673,6 +11127,7 @@ window.digestData = {
             "domain": "policy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T19:08:55+00:00"
         },
         {
@@ -10696,6 +11151,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T19:26:44+00:00"
         },
         {
@@ -10721,6 +11177,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T17:29:33+00:00"
         },
         {
@@ -10742,6 +11199,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T02:00:00+00:00"
         },
         {
@@ -10766,6 +11224,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:02:57+00:00"
         },
         {
@@ -10792,6 +11251,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T19:00:21+00:00"
         },
         {
@@ -10817,6 +11277,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-10T13:00:00+00:00"
         },
         {
@@ -10839,6 +11300,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-10T12:00:00+00:00"
         },
         {
@@ -10862,6 +11324,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T22:04:07+00:00"
         },
         {
@@ -10885,6 +11348,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T23:19:42+00:00"
         },
         {
@@ -10910,6 +11374,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T21:15:38+00:00"
         },
         {
@@ -10933,6 +11398,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T19:28:49+00:00"
         },
         {
@@ -10959,6 +11425,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T09:00:00+00:00"
         },
         {
@@ -10984,6 +11451,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T00:00:00+00:00"
         },
         {
@@ -11007,6 +11475,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T00:15:46+00:00"
         },
         {
@@ -11033,6 +11502,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T00:00:47+00:00"
         },
         {
@@ -11057,6 +11527,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T23:22:44+00:00"
         },
         {
@@ -11081,6 +11552,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T16:00:00+00:00"
         },
         {
@@ -11105,6 +11577,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T19:31:51+00:00"
         },
         {
@@ -11130,6 +11603,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T12:00:00+00:00"
         },
         {
@@ -11156,6 +11630,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T15:34:33+00:00"
         },
         {
@@ -11181,6 +11656,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T14:00:51+00:00"
         },
         {
@@ -11204,6 +11680,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T18:21:24+00:00"
         },
         {
@@ -11230,6 +11707,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:56:20+00:00"
         },
         {
@@ -11256,6 +11734,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T18:42:22+00:00"
         },
         {
@@ -11280,6 +11759,7 @@ window.digestData = {
             "domain": "legal_india",
             "category": "legal",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T03:30:33+00:00"
         },
         {
@@ -11303,6 +11783,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T21:56:42+00:00"
         },
         {
@@ -11325,6 +11806,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:24+00:00"
         },
         {
@@ -11348,6 +11830,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T17:59:34+00:00"
         },
         {
@@ -11370,6 +11853,7 @@ window.digestData = {
             "domain": "health",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T14:39:09+00:00"
         },
         {
@@ -11396,6 +11880,7 @@ window.digestData = {
             "domain": "space",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T14:29:57+00:00"
         },
         {
@@ -11420,6 +11905,7 @@ window.digestData = {
             "domain": "chips",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T14:01:22+00:00"
         },
         {
@@ -11444,6 +11930,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T13:15:09+00:00"
         },
         {
@@ -11467,6 +11954,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T20:45:18+00:00"
         },
         {
@@ -11493,6 +11981,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T21:20:29+00:00"
         },
         {
@@ -11516,6 +12005,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-25T00:00:00+00:00"
         },
         {
@@ -11542,6 +12032,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:05:55+00:00"
         },
         {
@@ -11566,6 +12057,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T15:00:00+00:00"
         },
         {
@@ -11590,6 +12082,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T16:53:46+00:00"
         },
         {
@@ -11612,6 +12105,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T12:31:28+00:00"
         },
         {
@@ -11634,6 +12128,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T13:45:33+00:00"
         },
         {
@@ -11657,6 +12152,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T01:02:13+00:00"
         },
         {
@@ -11681,6 +12177,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T23:13:27+00:00"
         },
         {
@@ -11704,6 +12201,7 @@ window.digestData = {
             "domain": "energy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T21:18:18+00:00"
         },
         {
@@ -11726,6 +12224,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T20:39:19+00:00"
         },
         {
@@ -11751,6 +12250,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-16T20:20:07+00:00"
         },
         {
@@ -11773,6 +12273,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T21:21:03+00:00"
         },
         {
@@ -11799,6 +12300,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T00:00:00+00:00"
         },
         {
@@ -11824,6 +12326,7 @@ window.digestData = {
             "domain": "security",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:51:51+00:00"
         },
         {
@@ -11850,6 +12353,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T10:00:00+00:00"
         },
         {
@@ -11873,6 +12377,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T20:50:32+00:00"
         },
         {
@@ -11896,6 +12401,7 @@ window.digestData = {
             "domain": "policy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T22:17:50+00:00"
         },
         {
@@ -11922,6 +12428,7 @@ window.digestData = {
             "domain": "other",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T02:12:34+00:00"
         },
         {
@@ -11946,6 +12453,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T22:51:22+00:00"
         },
         {
@@ -11972,6 +12480,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T12:00:40+00:00"
         },
         {
@@ -11998,6 +12507,7 @@ window.digestData = {
             "domain": "energy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T23:11:00+00:00"
         },
         {
@@ -12023,6 +12533,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T14:36:23+00:00"
         },
         {
@@ -12049,6 +12560,7 @@ window.digestData = {
             "domain": "legal_india",
             "category": "legal",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T08:01:49+00:00"
         },
         {
@@ -12073,6 +12585,7 @@ window.digestData = {
             "domain": "energy",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T00:23:00+00:00"
         },
         {
@@ -12097,6 +12610,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T18:15:28+00:00"
         },
         {
@@ -12118,6 +12632,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T21:16:18+00:00"
         },
         {
@@ -12142,6 +12657,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T00:15:37+00:00"
         },
         {
@@ -12164,6 +12680,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-11T15:01:22+00:00"
         },
         {
@@ -12187,6 +12704,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T16:53:02+00:00"
         },
         {
@@ -12213,6 +12731,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T23:36:31+00:00"
         },
         {
@@ -12239,6 +12758,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -12265,6 +12785,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:04:43+00:00"
         },
         {
@@ -12288,6 +12809,7 @@ window.digestData = {
             "domain": "ai",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-22T07:51:31+00:00"
         },
         {
@@ -12314,6 +12836,7 @@ window.digestData = {
             "domain": "space",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T20:51:50+00:00"
         },
         {
@@ -12338,6 +12861,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T18:00:00+00:00"
         },
         {
@@ -12362,6 +12886,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-23T20:55:44+00:00"
         },
         {
@@ -12386,6 +12911,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -12412,6 +12938,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -12438,6 +12965,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -12463,6 +12991,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -12487,6 +13016,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -12513,6 +13043,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -12534,6 +13065,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-11T21:14:40+00:00"
         },
         {
@@ -12555,6 +13087,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T16:00:00+00:00"
         },
         {
@@ -12576,6 +13109,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T12:10:00+00:00"
         },
         {
@@ -12602,6 +13136,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T17:18:00+00:00"
         },
         {
@@ -12626,6 +13161,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -12646,6 +13182,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T15:00:00+00:00"
         },
         {
@@ -12672,6 +13209,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T13:45:00+00:00"
         },
         {
@@ -12692,6 +13230,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T18:00:00+00:00"
         },
         {
@@ -12716,6 +13255,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 2,
+            "trending": false,
             "published_at": "2026-10-21T20:08:17+00:00"
         },
         {
@@ -12741,6 +13281,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-02T23:32:11+00:00"
         },
         {
@@ -12764,6 +13305,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T10:00:00+00:00"
         },
         {
@@ -12790,6 +13332,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-29T18:31:59+00:00"
         },
         {
@@ -12816,6 +13359,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-16T19:11:50+00:00"
         },
         {
@@ -12841,6 +13385,7 @@ window.digestData = {
             "domain": "science",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T15:00:00+00:00"
         },
         {
@@ -12865,12 +13410,13 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-22T10:00:00+00:00"
         },
         {
-            "headline": "10 years of Insolvency and Bankruptcy Code: Battling the delays - The Week",
+            "headline": "10 years of Insolvency and Bankruptcy Code: Battling the delays",
             "score": 55,
-            "source": "Dispute resolution India (Google News)",
+            "source": "The Week",
             "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNckVabHJlUW01WDBGYl84YlpkZVp5eUQ0V0E3TXZvNGM3ODBndnNUTkZJMjNZUnFHMzF5Mm1xSEJhVEhya2dWenlkN09LbmFWT24xZFdNRENxM0ZEOGV4bVZ5bUJ1amJPVE9KNml0b0Jfd2FnUnRMcGxSSE80RVp2YTJzZEZKZ1J1ZTlrSzNpU0swMy0zN3locXg0VDN2dkFRM2xLYVdxQ3RkcnFF0gGyAUFVX3lxTFBKaHZmZzVuV0ZIVFBYdFhneDZDRXZHaUhHY1MwVXF5ZUg0YXFkcTRsa3pLT01aeGI3d0FQRkpjUktXRmEzQkRLOUx0Z2c2RGQ4V2ZwcnNxdGpvUzItMXFNUVhlUmZiU0RoUmhxcnNuWFBaS0R3RWZtVG40aGZMMkdPdjItWW15ZDFyQm1JVGJISXRnUTBtczJ5N18yV244YzNlb2FHc1FEYXFrMFVsc0NKT3c?oc=5",
             "one_liner": "10 years of Insolvency and Bankruptcy Code: Battling the delays The Week",
             "topics": [
@@ -12888,12 +13434,13 @@ window.digestData = {
             "domain": "other",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T15:11:32+00:00"
         },
         {
-            "headline": "Indian AI Startups Could Add USD 100 Billion To Market Cap - Rediff",
+            "headline": "Indian AI Startups Could Add USD 100 Billion To Market Cap",
             "score": 55,
-            "source": "Startup funding India (Google News)",
+            "source": "Rediff",
             "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNRkFSd2ZiVlJfaHJmRFhRSTk2dEI2X3A0ZUcwTlh2RTZIU01XZlk2NGpuZ2lVUVR5MV9aR1FmZVdaT0V4OHdFckNuQU8tRUNhTWtadklsR2lya1Vpc1l3RFNMN3lZTXQzODBuOVZDX2licnNoN0sxZ1RoUTRxMzZWNU5qNGlScEJqdzNOM2QtUWVfRUpqQ2VVZ2JMUUtkMUJCTm9UVEU0TlN5WUZ0elg2NGhpWdIBtgFBVV95cUxNeEFoUV8tbG0xUU5wQjZVMzgtLUR1N3pPU19lVkRGeTZ4ZWx1WlpsbU9ockMtQ2xkQVBON3JudnVHdWszcU9aeDl3MUF2MWhtNl8yZTZ0WUdVS2NQMEFDS3czc0xFUl9odFZHMjNnVUlkZ0ItVmxjTXBoTTdNc3VKOHhzU0xETVpFc25fMmk3VGdreklBdnRXdVg1TXFxa1dlQlNpa1I0ZUczN2JFdXV6SkJ5akVudw?oc=5",
             "one_liner": "Indian AI Startups Could Add USD 100 Billion To Market Cap Rediff",
             "topics": [
@@ -12910,6 +13457,7 @@ window.digestData = {
             "domain": "business",
             "category": "market",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T16:30:52+00:00"
         },
         {
@@ -12934,6 +13482,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-06T16:19:06+00:00"
         },
         {
@@ -12959,6 +13508,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T21:18:34+00:00"
         },
         {
@@ -12985,6 +13535,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -13009,6 +13560,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-08T00:00:00+00:00"
         },
         {
@@ -13032,6 +13584,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-09T09:00:00+00:00"
         },
         {
@@ -13057,6 +13610,7 @@ window.digestData = {
             "domain": "mobility",
             "category": "tech",
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-21T18:48:28+00:00"
         },
         {
@@ -13080,6 +13634,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-30T08:30:00+00:00"
         },
         {
@@ -13106,6 +13661,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-09-25T20:41:06+00:00"
         },
         {
@@ -13130,6 +13686,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -13153,6 +13710,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         },
         {
@@ -13173,6 +13731,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-01T03:55:00+00:00"
         },
         {
@@ -13199,6 +13758,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-05T08:00:00+00:00"
         },
         {
@@ -13223,6 +13783,7 @@ window.digestData = {
             "domain": null,
             "category": null,
             "cluster_count": 1,
+            "trending": false,
             "published_at": "2026-10-07T00:00:00+00:00"
         }
     ]
