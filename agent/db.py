@@ -58,6 +58,27 @@ def sync_sources(conn) -> None:
         )
 
 
+# A source that failed this many times in a row is polled once a day instead of
+# every run. `enabled` can't be used for this: sync_sources resets it from
+# sources.py, which stays the single on/off switch.
+BACKOFF_FAILURES = 3
+BACKOFF_HOURS = 24
+
+
+def backed_off_source_ids(conn) -> set[str]:
+    """Failing sources that were already tried in the last BACKOFF_HOURS."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id FROM sources
+            WHERE consecutive_failures >= %s
+              AND last_poll_at > now() - make_interval(hours => %s)
+            """,
+            (BACKOFF_FAILURES, BACKOFF_HOURS),
+        )
+        return {row["id"] for row in cur.fetchall()}
+
+
 def first_fetch_source_ids(conn) -> set[str]:
     """Sources that have never been fetched successfully (just added, or never working)."""
     with conn.cursor() as cur:
@@ -121,7 +142,7 @@ def mark_source_result(
 ) -> None:
     with conn.cursor() as cur:
         if ok:
-            # A success clears the failure count and re-enables an auto-disabled source
+            # A success clears the failure count, which also ends any back-off
             cur.execute(
                 """
                 UPDATE sources SET
@@ -129,8 +150,7 @@ def mark_source_result(
                     last_success_at = now(),
                     last_item_at = GREATEST(COALESCE(last_item_at, 'epoch'), %s),
                     consecutive_failures = 0,
-                    last_error = NULL,
-                    enabled = true
+                    last_error = NULL
                 WHERE id = %s
                 """,
                 (newest_item, source_id),
@@ -146,18 +166,6 @@ def mark_source_result(
                 """,
                 (error[:500] if error else None, source_id),
             )
-            # Auto-disable after 3 consecutive failures
-            cur.execute(
-                """
-                UPDATE sources SET enabled = false
-                WHERE id = %s AND consecutive_failures >= 3 AND enabled = true
-                RETURNING id, name
-                """,
-                (source_id,),
-            )
-            disabled = cur.fetchone()
-            if disabled:
-                print(f"⚠️  Auto-disabled source '{disabled['name']}' after 3 failures")
 
 
 def record_run(conn, job: str, stats: dict, *, ok: bool) -> None:

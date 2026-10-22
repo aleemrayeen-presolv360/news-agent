@@ -39,6 +39,10 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 # Cloudflare Workers AI config (fallback)
 CF_MODEL = "@cf/meta/llama-3-8b-instruct"
+# Optional middle fallback, used only when CEREBRAS_API_KEY is set. Same Qwen
+# family as Groq, so its scores line up; Cloudflare's 8B model is the last resort.
+CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
+CEREBRAS_DEFAULT_MODEL = "qwen-3.8-27b"
 
 
 @dataclass
@@ -131,6 +135,8 @@ def _parse_score_response(text: str, tier: str) -> dict:
 SUMMARY_CHARS = 1200
 GROQ_MAX_WAIT = 65         # seconds; a longer retry-after means the daily quota is gone
 _groq_exhausted = False     # set once the daily quota is gone, so the rest of the run skips Groq
+_groq_remaining: int | None = None   # daily requests left, from Groq's last response
+GROQ_WARN_REMAINING = 150   # Telegram warning when fewer daily calls than this are left
 
 
 class GroqQuotaExhausted(RuntimeError):
@@ -139,7 +145,7 @@ class GroqQuotaExhausted(RuntimeError):
 
 def _call_groq(prompt: str, attempts: int = 4) -> str:
     """Call Groq, waiting out per-minute rate limits."""
-    global _groq_exhausted
+    global _groq_exhausted, _groq_remaining
     if _groq_exhausted:
         raise GroqQuotaExhausted("daily quota used up earlier in this run")
     api_key = env("GROQ_API_KEY", required=True)
@@ -171,9 +177,30 @@ def _call_groq(prompt: str, attempts: int = 4) -> str:
             if attempt < attempts - 1:
                 time.sleep(wait + 1)
                 continue
+        remaining = resp.headers.get("x-ratelimit-remaining-requests")
+        if remaining and remaining.isdigit():
+            _groq_remaining = int(remaining)
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
     raise RuntimeError("unreachable")
+
+
+def _call_cerebras(prompt: str) -> str:
+    """Cerebras (OpenAI-compatible). Raises when no key is set, so the caller moves on."""
+    api_key = env("CEREBRAS_API_KEY", required=True)
+    resp = httpx.post(
+        CEREBRAS_URL,
+        headers={"Authorization": f"Bearer {api_key}"},
+        json={
+            "model": env("CEREBRAS_MODEL") or CEREBRAS_DEFAULT_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 500,
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
 
 
 @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=5))
@@ -241,7 +268,13 @@ def score_item(item: dict) -> ScoreResult:
     except Exception as e:  # noqa: BLE001
         groq_error = str(e)
 
-    # Fallback to Cloudflare
+    if env("CEREBRAS_API_KEY"):
+        try:
+            return _result(item, _parse_score_response(_call_cerebras(prompt), item["tier"]), "cerebras")
+        except Exception as e:  # noqa: BLE001
+            groq_error += f" | cerebras: {str(e)[:80]}"
+
+    # Last resort: Cloudflare
     try:
         return _result(item, _parse_score_response(_call_cloudflare(prompt), item["tier"]), "cloudflare")
     except Exception as e:  # noqa: BLE001
@@ -280,7 +313,7 @@ def get_unscored_items(conn, limit: int | None = None) -> list[dict]:
 
 def update_scores(conn, results: list[ScoreResult]) -> dict:
     """Update news_memory with scores."""
-    stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "cloudflare": 0}
+    stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "cloudflare": 0, "cerebras": 0}
     
     with conn.cursor() as cur:
         for r in results:
@@ -317,6 +350,7 @@ def update_scores(conn, results: list[ScoreResult]) -> dict:
             )
             stats["scored"] += 1
             stats["cloudflare"] += r.model == "cloudflare"
+            stats["cerebras"] += r.model == "cerebras"
             
             # Track score distribution
             if r.score >= SCORE_BREAKING:
@@ -393,7 +427,7 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
 
     print(f"score: processing {len(items)} items...")
 
-    total_stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "cloudflare": 0}
+    total_stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "cloudflare": 0, "cerebras": 0}
     batch_results = []
     
     for i, item in enumerate(items):
@@ -413,10 +447,46 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
     print(
         f"score: {total_stats['scored']} scored, {total_stats['failed']} failed | "
         f"breaking={total_stats['breaking']}, major={total_stats['major']}, notable={total_stats['notable']} | "
-        f"cloudflare fallback={total_stats['cloudflare']}"
+        f"cerebras={total_stats['cerebras']}, cloudflare={total_stats['cloudflare']} | "
+        f"groq calls left today={_groq_remaining if _groq_remaining is not None else '?'}"
     )
 
+    # Kept in Neon so usage can be compared across days (the runner is wiped after each run)
+    with db.connect() as conn:
+        waiting = len(get_unscored_items(conn))
+        db.record_run(conn, "score", {"detail": {
+            **total_stats, "waiting": waiting,
+            "groq_remaining": _groq_remaining, "groq_exhausted": _groq_exhausted,
+        }}, ok=True)
+    print(f"score: {waiting} items still waiting")
+
+    warning = quota_warning(total_stats, _groq_remaining, _groq_exhausted, waiting)
+    if warning:
+        from . import telegram
+        if not telegram.send(warning):
+            print(warning)
+
     return 0
+
+
+def quota_warning(stats: dict, groq_remaining: int | None, groq_exhausted: bool,
+                  waiting: int) -> str | None:
+    """Telegram text when the free LLM budget is running out, else None."""
+    problems = []
+    if groq_exhausted:
+        problems.append("Groq's daily quota ran out during the run")
+    elif groq_remaining is not None and groq_remaining < GROQ_WARN_REMAINING:
+        problems.append(f"only {groq_remaining} Groq calls left today")
+    fallback = stats.get("cerebras", 0) + stats.get("cloudflare", 0)
+    if fallback:
+        problems.append(f"{fallback} items scored by a fallback model "
+                        f"(Cerebras {stats.get('cerebras', 0)}, Cloudflare {stats.get('cloudflare', 0)})")
+    if stats.get("failed"):
+        problems.append(f"{stats['failed']} items could not be scored")
+    if not problems:
+        return None
+    return ("⚠️ <b>Scoring budget</b>\n" + "\n".join(f"• {p}" for p in problems)
+            + f"\n\n{stats.get('scored', 0)} scored this run, {waiting} still waiting.")
 
 
 def main() -> int:

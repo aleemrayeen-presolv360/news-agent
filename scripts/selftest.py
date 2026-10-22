@@ -31,6 +31,7 @@ from agent.extract import (  # noqa: E402
     ExtractResult, _extract_text, _PAYWALL_SIGNALS, get_unextracted_items, update_extracted,
 )
 from agent.embed import get_unembedded_items  # noqa: E402
+from agent.db import backed_off_source_ids  # noqa: E402
 from agent.config import DOMAINS  # noqa: E402
 from agent.publish_static import item_to_dict, split_by_label  # noqa: E402
 from agent.ingest import split_first_fetch  # noqa: E402
@@ -336,6 +337,18 @@ class _FakeConn:
 _c = _FakeConn()
 update_extracted(_c, [ExtractResult(url="https://x/1", text=None, paywalled=False, error="timeout")])
 check("failed download marked as tried", _c.cur.sql[0][0].startswith("UPDATE raw_items SET article_text = ''"), True)
+_c = _FakeConn()
+backed_off_source_ids(_c)
+check("failing sources back off for a day",
+      ("consecutive_failures >=" in _c.cur.sql[0][0], _c.cur.sql[0][1]), (True, (3, 24)))
+
+_ok = {"scored": 200, "failed": 0, "cerebras": 0, "cloudflare": 0}
+check("no warning on a healthy run", score_mod.quota_warning(_ok, 600, False, 40), None)
+check("warns when Groq runs low", "only 90 Groq calls" in score_mod.quota_warning(_ok, 90, False, 40), True)
+check("warns when the quota ran out", "ran out" in score_mod.quota_warning(_ok, 0, True, 40), True)
+check("warns on fallback scores",
+      "Cloudflare 3" in score_mod.quota_warning({**_ok, "cloudflare": 3}, 600, False, 40), True)
+
 for _fn in (get_unextracted_items, get_unembedded_items):
     _c = _FakeConn()
     _fn(_c, 10)

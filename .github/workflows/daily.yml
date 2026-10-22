@@ -7,6 +7,10 @@
 # so one weekly run can't keep up with ~60 new articles a day. Notion stays weekly
 # (publish.yml, Friday).
 #
+# GitHub delays or drops scheduled runs when it is busy (seen: 5h late, and
+# 4-hourly ingests running only 3-4 times a day). So the job starts with its own
+# ingest, and a 09:01 IST catch-up run does the work only if 07:01 never happened.
+#
 # Budget: 30 runs/month x ~30 min = ~900 of 2,000 free minutes. Waiting on Groq's
 # rate limit is billed, so --limit on the score step is the main dial.
 
@@ -14,7 +18,8 @@ name: daily
 
 on:
   schedule:
-    - cron: '31 1 * * *'
+    - cron: '31 1 * * *'   # 07:01 IST
+    - cron: '31 3 * * *'   # 09:01 IST catch-up; exits in seconds if the site is already fresh
   workflow_dispatch:
 
 # Same group as publish.yml: the two never run at once or race to push data.js
@@ -32,52 +37,82 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Catch-up run only: stop if today's (IST) data.js is already committed
+      - name: Already refreshed today?
+        id: fresh
+        if: github.event.schedule == '31 3 * * *'
+        run: |
+          today=$(TZ=Asia/Kolkata date +%F)
+          if grep -q "\"generated_at\": \"$today" frontend/data.js; then
+            echo "data.js already generated on $today, nothing to do"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-python@v5
+        if: steps.fresh.outputs.skip != 'true'
         with:
           python-version: '3.12'
           cache: pip
 
       - uses: actions/cache@v4
+        if: steps.fresh.outputs.skip != 'true'
         with:
           path: ~/.cache/fastembed
           key: fastembed-bge-small-en-v1.5
 
       - run: pip install -r requirements.txt
+        if: steps.fresh.outputs.skip != 'true'
+
+      - name: Ingest feeds
+        if: steps.fresh.outputs.skip != 'true'
+        run: python -m agent.ingest
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Triage items
+        if: steps.fresh.outputs.skip != 'true'
         run: python -m agent.triage
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Extract articles
+        if: steps.fresh.outputs.skip != 'true'
         run: python -m agent.extract --limit 800
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Generate embeddings
+        if: steps.fresh.outputs.skip != 'true'
         run: python -m agent.embed --limit 1000
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Score items
+        if: steps.fresh.outputs.skip != 'true'
         run: python -m agent.score --limit 250
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}   # optional fallback
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}       # scoring-budget warning
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
 
       - name: Cluster stories
+        if: steps.fresh.outputs.skip != 'true'
         run: python -m agent.cluster
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Detect threads
+        if: steps.fresh.outputs.skip != 'true'
         run: python -m agent.threads
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Send breaking alerts
+        if: steps.fresh.outputs.skip != 'true'
         run: python -m agent.alerts
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
@@ -85,11 +120,13 @@ jobs:
           TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
 
       - name: Generate static frontend data
+        if: steps.fresh.outputs.skip != 'true'
         run: python -m agent.publish_static
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Commit and push data.js
+        if: steps.fresh.outputs.skip != 'true'
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"

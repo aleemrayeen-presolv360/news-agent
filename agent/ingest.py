@@ -111,6 +111,13 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
     sources = enabled_sources()
     if limit:
         sources = sources[:limit]
+    backed_off: set[str] = set()
+    if not dry_run:
+        from . import db
+        with db.connect() as conn:
+            db.sync_sources(conn)
+            backed_off = db.backed_off_source_ids(conn)
+        sources = [s for s in sources if s.id not in backed_off]
 
     results = asyncio.run(fetch_all(sources))
 
@@ -125,6 +132,7 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
         "items_seen": len(all_rows),
         "items_new": 0,
         "detail": {
+            "backed_off": sorted(backed_off),
             "failures": {r.source.id: r.error for r in failed},
             "per_source": {r.source.id: len(r.rows) for r in ok},
         },
@@ -136,7 +144,6 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
 
     from . import db
     with db.connect() as conn:
-        db.sync_sources(conn)
         first_ids = db.first_fetch_source_ids(conn) & {r.source.id for r in ok}
         keep, seen = split_first_fetch(all_rows, first_ids, datetime.now(timezone.utc))
         new_urls = db.insert_items(conn, keep)
@@ -160,6 +167,7 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
     print(
         f"ingest: {stats['sources_ok']}/{stats['sources_total']} sources ok, "
         f"{stats['items_seen']} items seen, {stats['items_new']} new"
+        + (f", {len(backed_off)} failing sources skipped until tomorrow" if backed_off else "")
     )
     if failed:
         print("  failures:", ", ".join(f"{r.source.id} ({r.error[:60]})"
