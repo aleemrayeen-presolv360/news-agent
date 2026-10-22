@@ -32,6 +32,7 @@ from agent.extract import (  # noqa: E402
 )
 from agent.embed import get_unembedded_items  # noqa: E402
 from agent.db import backed_off_source_ids  # noqa: E402
+from agent.trends import parse_picks  # noqa: E402
 from agent.config import DOMAINS  # noqa: E402
 from agent.publish_static import item_to_dict, split_by_label  # noqa: E402
 from agent.ingest import gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
@@ -296,6 +297,27 @@ check("website gets domain and category",
           {**row, "score_breakdown": {"domain": "business"}},
           {**row, "score_breakdown": None}])],
       [("space", "tech"), ("legal_india", "legal"), ("business", "market"), (None, None)])
+
+_gn_row = {**row, "headline": "eMudhra key flaw explained - MediaNama", "source_name": "Trending: emudhra",
+           "source_url": "https://news.google.com/rss/articles/x", "source_id": "trend_4"}
+_d = item_to_dict(_gn_row)
+check("Google News story shows its publisher", (_d["headline"], _d["source"]),
+      ("eMudhra key flaw explained", "MediaNama"))
+check("trend-watch story is trending", _d["trending"], True)
+check("story in 3 sources is trending", item_to_dict({**row, "cluster_count": 3})["trending"], True)
+check("ordinary story is not trending", item_to_dict({**row, "source_id": "electrek"})["trending"], False)
+
+# ------------------------------------------------------------ trends
+print("\ntrends")
+
+_picks = parse_picks('Sure: [{"term": "x", "domain": "Security", "query": " eMudhra  Key Flaw ", "why": "w"},'
+                     ' {"term": "Meta fine", "domain": "legal_india", "query": "meta new mexico penalty", "why": "US case"},'
+                     ' {"term": "dup", "domain": "ai", "query": "emudhra key flaw"},'
+                     ' {"term": "long", "domain": "ai", "query": "one two three four five six seven"}]', 5)
+check("trend picks cleaned", [(p["query"], p["domain"]) for p in _picks],
+      [("emudhra key flaw", "security"), ("meta new mexico penalty", "policy")])
+check("trend picks capped", len(parse_picks('[{"query": "a"}, {"query": "b"}, {"query": "c"}]', 2)), 2)
+check("unparseable trend reply means no picks", parse_picks("no idea", 3), [])
 
 # ------------------------------------------------------------ pipeline queues
 print("\npipeline queues")

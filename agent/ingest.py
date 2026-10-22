@@ -82,6 +82,7 @@ async def _fetch_one(client: httpx.AsyncClient, source: Source,
 
 
 FIRST_FETCH_REASON = f"first_fetch_older_than_{FIRST_FETCH_HOURS}h"
+TREND_MAX_ITEMS = 8   # per trend watch per fetch, so trends can't swamp the scoring budget
 
 
 def split_first_fetch(rows: list[dict], first_ids: set[str],
@@ -162,11 +163,18 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
     if not dry_run:
         from . import db
         with db.connect() as conn:
-            db.sync_sources(conn)
+            db.ensure_trend_table(conn)
+            trend_sources = db.active_trend_sources(conn)
+            db.sync_sources(conn, trend_sources)
             backed_off = db.backed_off_source_ids(conn)
-        sources = [s for s in sources if s.id not in backed_off]
+        sources = [s for s in sources + trend_sources if s.id not in backed_off]
 
     results = asyncio.run(fetch_all(sources))
+
+    for r in results:
+        if r.source.id.startswith("trend_"):
+            # A hot topic can return 100 results a day; the newest few are enough
+            r.rows = sorted(r.rows, key=lambda x: x["published_at"], reverse=True)[:TREND_MAX_ITEMS]
 
     ok = [r for r in results if r.error is None]
     failed = [r for r in results if r.error is not None]

@@ -63,6 +63,14 @@ jobs:
       - run: pip install -r requirements.txt
         if: steps.fresh.outputs.skip != 'true'
 
+      # One Groq call; never fails the job (agent/trends.py swallows its own errors)
+      - name: Find trends to watch
+        if: steps.fresh.outputs.skip != 'true'
+        run: python -m agent.trends
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
       - name: Ingest feeds
         if: steps.fresh.outputs.skip != 'true'
         run: python -m agent.ingest

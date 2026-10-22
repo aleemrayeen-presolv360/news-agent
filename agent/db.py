@@ -16,7 +16,7 @@ import psycopg
 from psycopg.rows import dict_row
 
 from .config import env
-from .sources import SOURCES
+from .sources import SOURCES, Source, _google_news
 
 
 @contextlib.contextmanager
@@ -38,8 +38,11 @@ def connect():
         conn.close()
 
 
-def sync_sources(conn) -> None:
-    """Push sources.py into the sources table. Safe to run every ingest."""
+TREND_PREFIX = "trend_"
+
+
+def sync_sources(conn, extra: Sequence[Source] = ()) -> None:
+    """Push sources.py (plus active trend watches) into the sources table. Safe to run every ingest."""
     with conn.cursor() as cur:
         cur.executemany(
             """
@@ -54,8 +57,42 @@ def sync_sources(conn) -> None:
                 note     = EXCLUDED.note
             """,
             [(s.id, s.name, s.tier, s.kind, s.url, s.enabled, s.note)
-             for s in SOURCES],
+             for s in (*SOURCES, *extra)],
         )
+        # Expired trend watches stay in the table (raw_items point at them) but switch off
+        cur.execute(
+            "UPDATE sources SET enabled = false WHERE id LIKE %s AND NOT (id = ANY(%s::text[]))",
+            (TREND_PREFIX + "%", [s.id for s in extra]),
+        )
+
+
+def ensure_trend_table(conn) -> None:
+    """trend_watches: one Google News search per trending topic, for a few days."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS trend_watches (
+              id          BIGSERIAL PRIMARY KEY,
+              query       TEXT NOT NULL UNIQUE,     -- lower-case Google News search
+              domain      TEXT,
+              reason      TEXT,
+              signal      TEXT,                     -- what spotted it
+              created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+              expires_at  TIMESTAMPTZ NOT NULL
+            )
+            """
+        )
+
+
+def active_trend_sources(conn) -> list[Source]:
+    """Each unexpired trend watch as a last-day Google News source."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, query, reason FROM trend_watches WHERE expires_at > now() ORDER BY id")
+        return [
+            Source(id=f"{TREND_PREFIX}{r['id']}", name=f"Trending: {r['query']}", tier="D",
+                   url=_google_news(r["query"], days=1), note=(r["reason"] or "")[:300])
+            for r in cur.fetchall()
+        ]
 
 
 # A source that failed this many times in a row is polled once a day instead of

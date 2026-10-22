@@ -33,6 +33,7 @@ def get_week_items(conn, window) -> list[dict]:
             SELECT m.id, m.headline, m.one_liner, m.source_url, m.source_name,
                    m.published_at, m.score, m.entities, m.topics,
                    m.market_impact, m.cluster_id, m.score_breakdown,
+                   (SELECT r.source_id FROM raw_items r WHERE r.id = m.id) as source_id,
                    (SELECT COUNT(*) FROM news_memory m2
                     WHERE m2.cluster_id = m.cluster_id AND m2.cluster_id IS NOT NULL) as cluster_count
             FROM news_memory m
@@ -90,14 +91,22 @@ def get_new_sources(conn) -> list[dict]:
                 for r in cur.fetchall()]
 
 
+TRENDING_SOURCES = 3   # a story carried by this many of our sources counts as trending
+
+
 def item_to_dict(item: dict) -> dict:
     """Convert DB row to frontend-friendly dict."""
     # Stories scored before domains existed have none; the website guesses those from keywords
     domain = (item.get("score_breakdown") or {}).get("domain")
+    headline, source = item["headline"] or "Untitled", item["source_name"] or "Unknown"
+    if "news.google.com" in (item["source_url"] or "") and " - " in headline:
+        # Google News titles end in " - Publisher"; show the publisher, not the search
+        headline, source = headline.rsplit(" - ", 1)
+    cluster_count = item["cluster_count"] or 1
     return {
-        "headline": item["headline"] or "Untitled",
+        "headline": headline,
         "score": item["score"],
-        "source": item["source_name"] or "Unknown",
+        "source": source,
         "url": item["source_url"] or "#",
         "one_liner": item["one_liner"],
         "topics": item["topics"] or [],
@@ -105,7 +114,8 @@ def item_to_dict(item: dict) -> dict:
         "market_impact": item["market_impact"],
         "domain": domain,
         "category": DOMAINS.get(domain),
-        "cluster_count": item["cluster_count"] or 1,
+        "cluster_count": cluster_count,
+        "trending": (item.get("source_id") or "").startswith("trend_") or cluster_count >= TRENDING_SOURCES,
         "published_at": item["published_at"].isoformat() if item.get("published_at") else None,
     }
 

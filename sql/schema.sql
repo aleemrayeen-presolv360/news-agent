@@ -123,3 +123,16 @@ CREATE TABLE IF NOT EXISTS runs (
   ok             BOOLEAN,
   detail         JSONB
 );
+
+-- Trend watches (agent/trends.py): a trending topic followed as a last-day
+-- Google News search for a few days. Ingest fetches each one as source trend_<id>.
+-- agent/db.py ensure_trend_table() creates this on the first run.
+CREATE TABLE IF NOT EXISTS trend_watches (
+  id          BIGSERIAL PRIMARY KEY,
+  query       TEXT NOT NULL UNIQUE,     -- lower-case Google News search
+  domain      TEXT,
+  reason      TEXT,
+  signal      TEXT,                     -- what spotted it
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at  TIMESTAMPTZ NOT NULL
+);
