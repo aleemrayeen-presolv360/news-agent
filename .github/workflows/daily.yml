@@ -11,8 +11,9 @@
 # 4-hourly ingests running only 3-4 times a day). So the job starts with its own
 # ingest, and a 09:01 IST catch-up run does the work only if 07:01 never happened.
 #
-# Budget: 30 runs/month x ~30 min = ~900 of 2,000 free minutes. Waiting on Groq's
-# rate limit is billed, so --limit on the score step is the main dial.
+# Budget: 30 runs/month x ~45 min. Free while the repo is public; a private repo gets
+# 2,000 min/month, so lower --limit on the score step to ~150 if it goes private again.
+# Waiting on Groq's rate limit is billed, so --limit on the score step is the main dial.
 
 name: daily
 
@@ -33,7 +34,7 @@ permissions:
 jobs:
   daily:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 75   # scoring runs ~6 stories a minute, so 250 takes ~44 min
     steps:
       - uses: actions/checkout@v4
 

@@ -10,6 +10,7 @@ Runs as separate pass after scoring for clean separation.
 from __future__ import annotations
 
 import argparse
+from html import escape
 
 from . import telegram
 from .config import SCORE_BREAKING
@@ -40,20 +41,21 @@ def format_alert(item: dict) -> str:
     """Format item as Telegram message."""
     score_bar = "*" * (item["score"] // 20)
     
-    msg = f"BREAKING: <b>{item['headline'][:100]}</b>\n\n"
-    
+    # Telegram parses HTML: an "&" or "<" in feed text would make it reject the message
+    msg = f"BREAKING: <b>{escape(item['headline'][:100])}</b>\n\n"
+
     if item["one_liner"]:
-        msg += f"{item['one_liner'][:200]}\n\n"
-    
+        msg += f"{escape(item['one_liner'][:200])}\n\n"
+
     if item["market_impact"] and item["market_impact"] != "none":
-        msg += f"Market: {item['market_impact'][:150]}\n\n"
-    
+        msg += f"Market: {escape(item['market_impact'][:150])}\n\n"
+
     if item["entities"]:
-        msg += f"Tags: {', '.join(item['entities'][:4])}\n"
-    
+        msg += f"Tags: {escape(', '.join(item['entities'][:4]))}\n"
+
     msg += f"\n{score_bar} Score: {item['score']}/100\n"
-    msg += f"Source: {item['source_name']}\n"
-    msg += f"Link: {item['source_url']}"
+    msg += f"Source: {escape(item['source_name'])}\n"
+    msg += f"Link: {escape(item['source_url'])}"
     
     return msg
 

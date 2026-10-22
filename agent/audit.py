@@ -14,6 +14,7 @@ Runs Monday 08:30 IST via GitHub Actions.
 from __future__ import annotations
 
 import argparse
+from html import escape
 
 from . import telegram
 from .config import week_window
@@ -108,7 +109,7 @@ def format_audit_report(window, stats: dict, unhealthy: list[dict]) -> str:
                 reason = "(never fetched)"
             else:
                 reason = f"(stale since {src['last_item_at']:%m-%d})"
-            msg += f"• [{src['tier']}] {src['name'][:20]} {reason}\n"
+            msg += f"• [{src['tier']}] {escape(src['name'][:20])} {reason}\n"  # "Bar & Bench" breaks Telegram HTML
         
         if len(unhealthy) > 5:
             msg += f"• ... and {len(unhealthy) - 5} more\n"
