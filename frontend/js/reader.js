@@ -15,6 +15,7 @@ const Reader = {
 
     FOLDERS: [
         { id: 'all', name: 'All' },
+        { id: 'trending', name: 'Trending' },
         { id: 'breaking', name: 'Breaking' },
         { id: 'major', name: 'Major' },
         { id: 'notable', name: 'Notable' }
@@ -62,10 +63,16 @@ const Reader = {
         let list = Stories.inRange(this.baseStories(), this.get('from'), this.get('to'));
         if (this.get('q')) list = Stories.search(this.get('q'), list);
         const folder = this.get('folder');
-        if (folder && folder !== 'all' && !ignore.includes('folder')) list = list.filter(s => s.label === folder);
+        if (folder && folder !== 'all' && !ignore.includes('folder')) list = list.filter(s => this.inFolder(s, folder));
         const cat = this.get('cat');
         if (cat && !ignore.includes('cat')) list = list.filter(s => s.category === cat);
+        const domain = this.get('domain');
+        if (domain && !ignore.includes('domain')) list = list.filter(s => s.area === domain);
         return list;
+    },
+
+    inFolder(story, folder) {
+        return folder === 'trending' ? story.trending : story.label === folder;
     },
 
     sorted(list) {
@@ -123,7 +130,8 @@ const Reader = {
         const folderLinks = this.mode === 'saved'
             ? `<a href="${this.link({ folder: null, story: null })}" aria-current="${folder === 'all'}"><span class="folder-mark" aria-hidden="true"></span>All saved<span class="n">${forFolders.length}</span></a>`
             : this.FOLDERS.map(f => {
-                const n = f.id === 'all' ? forFolders.length : count(forFolders, s => s.label === f.id);
+                const n = f.id === 'all' ? forFolders.length : count(forFolders, s => this.inFolder(s, f.id));
+                if (f.id === 'trending' && !n && folder !== 'trending') return '';
                 const icon = f.id === 'breaking' ? '<svg class="icon"><use href="#i-bolt"/></svg>' : '';
                 return `<a href="${this.link({ folder: f.id === 'all' ? null : f.id, story: null })}" aria-current="${folder === f.id}">${icon}${f.name}<span class="n">${n}</span></a>`;
             }).join('');
@@ -133,7 +141,20 @@ const Reader = {
                 <span class="cat-dot cat-${id}" aria-hidden="true"></span>${Util.esc(name)}<span class="n">${count(forCats, s => s.category === id)}</span>
             </a>`).join('');
 
-        return `${folderLinks}<h2>Categories</h2>${catLinks}`;
+        // Domains with stories in the current filters, biggest first; followed ones are marked
+        const domain = this.get('domain');
+        const forDomains = this.filtered({ ignore: ['domain'] });
+        const followed = UserState.followedDomains();
+        const domainLinks = Object.entries(CONFIG.DOMAINS)
+            .map(([id, name]) => ({ id, name, n: count(forDomains, s => s.area === id) }))
+            .filter(d => d.n || d.id === domain)
+            .sort((a, b) => b.n - a.n)
+            .map(d => `
+            <a href="${this.link({ domain: domain === d.id ? null : d.id, story: null })}" aria-current="${domain === d.id}">
+                ${Util.esc(d.name)}${followed && followed.includes(d.id) ? '<span class="sr-only"> (followed)</span><span class="followed-mark" aria-hidden="true">●</span>' : ''}<span class="n">${d.n}</span>
+            </a>`).join('');
+
+        return `${folderLinks}<h2>Categories</h2>${catLinks}${domainLinks ? `<h2>Domains</h2>${domainLinks}` : ''}`;
     },
 
     listHeadHtml() {
@@ -147,7 +168,7 @@ const Reader = {
         const from = this.get('from');
         const to = this.get('to');
         const dateText = from || to ? this.rangeText(from, to) : 'Any date';
-        const filtersOn = from || to || this.get('cat') || this.get('q');
+        const filtersOn = from || to || this.get('cat') || this.get('domain') || this.get('q');
         const sorts = this.mode === 'saved' ? [{ id: 'saved', name: 'Newest saved' }, ...this.SORTS.slice(0, 2)] : this.SORTS;
         const currentSort = this.get('sort') || sorts[0].id;
 
@@ -158,8 +179,9 @@ const Reader = {
                     <svg class="icon"><use href="#i-cal"/></svg>${Util.esc(dateText)}<svg class="icon"><use href="#i-chev"/></svg>
                 </button>
                 ${this.get('cat') ? `<a class="chip is-active" href="${this.link({ cat: null, story: null })}" aria-label="Remove ${Util.esc(CONFIG.CATEGORIES[this.get('cat')])} filter">${Util.esc(CONFIG.CATEGORIES[this.get('cat')])} ✕</a>` : ''}
+                ${this.get('domain') ? `<a class="chip is-active" href="${this.link({ domain: null, story: null })}" aria-label="Remove ${Util.esc(CONFIG.DOMAINS[this.get('domain')] || '')} filter">${Util.esc(CONFIG.DOMAINS[this.get('domain')] || this.get('domain'))} ✕</a>` : ''}
                 ${this.get('q') ? `<a class="chip is-active" href="${this.link({ q: null, story: null })}" aria-label="Remove search filter">“${Util.esc(this.get('q'))}” ✕</a>` : ''}
-                ${filtersOn ? `<a class="clear" href="${this.link({ from: null, to: null, cat: null, q: null, story: null })}">Clear all</a>` : ''}
+                ${filtersOn ? `<a class="clear" href="${this.link({ from: null, to: null, cat: null, domain: null, q: null, story: null })}">Clear all</a>` : ''}
             </div>
             <nav class="sort" aria-label="Sort">
                 ${sorts.map(s => `<a href="${this.link({ sort: s.id === sorts[0].id ? null : s.id })}" aria-current="${currentSort === s.id}">${s.name}</a>`).join('')}
@@ -187,7 +209,7 @@ const Reader = {
         if (!this.baseStories().length) {
             return `<div class="empty-state"><h2>No stories yet</h2><p>New stories arrive every morning.</p></div>`;
         }
-        return `<div class="empty-state"><h2>No stories match these filters</h2><p>Try a wider date range or another category.</p><a class="btn" href="${this.link({ from: null, to: null, cat: null, q: null, folder: null, story: null })}">Clear all filters</a></div>`;
+        return `<div class="empty-state"><h2>No stories match these filters</h2><p>Try a wider date range or another category.</p><a class="btn" href="${this.link({ from: null, to: null, cat: null, domain: null, q: null, folder: null, story: null })}">Clear all filters</a></div>`;
     },
 
     renderSelection() {
@@ -362,8 +384,9 @@ const Reader = {
             if (a && b && a > b) [a, b] = [b, a];
             let list = Stories.inRange(this.baseStories(), a, b);
             const folder = this.get('folder');
-            if (folder && folder !== 'all') list = list.filter(s => s.label === folder);
+            if (folder && folder !== 'all') list = list.filter(s => this.inFolder(s, folder));
             if (this.get('cat')) list = list.filter(s => s.category === this.get('cat'));
+            if (this.get('domain')) list = list.filter(s => s.area === this.get('domain'));
             if (this.get('q')) list = Stories.search(this.get('q'), list);
             applyBtn.textContent = `Show ${list.length} ${list.length === 1 ? 'story' : 'stories'}`;
             pop.querySelectorAll('[data-preset]').forEach(btn => {

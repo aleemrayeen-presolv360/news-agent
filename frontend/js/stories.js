@@ -38,6 +38,9 @@ const Stories = {
         };
         story.label = this.labelFor(story.score);
         story.category = this.categoryFor(story, item.category);
+        story.area = story.domain || this.guessDomain(story);
+        // Older data.js files have no "trending"; wide coverage is the same signal
+        story.trending = Boolean(item.trending) || story.coverage >= 3;
         story.searchText = Util.normalize([headline, story.source, story.summary, CONFIG.DOMAINS[story.domain] || '', ...story.topics, ...story.entities].join(' '));
         return story;
     },
@@ -79,6 +82,26 @@ const Stories = {
         if (/\b(law|legal|court|courts|regulation|regulator|compliance|act|policy|gdpr|litigation|arbitration|mediation|judgment|tribunal)\b/i.test(text)) return 'legal';
         if (/\b(market|markets|stock|stocks|funding|valuation|ipo|investment|billion|million|revenue)\b/i.test(text)) return 'market';
         return 'tech';
+    },
+
+    /**
+     * A domain for stories scored before the pipeline sent one (before 21 Oct 2026). Those came
+     * from AI-only scoring, so AI is the fallback for tech.
+     */
+    guessDomain(story) {
+        if (story.category === 'legal') return 'legal_india';
+        if (story.category === 'market' || story.category === 'competitors') return 'business';
+        const text = `${story.headline} ${story.topics.join(' ')}`;
+        const rules = [
+            ['security', /\b(security|vulnerabilit\w*|breach|hack\w*|malware|ransomware|exploit|cve)\b/i],
+            ['chips', /\b(chips?|gpus?|semiconductor\w*|tsmc|nvidia|wafer|foundry)\b/i],
+            ['mobility', /\b(ev|evs|electric vehicles?|tesla|robotaxi|self-driving|autonomous driving|cars?)\b/i],
+            ['space', /\b(space|nasa|spacex|rocket|satellite|orbit|isro|lunar|mars)\b/i],
+            ['health', /\b(health|medical|drug|biotech|clinical|cancer|protein|genom\w*)\b/i],
+            ['energy', /\b(energy|climate|battery|batteries|solar|nuclear|grid|carbon)\b/i],
+            ['robotics', /\b(robots?|robotics|humanoid)\b/i]
+        ];
+        return (rules.find(([, re]) => re.test(text)) || ['ai'])[0];
     },
 
     /**
@@ -135,7 +158,8 @@ const Stories = {
     // ---------- Shared markup ----------
 
     labelHtml(story) {
-        return `<span class="label label-${story.label}">${this.labelText(story.label)}</span>`;
+        return `<span class="label label-${story.label}">${this.labelText(story.label)}</span>`
+            + (story.trending ? '<span class="trend-tag">Trending</span>' : '');
     },
 
     /** The category's dot, named by the finer domain when there is one ("EVs and mobility"). */

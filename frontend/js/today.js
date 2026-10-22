@@ -26,17 +26,37 @@ const Today = {
 
     /**
      * Highest-ranked unread stories from the last TODAY_DAYS first (older ones only if there
-     * aren't enough); keep one Legal India story if the user asked for it.
+     * aren't enough), from the domains the user follows (Breaking always counts), at most
+     * MAX_PER_DOMAIN per domain so one busy domain can't take every slot. Keep one Legal India
+     * story if the user asked for it.
      */
+    MAX_PER_DOMAIN: 2,
+
     buildIds() {
         const prefs = UserState.prefs();
         const count = Number(prefs.dailyCount) || CONFIG.DAILY_COUNT_DEFAULT;
+        const followed = UserState.followedDomains();
         const candidates = [...Stories.visible()].sort((a, b) =>
             (UserState.isRead(a.id) - UserState.isRead(b.id)) ||
             (this.isRecent(b) - this.isRecent(a)) || (b.score - a.score)
         );
+        const wanted = s => !followed || followed.includes(s.area) || s.label === 'breaking';
+        const ordered = [...candidates.filter(wanted), ...candidates.filter(s => !wanted(s))];
 
-        const picks = candidates.slice(0, count);
+        const picks = [];
+        const perDomain = {};
+        for (const s of ordered) {
+            if (picks.length >= count) break;
+            if ((perDomain[s.area] || 0) >= this.MAX_PER_DOMAIN && s.label !== 'breaking') continue;
+            picks.push(s);
+            perDomain[s.area] = (perDomain[s.area] || 0) + 1;
+        }
+        // A quiet day with too few domains: fill up regardless of the per-domain limit
+        for (const s of ordered) {
+            if (picks.length >= count) break;
+            if (!picks.includes(s)) picks.push(s);
+        }
+
         if (prefs.includeLegal && picks.length && !picks.some(s => s.category === 'legal')) {
             const legal = candidates.find(s => s.category === 'legal' && !picks.includes(s));
             if (legal) picks[picks.length - 1] = legal;
@@ -100,7 +120,7 @@ const Today = {
             <div class="today">
                 <div>
                     <h1>${stories.length === 1 ? '1 story needs you today' : `${stories.length} stories need you today`}</h1>
-                    <p class="today-sub">${Util.esc(Util.weekdayDate())}. Picked from the last ${CONFIG.TODAY_DAYS} days.</p>
+                    <p class="today-sub">${Util.esc(Util.weekdayDate())}. Picked from the last ${CONFIG.TODAY_DAYS} days${UserState.followedDomains() ? ', in the domains you follow' : ', across every domain'}.</p>
                     <div class="today-start">
                         <a class="btn btn-primary btn-big" href="#/today/${startAt}" id="today-start">
                             ${started ? `Continue with story ${startAt}` : 'Start with story 1'}<kbd>Enter</kbd>

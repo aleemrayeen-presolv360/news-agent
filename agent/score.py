@@ -235,7 +235,9 @@ _INDIA_HINT = re.compile(
 
 def _result(item: dict, parsed: dict, model: str) -> ScoreResult:
     domain = parsed["domain"]
-    text = f"{item['title']} {item.get('article_text') or item.get('feed_summary') or ''}"
+    # Headline and opening only: Indian outlets mention India in page furniture, so a US
+    # court story from ET Tech would otherwise pass
+    text = f"{item['title']} {(item.get('article_text') or item.get('feed_summary') or '')[:500]}"
     if domain == "legal_india" and not _INDIA_HINT.search(text):
         domain = "other"
     return ScoreResult(

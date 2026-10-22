@@ -97,6 +97,7 @@ const Settings = {
     preferencesHtml() {
         const prefs = UserState.prefs();
         const theme = UserState.theme();
+        const followed = UserState.followedDomains();
         const radio = (name, value, current, text) =>
             `<label><input type="radio" name="${name}" value="${value}" ${String(current) === String(value) ? 'checked' : ''}><span>${text}</span></label>`;
 
@@ -116,6 +117,14 @@ const Settings = {
                 <div class="segmented" role="radiogroup" aria-labelledby="pref-count-label">
                     ${radio('dailyCount', 3, prefs.dailyCount, '3')}${radio('dailyCount', 5, prefs.dailyCount, '5')}${radio('dailyCount', 7, prefs.dailyCount, '7')}
                 </div>
+            </div>
+
+            <div class="setting-row setting-row-wide">
+                <div><h2 id="pref-domains-label">Domains I follow</h2><p>Today's list picks from these, and they're marked in All stories. Breaking stories always come through. All stories still shows everything.</p></div>
+                <fieldset class="domain-picks" aria-labelledby="pref-domains-label">
+                    ${Object.entries(CONFIG.DOMAINS).map(([id, name]) => `
+                        <label><input type="checkbox" data-domain="${id}" ${!followed || followed.includes(id) ? 'checked' : ''}><span>${Util.esc(name)}</span></label>`).join('')}
+                </fieldset>
             </div>
 
             <div class="setting-row">
@@ -559,6 +568,19 @@ const Settings = {
         if (el.name === 'dailyCount') {
             UserState.setPref('dailyCount', Number(el.value));
             this.resetTodayIfUnstarted();
+        }
+        if (el.dataset.domain) {
+            const boxes = [...this.el.querySelectorAll('[data-domain]')];
+            const checked = boxes.filter(b => b.checked).map(b => b.dataset.domain);
+            if (!checked.length) {
+                // Following nothing would empty Today; keep the last one on
+                el.checked = true;
+                Util.toast('Follow at least one domain.');
+                return;
+            }
+            UserState.setPref('domains', checked.length === boxes.length ? null : checked);
+            this.resetTodayIfUnstarted();
+            Reader.invalidate();
         }
         if (el.dataset.roleUser) this.setRole(el);
         if (el.dataset.audit) {

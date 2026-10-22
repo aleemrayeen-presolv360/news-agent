@@ -104,6 +104,14 @@ const UserState = {
         Util.save(this._key('prefs'), { ...this.prefs(), [name]: value });
     },
 
+    /** Domain ids the user follows, or null for "all of them" (the default). */
+    followedDomains() {
+        const list = this.prefs().domains;
+        if (!Array.isArray(list)) return null;
+        const known = list.filter(id => CONFIG.DOMAINS[id]);
+        return known.length && known.length < Object.keys(CONFIG.DOMAINS).length ? known : null;
+    },
+
     /** 'light' | 'dark' | 'system'. Stored as a plain string under "theme", as the old app did. */
     theme() {
         try {

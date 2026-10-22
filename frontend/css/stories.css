@@ -77,3 +77,5 @@
     .pane .story, .pane-hint { padding-left: 20px; padding-right: 20px; }
     .date-pop { left: 8px; right: 8px; width: auto; }
 }
+.folders .followed-mark { font-size: 8px; color: var(--ink); margin-left: 6px; }
+.folders a[aria-current="true"] .followed-mark { color: inherit; }
