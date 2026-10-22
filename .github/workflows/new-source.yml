@@ -1,0 +1,103 @@
+# New source: when agent/sources.py changes on main, fetch right away and put
+# any new source's last 24 hours on the website within ~10 minutes, instead of
+# waiting for the next 07:01 IST daily run.
+#
+# Ingest keeps only the last FIRST_FETCH_HOURS (24h) of a never-fetched source and
+# fills a busy channel's gaps from Google News. Score then handles only what was
+# fetched in this run; the website shows the ones scoring 55+, as always.
+#
+# Budget: ~6 min a run, only when sources.py changes.
+
+name: new-source
+
+on:
+  push:
+    branches: [main]
+    paths: ['agent/sources.py']
+  workflow_dispatch:
+
+# Same group as daily.yml and publish.yml: never two scorers or two data.js pushes at once
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  new-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/fastembed
+          key: fastembed-bge-small-en-v1.5
+
+      - run: pip install -r requirements.txt
+
+      - name: Ingest feeds (new sources keep their last 24h)
+        run: python -m agent.ingest
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Triage items
+        run: python -m agent.triage
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Extract articles
+        run: python -m agent.extract --limit 300
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Generate embeddings
+        run: python -m agent.embed --limit 400
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Score what this run fetched
+        run: python -m agent.score --ingested-within-hours 1 --limit 120
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}   # optional fallback
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}       # scoring-budget warning
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+
+      - name: Cluster stories
+        run: python -m agent.cluster
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Generate static frontend data
+        run: python -m agent.publish_static
+        env:
+          NEON_DSN: ${{ secrets.NEON_DSN }}
+
+      - name: Commit and push data.js
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add frontend/data.js
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: website data after a source change [skip ci]"
+          git pull --rebase
+          git push
+
+      - name: Notify on failure
+        if: failure()
+        run: python -m agent.notify_failure
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

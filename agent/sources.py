@@ -18,10 +18,10 @@ from dataclasses import dataclass
 from urllib.parse import quote
 
 
-def _google_news(query: str) -> str:
-    """A Google News search feed (India edition), last 7 days only."""
+def _google_news(query: str, days: int = 7) -> str:
+    """A Google News search feed (India edition), last `days` days only."""
     return ("https://news.google.com/rss/search?hl=en-IN&gl=IN&ceid=IN:en&q="
-            + quote(f"{query} when:7d"))
+            + quote(f"{query} when:{days}d"))
 
 
 _GN_NOTE = "Google News search; links are redirects, so it is scored from the headline"

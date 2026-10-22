@@ -34,7 +34,7 @@ from agent.embed import get_unembedded_items  # noqa: E402
 from agent.db import backed_off_source_ids  # noqa: E402
 from agent.config import DOMAINS  # noqa: E402
 from agent.publish_static import item_to_dict, split_by_label  # noqa: E402
-from agent.ingest import split_first_fetch  # noqa: E402
+from agent.ingest import gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
 from agent.triage import check_arxiv_gate  # noqa: E402
 import agent.score as score_mod  # noqa: E402
 
@@ -370,6 +370,19 @@ check("new source keeps its last 24h", [r["published_at"].day for r in _keep if 
 check("new source's older items stored as seen", [r["published_at"].day for r in _seen], [19])
 check("known sources unaffected", [r["source_id"] for r in _keep if r["published_at"].day == 10], ["old_feed"])
 check("no first-time sources: everything kept", len(split_first_fetch(_rows, set(), _now)[0]), 3)
+
+_busy = by_id("electrek")
+_recent = [{"title": "Tesla ships Cybercab", "published_at": datetime(2026, 10, 21, 9, 0, tzinfo=timezone.utc)}]
+_older = _recent + [{"title": "x", "published_at": datetime(2026, 10, 19, 9, 0, tzinfo=timezone.utc)}]
+check("short feed of a new source gets a Google News gap fill", needs_gap_fill(_busy, _recent, _now), True)
+check("feed reaching back 24h needs no gap fill", needs_gap_fill(_busy, _older, _now), False)
+check("Google News sources are never gap-filled",
+      needs_gap_fill(next(s for s in SOURCES if "news.google.com" in s.url), _recent, _now), False)
+_gn = [{"title": "Tesla ships Cybercab - Electrek", "source_id": "gn"},
+       {"title": "Rivian cuts prices - Electrek", "source_id": "gn"}]
+check("gap fill drops stories the feed already has and keeps the source",
+      [(r["title"], r["source_id"]) for r in gap_fill_rows(_busy, _recent, _gn)],
+      [("Rivian cuts prices", "electrek")])
 
 check("source ids are unique", len({s.id for s in SOURCES}), len(SOURCES))
 check("Google News feeds are encoded and limited to 7 days",

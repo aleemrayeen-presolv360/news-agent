@@ -291,8 +291,12 @@ def score_item(item: dict) -> ScoreResult:
         )
 
 
-def get_unscored_items(conn, limit: int | None = None) -> list[dict]:
-    """Get recent items that passed triage but haven't been scored. News first, papers after."""
+def get_unscored_items(conn, limit: int | None = None,
+                       ingested_hours: int | None = None) -> list[dict]:
+    """Get recent items that passed triage but haven't been scored. News first, papers after.
+
+    ingested_hours limits it to items fetched in the last N hours (the new-source run).
+    """
     with conn.cursor() as cur:
         query = """
             SELECT r.id, r.title, r.article_text, r.feed_summary,
@@ -303,11 +307,12 @@ def get_unscored_items(conn, limit: int | None = None) -> list[dict]:
             WHERE r.rules_pass = true
               AND m.score IS NULL
               AND r.published_at >= now() - make_interval(days => %s)
+              AND (%s::int IS NULL OR r.ingested_at >= now() - make_interval(hours => %s::int))
             ORDER BY (r.source_id = ANY(%s)), r.published_at DESC
         """
         if limit:
             query += f" LIMIT {limit}"
-        cur.execute(query, (PROCESS_DAYS, list(PAPER_SOURCES)))
+        cur.execute(query, (PROCESS_DAYS, ingested_hours, ingested_hours, list(PAPER_SOURCES)))
         return cur.fetchall()
 
 
@@ -366,7 +371,7 @@ def update_scores(conn, results: list[ScoreResult]) -> dict:
 BATCH_SIZE = 25  # Save to DB every N items to avoid connection timeout
 
 
-def run(dry_run: bool = False, limit: int | None = None) -> int:
+def run(dry_run: bool = False, limit: int | None = None, ingested_hours: int | None = None) -> int:
     """Main entry point."""
     if dry_run:
         print(f"\n{'=' * 60}")
@@ -419,7 +424,7 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
 
     # Get items with fresh connection
     with db.connect() as conn:
-        items = get_unscored_items(conn, limit)
+        items = get_unscored_items(conn, limit, ingested_hours)
     
     if not items:
         print("score: no items need scoring")
@@ -493,8 +498,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Score items using LLM.")
     ap.add_argument("--dry-run", action="store_true", help="test scoring without DB")
     ap.add_argument("--limit", type=int, help="only score N items")
+    ap.add_argument("--ingested-within-hours", type=int, help="only items fetched in the last N hours")
     args = ap.parse_args()
-    return run(dry_run=args.dry_run, limit=args.limit)
+    return run(dry_run=args.dry_run, limit=args.limit, ingested_hours=args.ingested_within_hours)
 
 
 if __name__ == "__main__":

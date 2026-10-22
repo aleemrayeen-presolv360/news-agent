@@ -70,6 +70,26 @@ def get_run_stats(conn, window) -> dict:
         return cur.fetchone()
 
 
+NEW_SOURCE_DAYS = 2   # how long Settings shows "Added today" for a source
+
+
+def get_new_sources(conn) -> list[dict]:
+    """Sources whose first items arrived in the last NEW_SOURCE_DAYS, newest first."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.name, min(r.ingested_at) AS added
+            FROM raw_items r JOIN sources s ON s.id = r.source_id
+            GROUP BY s.name
+            HAVING min(r.ingested_at) > now() - make_interval(days => %s)
+            ORDER BY added DESC, s.name
+            """,
+            (NEW_SOURCE_DAYS,),
+        )
+        return [{"name": r["name"], "added_at": r["added"].astimezone(IST).isoformat(timespec="seconds")}
+                for r in cur.fetchall()]
+
+
 def item_to_dict(item: dict) -> dict:
     """Convert DB row to frontend-friendly dict."""
     # Stories scored before domains existed have none; the website guesses those from keywords
@@ -116,6 +136,7 @@ def generate_data(conn, window) -> dict:
             "major_stories": len(groups["breaking"]) + len(groups["major"]),
             "notable_stories": len(groups["notable"]),
         },
+        "new_sources": get_new_sources(conn),
         **{label: [item_to_dict(i) for i in group] for label, group in groups.items()},
     }
 

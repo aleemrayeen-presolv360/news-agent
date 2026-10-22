@@ -19,8 +19,10 @@ import argparse
 import asyncio
 import json
 import sys
+import re
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlsplit
 
 import feedparser
 import httpx
@@ -29,7 +31,7 @@ from .config import (
     FEED_CONCURRENCY, FEED_TIMEOUT, FIRST_FETCH_HOURS, MAX_ITEM_AGE_DAYS, USER_AGENT,
 )
 from .normalize import normalize_entry, normalize_hf_paper
-from .sources import Source, enabled_sources
+from .sources import Source, _google_news, enabled_sources
 
 
 class FetchResult:
@@ -96,6 +98,51 @@ def split_first_fetch(rows: list[dict], first_ids: set[str],
     return keep, seen
 
 
+def needs_gap_fill(source: Source, rows: list[dict], now: datetime) -> bool:
+    """A new feed whose item list doesn't reach back FIRST_FETCH_HOURS.
+
+    Many feeds list only their last 10-50 items, so a busy channel's feed can
+    cover just the last few hours. Google News fills in the rest of the day.
+    """
+    if source.kind != "rss" or "news.google.com" in source.url or not rows:
+        return False
+    return min(r["published_at"] for r in rows) > now - timedelta(hours=FIRST_FETCH_HOURS)
+
+
+def _title_key(title: str) -> str:
+    return re.sub(r"\W+", " ", title.lower()).strip()[:60]
+
+
+def gap_fill_rows(source: Source, feed_rows: list[dict], gn_rows: list[dict]) -> list[dict]:
+    """Google News rows for this source that its own feed doesn't already carry."""
+    seen = {_title_key(r["title"]) for r in feed_rows}
+    out = []
+    for r in gn_rows:
+        title = re.sub(r"\s+-\s+[^-]+$", "", r["title"])   # drop the " - Publisher" suffix
+        if _title_key(title) in seen:
+            continue
+        seen.add(_title_key(title))
+        out.append({**r, "title": title, "source_id": source.id})
+    return out
+
+
+async def fetch_gap_fill(results: list[FetchResult], now: datetime) -> list[dict]:
+    """Last-day Google News rows for new sources whose feed is too short."""
+    todo = [r for r in results if needs_gap_fill(r.source, r.rows, now)]
+    if not todo:
+        return []
+    searches = [
+        Source(id=r.source.id, name=r.source.name, tier=r.source.tier,
+               url=_google_news(f"site:{urlsplit(r.source.url).hostname.removeprefix('www.')}", days=1))
+        for r in todo
+    ]
+    found = await fetch_all(searches)
+    rows = []
+    for r, gn in zip(todo, found):
+        rows += gap_fill_rows(r.source, r.rows, gn.rows)
+    return rows
+
+
 async def fetch_all(sources: list[Source]) -> list[FetchResult]:
     sem = asyncio.Semaphore(FEED_CONCURRENCY)
     headers = {
@@ -145,7 +192,11 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
     from . import db
     with db.connect() as conn:
         first_ids = db.first_fetch_source_ids(conn) & {r.source.id for r in ok}
-        keep, seen = split_first_fetch(all_rows, first_ids, datetime.now(timezone.utc))
+        now = datetime.now(timezone.utc)
+        gap_rows = asyncio.run(fetch_gap_fill([r for r in ok if r.source.id in first_ids], now))
+        if gap_rows:
+            print(f"ingest: {len(gap_rows)} extra items from Google News for busy new sources")
+        keep, seen = split_first_fetch(all_rows + gap_rows, first_ids, now)
         new_urls = db.insert_items(conn, keep)
         # After the real rows, so an article another feed also carries is processed normally
         db.insert_items(conn, seen, skip_reason=FIRST_FETCH_REASON)

@@ -123,6 +123,11 @@ const Stories = {
         return window.digestData?.stats || {};
     },
 
+    /** Pipeline sources added in the last 2 days: [{ name, added_at }]. */
+    newSources() {
+        return window.digestData?.new_sources || [];
+    },
+
     generatedAt() {
         return window.digestData?.generated_at || null;
     },

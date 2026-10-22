@@ -42,6 +42,20 @@ const Settings = {
         return Stories.fromSource(source.name).length;
     },
 
+    /** When the pipeline first fetched this source, if that was in the last 2 days. Matched by name. */
+    addedAt(source) {
+        const name = Util.normalize(source.name);
+        return Stories.newSources().find(s => Util.normalize(s.name) === name)?.added_at || null;
+    },
+
+    newSourcesCallout() {
+        const added = Stories.newSources();
+        if (!added.length) return '';
+        const names = added.slice(0, 6).map(s => Util.esc(s.name)).join(', ')
+            + (added.length > 6 ? ` and ${added.length - 6} more` : '');
+        return `<p class="callout">Added recently: ${names}. Each new source shows its last 24 hours of stories straight away, then updates with everything else.</p>`;
+    },
+
     // ---------- Rendering ----------
 
     async render(parts) {
@@ -249,6 +263,7 @@ const Settings = {
                 <div><strong>${this.sources.length - off}</strong>on for everyone</div>
                 <div><span class="status status-off"></span><strong>${off}</strong>turned off</div>
             </div>
+            ${this.newSourcesCallout()}
             ${this.sourceToolbarHtml()}
             <div class="table-wrap" id="source-table">${this.adminSourcesTable()}</div>
             <p class="callout">Turning a source off hides its stories for everyone. Every change is recorded in the audit log.</p>`;
@@ -263,9 +278,10 @@ const Settings = {
                 <tbody>${rows.map(s => {
                     const on = s.enabled !== false;
                     const n = this.storyCount(s);
+                    const added = this.addedAt(s);
                     return `
                     <tr class="${on ? '' : 'is-off'}">
-                        <td>${Util.esc(s.name)}<small>${Util.esc(s.url)}</small></td>
+                        <td>${Util.esc(s.name)}${added ? ` <span class="tag-new" title="First fetched ${Util.esc(Util.dateTime(added))}">Added ${Util.esc(Util.relative(added))}</span>` : ''}<small>${Util.esc(s.url)}</small></td>
                         <td>${Util.esc(CONFIG.CATEGORIES[s.category] || s.category)}</td>
                         <td class="num">${n || '<span class="muted">None</span>'}</td>
                         <td><span class="status ${on ? 'status-ok' : 'status-off'}">${on ? 'On' : 'Off for everyone'}</span></td>
