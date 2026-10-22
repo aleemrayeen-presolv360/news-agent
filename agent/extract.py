@@ -18,6 +18,7 @@ import httpx
 import trafilatura
 
 from .config import FEED_TIMEOUT, PROCESS_DAYS, USER_AGENT
+from .sources import PAPER_SOURCES
 
 # Patterns that indicate a paywall or login wall
 _PAYWALL_SIGNALS = (
@@ -112,7 +113,7 @@ async def extract_batch(urls: list[str], concurrency: int = 5) -> list[ExtractRe
 
 
 def get_unextracted_items(conn, limit: int | None = None) -> list[dict]:
-    """Get recent items that passed triage and still need text extraction."""
+    """Get recent items that passed triage and still need text extraction. News first, papers after."""
     with conn.cursor() as cur:
         query = """
             SELECT id, url_canonical, url_original, title, feed_summary
@@ -121,11 +122,11 @@ def get_unextracted_items(conn, limit: int | None = None) -> list[dict]:
               AND paywalled = false
               AND rules_pass IS TRUE
               AND published_at >= now() - make_interval(days => %s)
-            ORDER BY published_at DESC
+            ORDER BY (source_id = ANY(%s)), published_at DESC
         """
         if limit:
             query += f" LIMIT {limit}"
-        cur.execute(query, (PROCESS_DAYS,))
+        cur.execute(query, (PROCESS_DAYS, list(PAPER_SOURCES)))
         return cur.fetchall()
 
 
@@ -154,6 +155,12 @@ def update_extracted(conn, results: list[ExtractResult]) -> dict:
                 )
                 stats["paywalled"] += 1
             else:
+                # '' means "tried and failed": later stages fall back to the feed
+                # summary, and the item stops taking a slot in every future run.
+                cur.execute(
+                    "UPDATE raw_items SET article_text = '' WHERE url_canonical = %s",
+                    (r.url,),
+                )
                 stats["failed"] += 1
 
     return stats

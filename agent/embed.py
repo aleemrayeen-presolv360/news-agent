@@ -13,7 +13,8 @@ from __future__ import annotations
 import argparse
 from typing import TYPE_CHECKING
 
-from .config import EMBED_MODEL, EMBED_DIM
+from .config import EMBED_DIM, EMBED_MODEL, PROCESS_DAYS
+from .sources import PAPER_SOURCES
 
 if TYPE_CHECKING:
     from fastembed import TextEmbedding
@@ -60,7 +61,7 @@ def prepare_text(title: str, article_text: str | None, feed_summary: str | None)
 
 
 def get_unembedded_items(conn, limit: int | None = None) -> list[dict]:
-    """Get items that have text but no embedding yet."""
+    """Get recent items that have text but no embedding yet. News first, papers after."""
     with conn.cursor() as cur:
         query = """
             SELECT r.id, r.url_canonical, r.title, r.article_text, r.feed_summary
@@ -69,11 +70,12 @@ def get_unembedded_items(conn, limit: int | None = None) -> list[dict]:
             WHERE m.id IS NULL
               AND r.rules_pass IS TRUE
               AND (r.article_text IS NOT NULL OR r.feed_summary IS NOT NULL)
-            ORDER BY r.published_at DESC
+              AND r.published_at >= now() - make_interval(days => %s)
+            ORDER BY (r.source_id = ANY(%s)), r.published_at DESC
         """
         if limit:
             query += f" LIMIT {limit}"
-        cur.execute(query)
+        cur.execute(query, (PROCESS_DAYS, list(PAPER_SOURCES)))
         return cur.fetchall()
 
 

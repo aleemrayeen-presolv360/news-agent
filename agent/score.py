@@ -53,6 +53,7 @@ class ScoreResult:
     market_impact: str | None
     error: str | None
     domain: str = "other"
+    model: str = ""
 
 
 SCORING_PROMPT = """You score news for News Intel, a briefing read by the team at an Indian legal-tech company. They follow important developments across ALL of technology and science, plus Indian legal and business news.
@@ -205,7 +206,7 @@ _INDIA_HINT = re.compile(
 )
 
 
-def _result(item: dict, parsed: dict) -> ScoreResult:
+def _result(item: dict, parsed: dict, model: str) -> ScoreResult:
     domain = parsed["domain"]
     text = f"{item['title']} {item.get('article_text') or item.get('feed_summary') or ''}"
     if domain == "legal_india" and not _INDIA_HINT.search(text):
@@ -221,6 +222,7 @@ def _result(item: dict, parsed: dict) -> ScoreResult:
         market_impact=parsed["market_impact"],
         error=None,
         domain=domain,
+        model=model,
     )
 
 
@@ -235,13 +237,13 @@ def score_item(item: dict) -> ScoreResult:
 
     # Try Groq first
     try:
-        return _result(item, _parse_score_response(_call_groq(prompt), item["tier"]))
+        return _result(item, _parse_score_response(_call_groq(prompt), item["tier"]), "groq")
     except Exception as e:  # noqa: BLE001
         groq_error = str(e)
 
     # Fallback to Cloudflare
     try:
-        return _result(item, _parse_score_response(_call_cloudflare(prompt), item["tier"]))
+        return _result(item, _parse_score_response(_call_cloudflare(prompt), item["tier"]), "cloudflare")
     except Exception as e:  # noqa: BLE001
         return ScoreResult(
             item_id=item["id"],
@@ -278,7 +280,7 @@ def get_unscored_items(conn, limit: int | None = None) -> list[dict]:
 
 def update_scores(conn, results: list[ScoreResult]) -> dict:
     """Update news_memory with scores."""
-    stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0}
+    stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "cloudflare": 0}
     
     with conn.cursor() as cur:
         for r in results:
@@ -291,6 +293,7 @@ def update_scores(conn, results: list[ScoreResult]) -> dict:
                 "impact": r.impact,
                 "relevance": r.relevance,
                 "domain": r.domain,
+                "model": r.model,
             }
             
             cur.execute(
@@ -313,6 +316,7 @@ def update_scores(conn, results: list[ScoreResult]) -> dict:
                 ),
             )
             stats["scored"] += 1
+            stats["cloudflare"] += r.model == "cloudflare"
             
             # Track score distribution
             if r.score >= SCORE_BREAKING:
@@ -389,7 +393,7 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
 
     print(f"score: processing {len(items)} items...")
 
-    total_stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0}
+    total_stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "cloudflare": 0}
     batch_results = []
     
     for i, item in enumerate(items):
@@ -408,7 +412,8 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
 
     print(
         f"score: {total_stats['scored']} scored, {total_stats['failed']} failed | "
-        f"breaking={total_stats['breaking']}, major={total_stats['major']}, notable={total_stats['notable']}"
+        f"breaking={total_stats['breaking']}, major={total_stats['major']}, notable={total_stats['notable']} | "
+        f"cloudflare fallback={total_stats['cloudflare']}"
     )
 
     return 0

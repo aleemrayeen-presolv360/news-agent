@@ -50,12 +50,12 @@ jobs:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Extract articles
-        run: python -m agent.extract --limit 400
+        run: python -m agent.extract --limit 800
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
       - name: Generate embeddings
-        run: python -m agent.embed --limit 400
+        run: python -m agent.embed --limit 1000
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 

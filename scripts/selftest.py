@@ -27,7 +27,10 @@ from agent.normalize import (  # noqa: E402
 from agent.sources import (  # noqa: E402
     ARXIV_SOURCES, PAPER_SOURCES, SOURCES, by_id, enabled_sources,
 )
-from agent.extract import _extract_text, _PAYWALL_SIGNALS  # noqa: E402
+from agent.extract import (  # noqa: E402
+    ExtractResult, _extract_text, _PAYWALL_SIGNALS, get_unextracted_items, update_extracted,
+)
+from agent.embed import get_unembedded_items  # noqa: E402
 from agent.config import DOMAINS  # noqa: E402
 from agent.publish_static import item_to_dict, split_by_label  # noqa: E402
 from agent.ingest import split_first_fetch  # noqa: E402
@@ -277,7 +280,7 @@ check("missing domain becomes other",
 
 
 def _domain_for(title, domain):
-    return score_mod._result({"id": 1, "title": title}, {**parsed, "domain": domain}).domain
+    return score_mod._result({"id": 1, "title": title}, {**parsed, "domain": domain}, "groq").domain
 
 
 check("legal_india kept for Indian courts", _domain_for("Delhi High Court rules on ODR", "legal_india"), "legal_india")
@@ -292,6 +295,53 @@ check("website gets domain and category",
           {**row, "score_breakdown": {"domain": "business"}},
           {**row, "score_breakdown": None}])],
       [("space", "tech"), ("legal_india", "legal"), ("business", "market"), (None, None)])
+
+# ------------------------------------------------------------ pipeline queues
+print("\npipeline queues")
+
+_reply = '{"domain": "space", "novelty": 10, "impact": 10, "relevance": 10}'
+_item = {"id": 1, "title": "t", "source_name": "s", "tier": "A"}
+with mock.patch.object(score_mod, "_call_groq", return_value=_reply):
+    check("Groq score records its model", score_mod.score_item(_item).model, "groq")
+with mock.patch.object(score_mod, "_call_groq", side_effect=RuntimeError("429")), \
+     mock.patch.object(score_mod, "_call_cloudflare", return_value=_reply):
+    check("fallback score records cloudflare", score_mod.score_item(_item).model, "cloudflare")
+
+
+class _FakeCur:
+    def __init__(self):
+        self.sql = []
+
+    def execute(self, q, params=None):
+        self.sql.append((" ".join(q.split()), params))
+
+    def fetchall(self):
+        return []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+class _FakeConn:
+    def __init__(self):
+        self.cur = _FakeCur()
+
+    def cursor(self):
+        return self.cur
+
+
+_c = _FakeConn()
+update_extracted(_c, [ExtractResult(url="https://x/1", text=None, paywalled=False, error="timeout")])
+check("failed download marked as tried", _c.cur.sql[0][0].startswith("UPDATE raw_items SET article_text = ''"), True)
+for _fn in (get_unextracted_items, get_unembedded_items):
+    _c = _FakeConn()
+    _fn(_c, 10)
+    _q, _params = _c.cur.sql[0]
+    check(f"{_fn.__name__}: news first, last PROCESS_DAYS only",
+          ("ORDER BY (" in _q and "make_interval" in _q, list(PAPER_SOURCES) in _params), (True, True))
 
 # ------------------------------------------------------------ first fetch
 print("\nfirst fetch")
