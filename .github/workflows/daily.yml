@@ -86,7 +86,7 @@ jobs:
 
       - name: Extract articles
         if: steps.fresh.outputs.skip != 'true'
-        run: python -m agent.extract --limit 800
+        run: python -m agent.extract --limit 300
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
 
