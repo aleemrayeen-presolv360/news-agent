@@ -29,9 +29,10 @@ import httpx
 
 from .config import (
     FEED_CONCURRENCY, FEED_TIMEOUT, FIRST_FETCH_HOURS, MAX_ITEM_AGE_DAYS, USER_AGENT,
+    supabase_settings,
 )
 from .normalize import normalize_entry, normalize_hf_paper
-from .sources import Source, _google_news, enabled_sources
+from .sources import Source, _google_news, enabled_sources, requested_sources
 
 
 class FetchResult:
@@ -155,19 +156,41 @@ async def fetch_all(sources: list[Source]) -> list[FetchResult]:
         return await asyncio.gather(*(_fetch_one(client, s, sem) for s in sources))
 
 
+def fetch_requested_sources() -> list[Source]:
+    """Approved source requests from the website. Supabase being down only skips them this run."""
+    url, key = supabase_settings()
+    if not url or not key:
+        return []
+    try:
+        resp = httpx.get(f"{url}/rest/v1/source_request",
+                         params={"status": "eq.approved", "select": "id,name,url,requester_email",
+                                 "order": "id"},
+                         headers={"apikey": key, "Authorization": f"Bearer {key}"},
+                         timeout=FEED_TIMEOUT)
+        resp.raise_for_status()
+        return requested_sources(resp.json())
+    except (httpx.HTTPError, ValueError) as e:
+        print(f"ingest: couldn't read approved source requests from Supabase ({e}); "
+              "skipping them this run", file=sys.stderr)
+        return []
+
+
 def run(dry_run: bool = False, limit: int | None = None) -> int:
     sources = enabled_sources()
     if limit:
         sources = sources[:limit]
+    requested = fetch_requested_sources()
     backed_off: set[str] = set()
-    if not dry_run:
+    if dry_run:
+        sources += requested
+    else:
         from . import db
         with db.connect() as conn:
             db.ensure_trend_table(conn)
             trend_sources = db.active_trend_sources(conn)
-            db.sync_sources(conn, trend_sources)
+            db.sync_sources(conn, trend_sources + requested)
             backed_off = db.backed_off_source_ids(conn)
-        sources = [s for s in sources + trend_sources if s.id not in backed_off]
+        sources = [s for s in sources + trend_sources + requested if s.id not in backed_off]
 
     results = asyncio.run(fetch_all(sources))
 

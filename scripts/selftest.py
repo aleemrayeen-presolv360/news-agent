@@ -25,7 +25,7 @@ from agent.normalize import (  # noqa: E402
     canonical_url, clean_text, normalize_entry, normalize_hf_paper,
 )
 from agent.sources import (  # noqa: E402
-    ARXIV_SOURCES, PAPER_SOURCES, SOURCES, by_id, enabled_sources,
+    ARXIV_SOURCES, PAPER_SOURCES, SOURCES, by_id, enabled_sources, requested_sources,
 )
 from agent.extract import (  # noqa: E402
     ExtractResult, _extract_text, _PAYWALL_SIGNALS, get_unextracted_items, update_extracted,
@@ -33,7 +33,7 @@ from agent.extract import (  # noqa: E402
 from agent.embed import get_unembedded_items  # noqa: E402
 from agent.db import backed_off_source_ids  # noqa: E402
 from agent.trends import parse_picks  # noqa: E402
-from agent.config import DOMAINS  # noqa: E402
+from agent.config import DOMAINS, supabase_settings  # noqa: E402
 from agent.publish_static import item_to_dict, split_by_label  # noqa: E402
 from agent.ingest import gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
 from agent.triage import check_arxiv_gate  # noqa: E402
@@ -178,6 +178,21 @@ check("disabled sources carry an explanatory note",
       all(s.note for s in SOURCES if not s.enabled), True)
 check("arxiv polled per-category, never combined",
       all("+" not in s.url for s in SOURCES if "arxiv" in s.id), True)
+
+# ------------------------------------------------------------ source requests
+print("\nsource requests")
+req = requested_sources([
+    {"id": 7, "name": "Laravel News", "url": "https://feed.laravel-news.com/", "requester_email": "a@b.c"},
+    {"id": 8, "name": "Electrek again", "url": "https://electrek.co/feed"},          # already in sources.py
+    {"id": 9, "name": "Bad scheme", "url": "javascript:alert(1)"},
+    {"id": 10, "name": "", "url": "https://example.com/feed"},
+    {"id": 11, "name": "Laravel twice", "url": "https://feed.laravel-news.com"},
+])
+check("approved request becomes a tier-D source", [(s.id, s.tier) for s in req], [("req_7", "D")])
+check("request ids never clash with sources.py", all(not s.id.startswith("req_") for s in SOURCES), True)
+with mock.patch.dict(os.environ, {"SUPABASE_URL": "", "SUPABASE_ANON_KEY": ""}):
+    sb_url, sb_key = supabase_settings()
+check("supabase settings read from frontend config.js", (sb_url.startswith("https://"), len(sb_key) > 40), (True, True))
 
 # ------------------------------------------------------------ extract
 print("\nextract")

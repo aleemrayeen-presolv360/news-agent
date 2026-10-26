@@ -4,14 +4,32 @@
      - Breaking stories from the last few days that you haven't read (everyone)
      - the news being out of date because the daily update didn't run (everyone)
      - pipeline problems from data.js "health" (admins), with details in Settings → Sources
+     - an admin's answer to your source request, and source requests waiting (admins)
    The tab title also counts unread Breaking stories, so it shows while the tab is in the background.
 */
 
 const Notices = {
     BREAKING_DAYS: 3,     // Breaking stories older than this no longer get a notice
     STALE_HOURS: 30,      // data.js is rewritten every morning; older than this means the update failed
+    ANSWER_DAYS: 14,      // an admin's answer to your request shows until dismissed, for this long
 
     el: null,
+    pendingRequests: 0,   // admins: source requests waiting for a decision
+    answers: [],          // your requests an admin decided on
+
+    /** Source requests come from Supabase, not data.js, so they load after sign-in. */
+    async loadRequests() {
+        const me = Auth.currentUser;
+        const since = Date.now() - this.ANSWER_DAYS * 86400000;
+        this.answers = (await db.getSourceRequests({ mine: true }))
+            .filter(r => (r.status === 'approved' || r.status === 'rejected') && r.reviewed_at)
+            .filter(r => r.reviewed_by_email !== me?.email)     // an admin's own "Add source" isn't news to them
+            .filter(r => new Date(r.reviewed_at).getTime() >= since);
+        this.pendingRequests = Auth.isAdmin()
+            ? (await db.getSourceRequests()).filter(r => r.status === 'pending').length
+            : 0;
+        this.render();
+    },
 
     init() {
         this.el = document.getElementById('notice-bar');
@@ -78,6 +96,27 @@ const Notices = {
                 <div class="notice" role="status">
                     <p class="notice-text"><strong>The news pipeline needs a look.</strong> ${warnings.length === 1 ? Util.esc(warnings[0]) : `${warnings.length} issues.`}</p>
                     <a class="notice-more" href="#/settings/sources">See details</a>
+                </div>`);
+        }
+
+        for (const r of this.answers.filter(a => !UserState.isNoticeDismissed(`request-${a.id}`))) {
+            const text = r.status === 'approved'
+                ? `<strong>${Util.esc(r.name)} was approved.</strong> Its stories start appearing after the next morning update.`
+                : `<strong>${Util.esc(r.name)} was not added.</strong> ${Util.esc(r.review_note || '')}`;
+            items.push(`
+                <div class="notice" role="status">
+                    <p class="notice-text">${text}</p>
+                    <a class="notice-more" href="#/settings/requests">Your requests</a>
+                    <button type="button" class="notice-close" data-dismiss="request-${Util.esc(r.id)}" aria-label="Dismiss this notice">✕</button>
+                </div>`);
+        }
+
+        if (this.pendingRequests) {
+            const n = this.pendingRequests;
+            items.push(`
+                <div class="notice" role="status">
+                    <p class="notice-text"><strong>${n} source ${n === 1 ? 'request is' : 'requests are'} waiting</strong> for an admin to approve or reject.</p>
+                    <a class="notice-more" href="#/settings/admin-requests">Review</a>
                 </div>`);
         }
 

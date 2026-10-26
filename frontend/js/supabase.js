@@ -2,7 +2,7 @@
    Data access: Supabase when configured, with a localStorage fallback so the app
    keeps working in demo mode or when Supabase is unreachable.
 
-   Tables (Supabase): profile, note, source, audit_log
+   Tables (Supabase): profile, note, source, source_request, audit_log
 */
 
 let supabaseClient = null;
@@ -157,20 +157,20 @@ async function getSources() {
     }
 }
 
-async function addSource(source) {
+async function addSource(source, { log = true } = {}) {
+    let saved;
     if (!supabaseClient) {
         const sources = Util.load('sources', []);
-        const saved = { ...source, id: Date.now(), created_at: new Date().toISOString() };
+        saved = { ...source, id: Date.now(), created_at: new Date().toISOString() };
         sources.push(saved);
         Util.save('sources', sources);
-        await logAudit('source_add', `Added source: ${source.name}`);
-        return saved;
+    } else {
+        const { data, error } = await supabaseClient.from('source').insert(source).select().single();
+        if (error) throw error;
+        saved = data;
     }
-
-    const { data, error } = await supabaseClient.from('source').insert(source).select().single();
-    if (error) throw error;
-    await logAudit('source_add', `Added source: ${source.name}`);
-    return data;
+    if (log) await logAudit('source_add', `Added source: ${source.name}`);
+    return saved;
 }
 
 async function updateSource(id, updates) {
@@ -186,6 +186,89 @@ async function updateSource(id, updates) {
     const { data, error } = await supabaseClient.from('source').update(updates).eq('id', id).select().single();
     if (error) throw error;
     return data;
+}
+
+// ==================== SOURCE REQUESTS ====================
+// Members ask for a feed; an admin approves or rejects it. The pipeline fetches approved rows.
+
+const LOCAL_REQUESTS_KEY = 'source_requests';
+
+/** All requests (admins), or only the signed-in person's own (members). Newest first. */
+async function getSourceRequests({ mine = false } = {}) {
+    const user = await getUser();
+    if (!supabaseClient) {
+        const all = Util.load(LOCAL_REQUESTS_KEY, []);
+        return mine ? all.filter(r => r.requested_by === user?.id) : all;
+    }
+    try {
+        let query = supabaseClient.from('source_request').select('*').order('created_at', { ascending: false });
+        if (mine) query = query.eq('requested_by', user?.id);
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+    } catch (e) {
+        console.error('getSourceRequests error:', e);
+        return [];
+    }
+}
+
+/** Ask for a source. An admin's own request is approved straight away. */
+async function requestSource({ name, url, category, reason }, { approve = false } = {}) {
+    const user = await getUser();
+    const now = new Date().toISOString();
+    const row = {
+        name, url, category, reason: reason || null,
+        status: approve ? 'approved' : 'pending',
+        requested_by: user?.id || null,
+        requester_email: user?.email || null,
+        ...(approve ? { reviewed_by_email: user?.email || null, reviewed_at: now } : {})
+    };
+
+    let saved;
+    if (!supabaseClient) {
+        saved = { ...row, id: Date.now(), created_at: now };
+        Util.save(LOCAL_REQUESTS_KEY, [saved, ...Util.load(LOCAL_REQUESTS_KEY, [])]);
+    } else {
+        const { data, error } = await supabaseClient.from('source_request').insert(row).select().single();
+        if (error) throw error;
+        saved = data;
+    }
+    if (approve) await addSource({ name, url, category, enabled: true });
+    else await logAudit('source_request', `Requested source: ${name} (${url})`);
+    return saved;
+}
+
+/** Approve or reject (admins), or withdraw (the requester). A reject needs a note. */
+async function reviewSourceRequest(request, status, note = '') {
+    const user = await getUser();
+    const updates = status === 'withdrawn'
+        ? { status }
+        : { status, review_note: note || null, reviewed_by_email: user?.email || null, reviewed_at: new Date().toISOString() };
+
+    if (!supabaseClient) {
+        const all = Util.load(LOCAL_REQUESTS_KEY, []);
+        const match = all.find(r => String(r.id) === String(request.id));
+        if (match) Object.assign(match, updates);
+        Util.save(LOCAL_REQUESTS_KEY, all);
+    } else {
+        // Only change a request that is still pending, so two admins can't decide it twice
+        const { data, error } = await supabaseClient.from('source_request')
+            .update(updates).eq('id', request.id).eq('status', 'pending').select();
+        if (error) throw error;
+        if (!data?.length) throw new Error('This request was already decided.');
+    }
+
+    if (status === 'approved') {
+        // List it in Settings so it can be hidden or turned off like any other source
+        const sources = await getSources();
+        if (!sources.some(s => s.url === request.url)) {
+            await addSource({ name: request.name, url: request.url, category: request.category, enabled: true }, { log: false });
+        }
+        await logAudit('source_approve', `Approved ${request.name} (${request.url}), requested by ${request.requester_email || 'unknown'}`);
+    }
+    if (status === 'rejected') {
+        await logAudit('source_reject', `Rejected ${request.name} (${request.url}), requested by ${request.requester_email || 'unknown'}: ${note}`);
+    }
 }
 
 /** Fill an empty source table with the default feed list (first run only). */
@@ -293,6 +376,9 @@ window.db = {
     addSource,
     updateSource,
     seedSources,
+    getSourceRequests,
+    requestSource,
+    reviewSourceRequest,
     logAudit,
     getAuditLog,
     getUsers,

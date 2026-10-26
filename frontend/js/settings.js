@@ -1,8 +1,9 @@
 /*
-   Settings: preferences, my sources and account for everyone;
-   sources, users and audit log for admins.
+   Settings: preferences, my sources, source requests and account for everyone;
+   sources, source requests to review, users and audit log for admins.
 
-   Routes: #/settings/preferences | sources | account | admin-sources | users | audit
+   Routes: #/settings/preferences | sources | requests | account
+           | admin-sources | admin-requests | users | audit
 */
 
 const Settings = {
@@ -10,12 +11,16 @@ const Settings = {
     page: 'preferences',
     sources: [],
     sourceFilter: { query: '', category: 'all' },
+    requests: [],
+    rejecting: null,      // id of the request whose reject reason is being typed
 
     PAGES: {
         preferences: { title: 'Preferences' },
         sources: { title: 'My sources' },
+        requests: { title: 'Request a source' },
         account: { title: 'Account and password' },
         'admin-sources': { title: 'Sources', admin: true },
+        'admin-requests': { title: 'Source requests', admin: true },
         users: { title: 'Users', admin: true },
         audit: { title: 'Audit log', admin: true }
     },
@@ -68,8 +73,8 @@ const Settings = {
             <div class="settings">
                 <nav class="settings-nav" aria-label="Settings">
                     <h2>You</h2>
-                    ${this.navLink('preferences')}${this.navLink('sources')}${this.navLink('account')}
-                    ${Auth.isAdmin() ? `<div class="admin-group"><h2>Admin</h2>${this.navLink('admin-sources')}${this.navLink('users')}${this.navLink('audit')}</div>` : ''}
+                    ${this.navLink('preferences')}${this.navLink('sources')}${this.navLink('requests')}${this.navLink('account')}
+                    ${Auth.isAdmin() ? `<div class="admin-group"><h2>Admin</h2>${this.navLink('admin-sources')}${this.navLink('admin-requests', Notices.pendingRequests)}${this.navLink('users')}${this.navLink('audit')}</div>` : ''}
                 </nav>
                 <div class="settings-body" id="settings-body"><p class="muted">Loading…</p></div>
             </div>`;
@@ -81,6 +86,11 @@ const Settings = {
             await this.loadSources();
             body.innerHTML = page === 'sources' ? this.mySourcesHtml() : this.adminSourcesHtml();
         }
+        if (page === 'requests' || page === 'admin-requests') {
+            await this.loadSources();
+            this.requests = await db.getSourceRequests({ mine: page === 'requests' });
+            body.innerHTML = page === 'requests' ? this.myRequestsHtml() : this.adminRequestsHtml();
+        }
         if (page === 'users') body.innerHTML = await this.usersHtml();
         if (page === 'audit') {
             this.auditEntries = await db.getAuditLog();
@@ -88,8 +98,9 @@ const Settings = {
         }
     },
 
-    navLink(page) {
-        return `<a href="#/settings/${page}" ${this.page === page ? 'aria-current="page"' : ''}>${this.PAGES[page].title}</a>`;
+    navLink(page, count = 0) {
+        const badge = count ? `<span class="nav-badge" aria-label="${count} waiting">${count}</span>` : '';
+        return `<a href="#/settings/${page}" ${this.page === page ? 'aria-current="page"' : ''}>${this.PAGES[page].title}${badge}</a>`;
     },
 
     // ---------- Preferences ----------
@@ -357,32 +368,253 @@ const Settings = {
                 nameEl.setAttribute('aria-invalid', 'true');
                 return nameEl.focus();
             }
-            if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
-            try { new URL(url); } catch {
-                error.textContent = 'Enter a feed address, such as techcrunch.com/feed.';
-                urlEl.setAttribute('aria-invalid', 'true');
-                return urlEl.focus();
-            }
-            if (this.sources.some(s => s.url === url)) {
-                error.textContent = `This feed is already listed as ${this.sources.find(s => s.url === url).name}.`;
+            url = this.cleanFeedUrl(url);
+            const problem = url ? this.feedUrlProblem(url) : 'Enter a feed address, such as techcrunch.com/feed.';
+            if (problem) {
+                error.textContent = problem;
                 urlEl.setAttribute('aria-invalid', 'true');
                 return urlEl.focus();
             }
 
             error.textContent = '';
             try {
-                await db.addSource({ name, url, category: document.getElementById('source-category').value, enabled: true });
+                // Stored as an approved request: that's the list the news pipeline fetches
+                await db.requestSource({ name, url, category: document.getElementById('source-category').value }, { approve: true });
             } catch (err) {
                 console.error(err);
-                error.textContent = "Couldn't add the source. Check your connection and try again.";
+                error.textContent = this.saveErrorText(err, "Couldn't add the source.");
                 return;
             }
             dialog.close();
             e.target.reset();
             await this.loadSources();
             this.refreshSourceTable();
-            Util.toast(`${name} added. The pipeline will pick it up on its next run.`);
+            Util.toast(`${name} added. ${this.ARRIVAL_TEXT}`, { timeout: 8000 });
         });
+    },
+
+    // ---------- Source requests ----------
+
+    ARRIVAL_TEXT: 'It is fetched within 4 hours, and its stories appear after the next morning update (about 7:30 AM).',
+
+    REQUEST_STATUS: {
+        pending: { text: 'Waiting for an admin', css: 'status-wait' },
+        approved: { text: 'Approved', css: 'status-ok' },
+        rejected: { text: 'Rejected', css: 'status-off' },
+        withdrawn: { text: 'Withdrawn', css: 'status-off' }
+    },
+
+    /** "techcrunch.com/feed" → "https://techcrunch.com/feed", or null when it isn't a web address. */
+    cleanFeedUrl(raw) {
+        let url = raw.trim();
+        if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
+        try {
+            return new URL(url).hostname.includes('.') ? url : null;
+        } catch {
+            return null;
+        }
+    },
+
+    /** Why this feed can't be added, or '' when it can. Checks the source list and the requests on screen. */
+    feedUrlProblem(url) {
+        const same = u => (u || '').replace(/\/+$/, '').toLowerCase() === url.replace(/\/+$/, '').toLowerCase();
+        const listed = this.sources.find(s => same(s.url));
+        if (listed) return `This feed is already a source: ${listed.name}.`;
+        const open = this.requests.find(r => same(r.url) && r.status === 'pending');
+        if (open) return `This feed has already been requested and is waiting for an admin.`;
+        return '';
+    },
+
+    /** Supabase's unique index stops two open requests for the same feed. */
+    saveErrorText(err, fallback) {
+        if (err?.code === '23505') return 'Someone has already asked for this feed. An admin will decide on it.';
+        if (err?.code === '42P01' || /source_request/.test(err?.message || '')) return `${fallback} The source_request table is missing in Supabase; an admin needs to run sql/supabase.sql.`;
+        return `${fallback} Check your connection and try again.`;
+    },
+
+    requestStatus(r) {
+        const s = this.REQUEST_STATUS[r.status] || { text: r.status, css: 'status-off' };
+        return `<span class="status ${s.css}">${s.text}</span>`;
+    },
+
+    requestSourceCell(r) {
+        return `${Util.esc(r.name)}<small><a href="${Util.esc(r.url)}" target="_blank" rel="noopener">${Util.esc(r.url)}</a></small>`;
+    },
+
+    myRequestsHtml() {
+        const option = ([id, name]) => `<option value="${id}">${Util.esc(name)}</option>`;
+        return `
+            <div class="settings-head"><h1>Request a source</h1></div>
+            <p class="settings-lede">Know a news site, blog or newsletter the team should follow? Ask for it here. An admin approves or rejects each request, and you'll see the answer on this page and at the top of the site.</p>
+            <form class="account-form request-form" id="request-form" novalidate>
+                <div class="field">
+                    <label for="request-url">Feed address</label>
+                    <input id="request-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="laravel-news.com/feed…">
+                    <span class="hint">An RSS or Atom feed works best. Most news sites have one at /feed or /rss.</span>
+                </div>
+                <div class="field">
+                    <label for="request-name">Name</label>
+                    <input id="request-name" type="text" autocomplete="off" required placeholder="Laravel News…">
+                </div>
+                <div class="field">
+                    <label for="request-category">Category</label>
+                    <select id="request-category">${Object.entries(CONFIG.CATEGORIES).map(option).join('')}</select>
+                </div>
+                <div class="field">
+                    <label for="request-reason">Why is it useful? <span class="muted">(optional)</span></label>
+                    <textarea id="request-reason" rows="2" maxlength="300" placeholder="Covers PHP releases we build on…"></textarea>
+                </div>
+                <p class="form-error" id="request-error" aria-live="polite"></p>
+                <div><button type="submit" class="btn btn-primary">Send request</button></div>
+            </form>
+            <h2 class="section-title">Your requests</h2>
+            <div class="table-wrap" id="request-table">${this.myRequestsTable()}</div>`;
+    },
+
+    myRequestsTable() {
+        if (!this.requests.length) return '<p class="empty-state">No requests yet.</p>';
+        return `
+            <table>
+                <thead><tr><th scope="col">Source</th><th scope="col">Asked</th><th scope="col">Status</th><th scope="col">Admin's note</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+                <tbody>${this.requests.map(r => {
+                    const n = r.status === 'approved' ? this.storyCount(r) : 0;
+                    const note = r.status === 'approved'
+                        ? (n ? `${n} ${n === 1 ? 'story' : 'stories'} so far` : 'Stories appear after the next morning update')
+                        : (r.review_note || '');
+                    return `
+                    <tr class="${r.status === 'withdrawn' ? 'is-off' : ''}">
+                        <td>${this.requestSourceCell(r)}</td>
+                        <td>${Util.esc(Util.relative(r.created_at))}</td>
+                        <td>${this.requestStatus(r)}</td>
+                        <td>${Util.esc(note)}</td>
+                        <td>${r.status === 'pending' ? `<button type="button" class="btn btn-small" data-withdraw="${Util.esc(r.id)}">Withdraw</button>` : ''}</td>
+                    </tr>`;
+                }).join('')}</tbody>
+            </table>`;
+    },
+
+    async submitRequest(form) {
+        const urlEl = form.querySelector('#request-url');
+        const nameEl = form.querySelector('#request-name');
+        const error = form.querySelector('#request-error');
+        const btn = form.querySelector('button[type="submit"]');
+        [urlEl, nameEl].forEach(el => el.removeAttribute('aria-invalid'));
+        const fail = (el, text) => {
+            error.textContent = text;
+            el.setAttribute('aria-invalid', 'true');
+            el.focus();
+        };
+
+        const url = this.cleanFeedUrl(urlEl.value);
+        if (!url) return fail(urlEl, 'Enter a feed address, such as laravel-news.com/feed.');
+        const problem = this.feedUrlProblem(url);
+        if (problem) return fail(urlEl, problem);
+        const name = nameEl.value.trim();
+        if (!name) return fail(nameEl, 'Give the source a name.');
+
+        error.textContent = '';
+        btn.disabled = true;
+        try {
+            await db.requestSource({
+                name, url,
+                category: form.querySelector('#request-category').value,
+                reason: form.querySelector('#request-reason').value.trim()
+            });
+        } catch (err) {
+            console.error(err);
+            error.textContent = this.saveErrorText(err, "Couldn't send the request.");
+            btn.disabled = false;
+            return;
+        }
+        btn.disabled = false;
+        form.reset();
+        this.requests = await db.getSourceRequests({ mine: true });
+        this.el.querySelector('#request-table').innerHTML = this.myRequestsTable();
+        Util.toast(`Request sent. An admin will approve or reject ${name}.`);
+        Notices.loadRequests();
+    },
+
+    adminRequestsHtml() {
+        const waiting = this.requests.filter(r => r.status === 'pending').length;
+        return `
+            <div class="settings-head">
+                <h1>Source requests</h1>
+                <span class="muted">${waiting ? `${waiting} waiting` : 'Nothing waiting'}</span>
+            </div>
+            <p class="settings-lede">Approving adds the feed to the news pipeline. ${this.ARRIVAL_TEXT} At first only its last 24 hours are kept. Rejecting needs a short reason, which the person who asked will see.</p>
+            <div id="request-table">${this.adminRequestsTables()}</div>
+            <p class="callout">Every decision is recorded in the audit log. A feed that keeps failing after approval shows under Pipeline health in Sources.</p>`;
+    },
+
+    adminRequestsTables() {
+        const waiting = this.requests.filter(r => r.status === 'pending').reverse();   // oldest first
+        const decided = this.requests.filter(r => r.status === 'approved' || r.status === 'rejected').slice(0, 50);
+        const asked = r => `${Util.esc(r.requester_email || 'Unknown')}<small>${Util.esc(Util.relative(r.created_at))}</small>`;
+
+        const actions = r => this.rejecting === String(r.id)
+            ? `<form class="reject-form" data-reject-form="${Util.esc(r.id)}" novalidate>
+                    <label class="sr-only" for="reject-${Util.esc(r.id)}">Reason for rejecting ${Util.esc(r.name)}</label>
+                    <input id="reject-${Util.esc(r.id)}" type="text" maxlength="200" required placeholder="Paywalled, duplicate, off-topic…">
+                    <button type="submit" class="btn btn-small btn-danger">Reject</button>
+                    <button type="button" class="btn btn-small" data-cancel-reject>Cancel</button>
+               </form>`
+            : `<div class="row-actions">
+                    <button type="button" class="btn btn-small btn-primary" data-approve="${Util.esc(r.id)}">Approve</button>
+                    <button type="button" class="btn btn-small" data-reject="${Util.esc(r.id)}">Reject</button>
+               </div>`;
+
+        return `
+            <h2 class="section-title">Waiting</h2>
+            ${waiting.length ? `
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Source</th><th scope="col">Category</th><th scope="col">Asked by</th><th scope="col">Why</th><th scope="col">Decision</th></tr></thead>
+                    <tbody>${waiting.map(r => `
+                        <tr>
+                            <td>${this.requestSourceCell(r)}</td>
+                            <td>${Util.esc(CONFIG.CATEGORIES[r.category] || r.category)}</td>
+                            <td>${asked(r)}</td>
+                            <td>${Util.esc(r.reason || '')}</td>
+                            <td>${actions(r)}</td>
+                        </tr>`).join('')}</tbody>
+                </table>
+            </div>` : '<p class="empty-state">No requests waiting.</p>'}
+            ${decided.length ? `
+            <h2 class="section-title">Decided</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Source</th><th scope="col">Asked by</th><th scope="col">Decision</th><th scope="col">Note</th></tr></thead>
+                    <tbody>${decided.map(r => `
+                        <tr>
+                            <td>${this.requestSourceCell(r)}</td>
+                            <td>${asked(r)}</td>
+                            <td>${this.requestStatus(r)}<small>${Util.esc(r.reviewed_by_email || '')}${r.reviewed_at ? `, ${Util.esc(Util.relative(r.reviewed_at))}` : ''}</small></td>
+                            <td>${Util.esc(r.review_note || '')}</td>
+                        </tr>`).join('')}</tbody>
+                </table>
+            </div>` : ''}`;
+    },
+
+    async decideRequest(id, status, note = '') {
+        const request = this.requests.find(r => String(r.id) === String(id));
+        if (!request) return;
+        try {
+            await db.reviewSourceRequest(request, status, note);
+        } catch (err) {
+            console.error(err);
+            Util.toast(err?.message === 'This request was already decided.'
+                ? 'Someone already decided this request. The list has been refreshed.'
+                : "Couldn't save the decision. Check your connection and try again.");
+        }
+        this.rejecting = null;
+        const messages = {
+            approved: `${request.name} approved. ${this.ARRIVAL_TEXT}`,
+            rejected: `${request.name} rejected. ${request.requester_email || 'The requester'} will see your reason.`,
+            withdrawn: `Request for ${request.name} withdrawn.`
+        };
+        Util.toast(messages[status], { timeout: 8000 });
+        await Notices.loadRequests();   // first, so the nav's waiting count is current
+        await this.render([this.page]);
     },
 
     // ---------- Admin: users ----------
@@ -561,6 +793,26 @@ const Settings = {
             const on = target.getAttribute('aria-checked') !== 'true';
             this.setSourceGlobal(target.dataset.globalSource, on);
         }
+
+        if (target.dataset.approve) this.decideRequest(target.dataset.approve, 'approved');
+        if (target.dataset.withdraw) this.decideRequest(target.dataset.withdraw, 'withdrawn');
+        if (target.dataset.reject || target.hasAttribute('data-cancel-reject')) {
+            this.rejecting = target.dataset.reject || null;
+            this.el.querySelector('#request-table').innerHTML = this.adminRequestsTables();
+            if (this.rejecting) this.el.querySelector(`#reject-${CSS.escape(this.rejecting)}`)?.focus();
+        }
+    },
+
+    submitReject(form) {
+        const input = form.querySelector('input');
+        const note = input.value.trim();
+        if (!note) {
+            input.setAttribute('aria-invalid', 'true');
+            input.focus();
+            Util.toast('Say why, so the person who asked knows.');
+            return;
+        }
+        this.decideRequest(form.dataset.rejectForm, 'rejected', note);
     },
 
     onChange(e) {
@@ -598,11 +850,19 @@ const Settings = {
     }
 };
 
-// Password form uses submit, so bind it through delegation on the document
+// Forms on settings pages use submit, so bind them through delegation on the document
 document.addEventListener('submit', e => {
     if (e.target.id === 'password-form') {
         e.preventDefault();
         Settings.changePassword(e.target);
+    }
+    if (e.target.id === 'request-form') {
+        e.preventDefault();
+        Settings.submitRequest(e.target);
+    }
+    if (e.target.dataset.rejectForm) {
+        e.preventDefault();
+        Settings.submitReject(e.target);
     }
 });
 

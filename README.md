@@ -138,8 +138,16 @@ news-agent/
 | **All stories** | `#/stories` | Everything, Gmail-style: folders (Trending / Breaking / Major / Notable), categories, domains, a date filter, sort, and a reading pane. |
 | **Saved** | `#/saved` | Stories you pressed **S** on. A copy is kept, so they stay after leaving the weekly file. |
 | **Notes** | `#/notes` | Private notes that save as you type. Press **N** on any story to add it to a note. |
-| **Settings** | `#/settings` | Preferences (including the domains you follow), hide sources you don't need, change your password. |
-| **Admin** (admins only) | inside Settings | Turn sources on/off for everyone, change roles, read the audit log. |
+| **Settings** | `#/settings` | Preferences (including the domains you follow), hide sources you don't need, **request a new source**, change your password. |
+| **Admin** (admins only) | inside Settings | Approve or reject source requests, add sources, turn sources on/off for everyone, change roles, read the audit log. |
+
+**Source requests.** Any member can ask for a feed in Settings → Request a source (address,
+name, category, why). Admins see a "requests waiting" notice and decide in Settings → Source
+requests; a rejection needs a reason. The requester sees the answer as a notice and on their
+requests page. Approving is what adds the feed: every ingest reads the approved rows from
+Supabase, so the feed is fetched within 4 hours (its last 24 hours only, like any new source)
+and its stories appear after the next morning update. An admin's "Add source" is stored as an
+approved request. Every request and decision goes in the audit log.
 
 Every filter is in the address bar (for example `#/stories?folder=breaking&from=2026-10-01`), so
 **Back**, refresh, bookmarks and Ctrl-click all work.
@@ -294,6 +302,7 @@ Create once: paste `sql/schema.sql` into Neon's SQL Editor, or `psql "$NEON_DSN"
 | `profile` | Name, email and role (`user` = Member, `admin`) for each account. Created on sign-up by a trigger. |
 | `note` | Notes (HTML), pinned flag, timestamps |
 | `source` | The source list shown in Settings and its on/off switch |
+| `source_request` | Sources members asked for: status (pending, approved, rejected, withdrawn), who asked and why, the admin's note. The pipeline fetches the approved ones. |
 | `audit_log` | Sign-ins and admin actions |
 | `user_setting` | Exists but unused for now |
 
@@ -335,7 +344,7 @@ GitHub cron is in **UTC**; India is UTC+5:30. All times below are India time.
 | Workflow | When | Does |
 |---|---|---|
 | `ingest.yml` | every 4 hours (:37 past) | fetch feeds |
-| `daily.yml` | every day 07:01, catch-up 09:01 | trends → ingest → triage → extract (800) → embed (1000) → score (up to 250) → cluster → threads → **`data.js`** (with pipeline health) → commit. The 09:01 run stops at once if 07:01 already refreshed the site. |
+| `daily.yml` | every day 07:01, catch-up 09:01 | trends → ingest → triage → extract (300) → embed (1000) → score (up to 200) → cluster → threads → **`data.js`** (with pipeline health) → commit. The 09:01 run stops at once if 07:01 already refreshed the site. |
 | `new-source.yml` | when `agent/sources.py` changes on `main` | ingest (new sources keep their last 24 hours) → score what was just fetched → **`data.js`** → commit, so a new source is on the site in about 10 minutes |
 | `publish.yml` | Friday 12:01 | the same (score up to 150) → **`data.js`** → commit → Notion digest |
 | `addendum.yml` | Saturday 08:00 | process Friday-afternoon news, Notion add-on |
@@ -376,7 +385,8 @@ up with about 250 a day on the free tier, and about 210 already arrive. For a to
 feed, use `_google_news("search words")` in `sources.py`. On its first fetch the source brings in
 its last 24 hours, and pushing the change to `main` runs `new-source.yml`, so those stories are on the
 site in about 10 minutes (only ones scoring 55+). For two days Settings → Sources marks it "Added …".
-The Settings → Sources screen does *not* add feeds to the pipeline (see Known gaps).
+Members and admins can also add a feed from the website without a code change (see "Source
+requests" above); it then appears on the site after the next morning run, not in 10 minutes.
 
 **Make someone an admin.** Supabase → Table Editor → `profile` → set `role` to `admin`. After
 that, admins can change roles from Settings → Users.
@@ -415,6 +425,10 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
   but anyone holding the public anon key (which is in `config.js`) could read every note and every
   profile email directly from the database. Before storing anything sensitive, turn RLS on for
   `note` and `profile` with "owner only" policies.
+- For the same reason, "only admins approve source requests" is enforced by the website, not the
+  database: someone calling Supabase directly with the anon key could approve their own request.
+  An approved feed only adds news to score, and every decision made on the site is in the audit
+  log. RLS policies on `source_request` (insert own, update by admins) would close this.
 - News text from feeds is escaped before it is shown, so a malicious headline can't run code in
   the page. Pasted text in notes is inserted as plain text.
 - `.env` holds the pipeline secrets and must never be committed.
@@ -423,10 +437,10 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
 
 ## Known gaps and next steps
 
-1. **Settings → Sources doesn't control the pipeline.** `agent/sources.py` (67 enabled feeds across
+1. **Settings → Sources only partly controls the pipeline.** `agent/sources.py` (67 enabled feeds across
    AI, EVs, space, health, energy, chips, security, robotics, science, Indian tech, Legal India,
-   market and competitors) is what gets fetched. The Supabase `source` list only hides stories by
-   source name. Many feeds in it were tested on 21 Oct 2026 and don't work (LiveLaw, Mondaq, India
+   market and competitors) plus approved source requests are what gets fetched. The on/off switch
+   in the Supabase `source` list only hides stories by source name. Many feeds in it were tested on 21 Oct 2026 and don't work (LiveLaw, Mondaq, India
    Kanoon, Financial Express, Entrackr, VCCircle and others), and some publish too much to score
    for free (Business Today, CNBC TV18, Tax Guru), so they were left out.
 2. **Older stories have no domain.** Stories scored before 21 Oct 2026 get a keyword guess (AI by
@@ -434,7 +448,7 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
 3. **Source names differ** between the pipeline ("NVIDIA Technical Blog") and Settings
    ("NVIDIA Blog"), so a few on/off switches don't match their stories. Same fix as 1.
 4. **Scoring is slow on the free tier.** Groq allows about 11 scoring calls a minute, so the daily
-   run scores at most 250. With ~200 news items a day plus trend watches, older items can age out
+   run scores at most 200 (to fit the private repo's 2,000 Actions minutes). With ~200 news items a day plus trend watches, older items can age out
    of the 14-day window unscored on busy days. `CEREBRAS_API_KEY` adds a second free model.
 5. **Many sites block downloads from cloud servers** (The Information, OpenAI, The Robot Report,
    Google News links). Those stories are scored from their feed summary or headline.

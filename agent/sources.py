@@ -221,6 +221,29 @@ ARXIV_SOURCES = ("arxiv_ai", "arxiv_lg", "arxiv_cl")
 PAPER_SOURCES = ARXIV_SOURCES + ("hf_papers",)
 
 
+REQUEST_PREFIX = "req_"
+
+
+def requested_sources(rows: list[dict]) -> list[Source]:
+    """Source requests an admin approved on the website (Supabase source_request) as tier-D feeds.
+
+    A feed that sources.py already has is skipped, so approving it twice never polls it twice.
+    """
+    known = {s.url.rstrip("/").lower() for s in SOURCES if s.url}
+    out = []
+    for r in rows:
+        url = str(r.get("url") or "").strip()
+        name = str(r.get("name") or "").strip()
+        if not name or not url.lower().startswith(("http://", "https://")):
+            continue
+        if url.rstrip("/").lower() in known:
+            continue
+        known.add(url.rstrip("/").lower())
+        out.append(Source(id=f"{REQUEST_PREFIX}{r['id']}", name=name[:120], tier="D", url=url,
+                          note=f"requested on the website by {r.get('requester_email') or 'a member'}"))
+    return out
+
+
 def enabled_sources() -> list[Source]:
     return [s for s in SOURCES if s.enabled and s.url]
 

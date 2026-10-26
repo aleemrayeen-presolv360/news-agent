@@ -11,8 +11,9 @@
 # 4-hourly ingests running only 3-4 times a day). So the job starts with its own
 # ingest, and a 09:01 IST catch-up run does the work only if 07:01 never happened.
 #
-# Budget: 30 runs/month x ~45 min. Free while the repo is public; a private repo gets
-# 2,000 min/month, so lower --limit on the score step to ~150 if it goes private again.
+# Budget: the repo is private, so Actions gets 2,000 min/month. Measured 19-26 Oct 2026:
+# this job 28-42 min with --limit 250, ingest ~1 min x 6 a day. At --limit 200 the month is
+# ~1,300 min (this job ~30 x 32, ingest ~180, the rest ~150). The timeout caps a stuck run.
 # Waiting on Groq's rate limit is billed, so --limit on the score step is the main dial.
 
 name: daily
@@ -34,7 +35,7 @@ permissions:
 jobs:
   daily:
     runs-on: ubuntu-latest
-    timeout-minutes: 75   # scoring runs ~6 stories a minute, so 250 takes ~44 min
+    timeout-minutes: 50   # scoring runs ~6-8 stories a minute, so 200 takes ~25-33 min
     steps:
       - uses: actions/checkout@v4
 
@@ -98,7 +99,7 @@ jobs:
 
       - name: Score items
         if: steps.fresh.outputs.skip != 'true'
-        run: python -m agent.score --limit 250
+        run: python -m agent.score --limit 200
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}

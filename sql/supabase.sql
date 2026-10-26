@@ -42,6 +42,29 @@ CREATE TABLE IF NOT EXISTS source (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- News sources members asked for. An admin approves or rejects each one in
+-- Settings > Source requests. The news pipeline (agent/ingest.py) fetches every
+-- approved row on each run, so approving is what actually adds a feed.
+-- An admin's own "Add source" is stored here too, already approved.
+CREATE TABLE IF NOT EXISTS source_request (
+    id                BIGSERIAL PRIMARY KEY,
+    name              TEXT NOT NULL,
+    url               TEXT NOT NULL,
+    category          TEXT NOT NULL,               -- tech | legal | market | competitors
+    reason            TEXT,                        -- why the requester wants it
+    status            TEXT NOT NULL DEFAULT 'pending'
+                      CHECK (status IN ('pending', 'approved', 'rejected', 'withdrawn')),
+    requested_by      UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    requester_email   TEXT,
+    review_note       TEXT,                        -- the admin's reason, shown to the requester
+    reviewed_by_email TEXT,
+    reviewed_at       TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- One open or approved request per feed; a rejected feed can be asked for again
+CREATE UNIQUE INDEX IF NOT EXISTS source_request_url_open
+    ON source_request (lower(url)) WHERE status IN ('pending', 'approved');
+
 -- Admin actions and sign-ins, shown in Settings > Audit log.
 CREATE TABLE IF NOT EXISTS audit_log (
     id          BIGSERIAL PRIMARY KEY,

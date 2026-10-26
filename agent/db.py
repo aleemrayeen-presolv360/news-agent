@@ -42,7 +42,7 @@ TREND_PREFIX = "trend_"
 
 
 def sync_sources(conn, extra: Sequence[Source] = ()) -> None:
-    """Push sources.py (plus active trend watches) into the sources table. Safe to run every ingest."""
+    """Push sources.py (plus trend watches and approved website requests) into the sources table. Safe to run every ingest."""
     with conn.cursor() as cur:
         cur.executemany(
             """

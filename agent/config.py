@@ -11,6 +11,7 @@ Addendum covers Friday 12:00 IST -> Saturday 00:00 IST.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -37,6 +38,23 @@ def env(key: str, default: str | None = None, *, required: bool = False) -> str:
             "GitHub Settings -> Secrets and variables -> Actions."
         )
     return val or ""
+
+
+def supabase_settings() -> tuple[str, str]:
+    """The website's Supabase URL and anon key, used to read approved source requests.
+
+    The anon key is public (the website ships it), so by default both are read
+    from frontend/js/config.js and no extra secret is needed. Env vars override.
+    """
+    url, key = env("SUPABASE_URL"), env("SUPABASE_ANON_KEY")
+    if url and key:
+        return url, key
+    try:
+        js = (Path(__file__).parent.parent / "frontend" / "js" / "config.js").read_text(encoding="utf-8")
+    except OSError:
+        return "", ""
+    found = dict(re.findall(r"(SUPABASE_URL|SUPABASE_ANON_KEY):\s*'([^']*)'", js))
+    return url or found.get("SUPABASE_URL", ""), key or found.get("SUPABASE_ANON_KEY", "")
 
 
 # ---------------------------------------------------------------- tuning

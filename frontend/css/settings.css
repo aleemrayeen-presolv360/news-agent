@@ -64,3 +64,12 @@ td.num { font-variant-numeric: tabular-nums; }
 .health h2 { font-family: var(--sans); font-size: 14.5px; font-weight: 600; }
 .health p { font-size: 13px; }
 .health-warnings { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; }
+
+/* Source requests */
+.status-wait { color: var(--warn); }
+.nav-badge { margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--manila); color: var(--text); font-size: 12px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+.settings-nav a[aria-current="page"] .nav-badge { background: var(--ink-fg); color: var(--ink); }
+.section-title { font-family: var(--sans); font-size: 14.5px; font-weight: 600; margin-top: 8px; }
+.request-form { max-width: 520px; }
+.row-actions, .reject-form { display: flex; gap: 8px; align-items: center; }
+.reject-form input { width: 220px; padding: 5px 10px; font-size: 13px; }
