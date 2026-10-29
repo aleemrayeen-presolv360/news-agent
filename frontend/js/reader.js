@@ -23,13 +23,18 @@ const Reader = {
 
     SORTS: [
         { id: 'important', name: 'Most important' },
-        { id: 'newest', name: 'Newest' },
+        { id: 'newest', name: 'Newest first' },
         { id: 'covered', name: 'Most covered' }
     ],
 
     init() {
         this.el = document.getElementById('view-stories');
         this.el.addEventListener('click', e => this.onClick(e));
+        this.el.addEventListener('change', e => {
+            if (e.target.id !== 'sort-select') return;
+            const first = this.mode === 'saved' ? 'saved' : this.SORTS[0].id;
+            location.hash = this.link({ sort: e.target.value === first ? null : e.target.value, story: null });
+        });
     },
 
     // ---------- URL helpers ----------
@@ -97,6 +102,10 @@ const Reader = {
         if (key !== this._layoutKey || !this.el.querySelector('.reader')) {
             this._layoutKey = key;
             this.renderLayout();
+            // On a phone the folders are one scrolling row: bring the open folder into view
+            const current = this.el.querySelector('.folders a[aria-current="true"]');
+            const strip = current && current.parentElement;
+            if (strip && strip.scrollWidth > strip.clientWidth) strip.scrollLeft += current.getBoundingClientRect().left - strip.getBoundingClientRect().left - 10;
         }
         this.renderSelection();
     },
@@ -106,15 +115,21 @@ const Reader = {
         this._layoutKey = null;
     },
 
+    /** All stories shows one row per event; Saved keeps each article the reader saved. */
+    events(list) {
+        return this.mode === 'saved' ? list : Stories.grouped(list);
+    },
+
     renderLayout() {
-        this.list = this.sorted(this.filtered());
+        this.list = this.events(this.sorted(this.filtered()));
 
         this.el.innerHTML = `
             <div class="reader">
                 <nav class="folders" aria-label="Folders">${this.foldersHtml()}</nav>
                 <section class="story-list" aria-label="Story list">
                     <div class="list-head">${this.listHeadHtml()}</div>
-                    ${this.list.length ? `<ol class="rows">${this.list.map(s => this.rowHtml(s)).join('')}</ol>` : this.emptyListHtml()}
+                    ${this.list.length ? `<ol class="rows">${this.rowsHtml()}</ol>` : this.emptyListHtml()}
+                    <p class="list-keys" aria-hidden="true"><span><kbd>J</kbd><kbd>K</kbd> move</span><span><kbd>E</kbd> done</span><span><kbd>S</kbd> save</span><span><kbd>N</kbd> note</span><span><kbd>O</kbd> open</span></p>
                 </section>
                 <section class="pane" aria-label="Story" aria-live="polite"></section>
             </div>`;
@@ -125,12 +140,12 @@ const Reader = {
         const folder = this.get('folder') || 'all';
         const forFolders = this.filtered({ ignore: ['folder'] });
         const forCats = this.filtered({ ignore: ['cat'] });
-        const count = (list, fn) => list.filter(fn).length;
+        const count = (list, fn) => this.events(list.filter(fn)).length;
 
         const folderLinks = this.mode === 'saved'
-            ? `<a href="${this.link({ folder: null, story: null })}" aria-current="${folder === 'all'}"><span class="folder-mark" aria-hidden="true"></span>All saved<span class="n">${forFolders.length}</span></a>`
+            ? `<a href="${this.link({ folder: null, story: null })}" aria-current="${folder === 'all'}"><span class="folder-mark" aria-hidden="true"></span>All saved<span class="n">${this.events(forFolders).length}</span></a>`
             : this.FOLDERS.map(f => {
-                const n = f.id === 'all' ? forFolders.length : count(forFolders, s => this.inFolder(s, f.id));
+                const n = f.id === 'all' ? this.events(forFolders).length : count(forFolders, s => this.inFolder(s, f.id));
                 if (f.id === 'trending' && !n && folder !== 'trending') return '';
                 const icon = f.id === 'breaking' ? '<svg class="icon"><use href="#i-bolt"/></svg>' : '';
                 return `<a href="${this.link({ folder: f.id === 'all' ? null : f.id, story: null })}" aria-current="${folder === f.id}">${icon}${f.name}<span class="n">${n}</span></a>`;
@@ -151,10 +166,10 @@ const Reader = {
             .sort((a, b) => b.n - a.n)
             .map(d => `
             <a href="${this.link({ domain: domain === d.id ? null : d.id, story: null })}" aria-current="${domain === d.id}">
-                ${Util.esc(d.name)}${followed && followed.includes(d.id) ? '<span class="sr-only"> (followed)</span><span class="followed-mark" aria-hidden="true">●</span>' : ''}<span class="n">${d.n}</span>
+                ${followed && followed.includes(d.id) ? '<span class="followed-mark" aria-hidden="true"></span>' : ''}${Util.esc(d.name)}${followed && followed.includes(d.id) ? '<span class="sr-only"> (followed)</span>' : ''}<span class="n">${d.n}</span>
             </a>`).join('');
 
-        return `${folderLinks}<h2>Categories</h2>${catLinks}${domainLinks ? `<h2>Domains</h2>${domainLinks}` : ''}`;
+        return `<h2>Folders</h2>${folderLinks}<h2>Categories</h2>${catLinks}${domainLinks ? `<h2>Domains</h2>${domainLinks}` : ''}`;
     },
 
     listHeadHtml() {
@@ -163,7 +178,7 @@ const Reader = {
         const unread = this.list.filter(s => !UserState.isRead(s.id)).length;
         const countText = this.mode === 'saved'
             ? `${this.list.length} ${this.list.length === 1 ? 'story' : 'stories'}`
-            : `${unread} unread of ${this.list.length}`;
+            : `${this.list.length} · ${unread} unread`;
 
         const from = this.get('from');
         const to = this.get('to');
@@ -173,7 +188,12 @@ const Reader = {
         const currentSort = this.get('sort') || sorts[0].id;
 
         return `
-            <div class="list-head-top"><h1>${Util.esc(title)}</h1><small aria-live="polite">${countText}</small></div>
+            <div class="list-head-top">
+                <h1>${Util.esc(title)}</h1><small aria-live="polite">${countText}</small>
+                <label class="sort"><span class="sr-only">Sort</span>
+                    <select id="sort-select">${sorts.map(s => `<option value="${s.id}" ${currentSort === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select>
+                </label>
+            </div>
             <div class="filter-bar">
                 <button type="button" class="chip ${from || to ? 'is-active' : ''}" id="date-chip" aria-expanded="false" aria-controls="date-pop">
                     <svg class="icon"><use href="#i-cal"/></svg>${Util.esc(dateText)}<svg class="icon"><use href="#i-chev"/></svg>
@@ -182,22 +202,37 @@ const Reader = {
                 ${this.get('domain') ? `<a class="chip is-active" href="${this.link({ domain: null, story: null })}" aria-label="Remove ${Util.esc(CONFIG.DOMAINS[this.get('domain')] || '')} filter">${Util.esc(CONFIG.DOMAINS[this.get('domain')] || this.get('domain'))} ✕</a>` : ''}
                 ${this.get('q') ? `<a class="chip is-active" href="${this.link({ q: null, story: null })}" aria-label="Remove search filter">“${Util.esc(this.get('q'))}” ✕</a>` : ''}
                 ${filtersOn ? `<a class="clear" href="${this.link({ from: null, to: null, cat: null, domain: null, q: null, story: null })}">Clear all</a>` : ''}
-            </div>
-            <nav class="sort" aria-label="Sort">
-                ${sorts.map(s => `<a href="${this.link({ sort: s.id === sorts[0].id ? null : s.id })}" aria-current="${currentSort === s.id}">${s.name}</a>`).join('')}
-            </nav>`;
+            </div>`;
     },
 
+    /** Rows, with a heading for each day when the list is sorted by date. */
+    rowsHtml() {
+        const sort = this.get('sort');
+        if (sort !== 'newest') return this.list.map(s => this.rowHtml(s)).join('');
+        let day = null;
+        return this.list.map(s => {
+            const key = s.publishedAt ? Util.dayKey(new Date(s.publishedAt)) : 'none';
+            const head = key !== day ? `<li class="row-day"><h2>${s.publishedAt ? Util.esc(Util.weekdayDate(s.publishedAt)) : 'No date'}</h2></li>` : '';
+            day = key;
+            return head + this.rowHtml(s);
+        }).join('');
+    },
+
+    /** Tags, headline, then "Source +7 sources · 9:40 AM". The label shows unless the folder already says it. */
     rowHtml(s) {
         const read = this.mode === 'stories' && UserState.isRead(s.id);
-        const date = this.mode === 'saved' && s.savedAt ? `Saved ${Util.shortDate(s.savedAt)}` : Util.shortDate(s.publishedAt);
+        const byDay = this.get('sort') === 'newest';
+        const when = this.mode === 'saved' && s.savedAt ? `Saved ${Util.shortDate(s.savedAt)}`
+            : byDay ? Util.clock(s.publishedAt) : Util.shortDate(s.publishedAt);
+        const folder = this.get('folder');
+        const showLabel = this.mode === 'saved' || !['breaking', 'major', 'notable'].includes(folder);
+        const more = Stories.moreSourcesText(s);
         return `
             <li class="${read || this.mode === 'saved' ? 'is-read' : ''}" data-id="${Util.esc(s.id)}">
                 <a href="${this.link({ story: s.id })}">
-                    <span class="dot-unread" aria-hidden="true"></span>
+                    <span class="story-meta">${showLabel ? Stories.labelHtml(s) : ''}${Stories.categoryHtml(s)}${Stories.trendHtml(s)}</span>
                     <span class="row-title">${Util.esc(s.headline)}</span>
-                    <span class="row-date">${Util.esc(date)}</span>
-                    <span class="story-meta">${Stories.labelHtml(s)}<span>${Util.esc(s.source)}</span>${s.coverage > 1 ? `<span>${s.coverage} sources</span>` : ''}${read ? '<span class="sr-only">Read</span>' : ''}</span>
+                    <span class="meta">${Util.esc(s.source)}${more ? ` <b>${more}</b>` : ''}${when ? ` · ${Util.esc(when)}` : ''}${read ? '<span class="sr-only">, read</span>' : ''}</span>
                 </a>
             </li>`;
     },
@@ -225,7 +260,7 @@ const Reader = {
         }
 
         if (this.mode === 'stories') {
-            UserState.setRead(story.id);
+            Stories.markRead(story);
             const row = this.el.querySelector(`.rows li[data-id="${CSS.escape(story.id)}"]`);
             row?.classList.add('is-read');
         }
@@ -237,16 +272,16 @@ const Reader = {
 
         const back = `<a class="btn btn-small mobile-back" href="${this.link({ story: null })}">Back to list</a>`;
         const extra = this.mode === 'stories'
-            ? `<button type="button" class="btn" data-action="unread">Mark unread<kbd>E</kbd></button>`
+            ? `<button type="button" class="btn" data-action="unread"><kbd>E</kbd>Mark unread</button>`
             : '';
-        pane.innerHTML = Stories.articleHtml(story, { actions: extra }) + `<p class="kbd-hint pane-hint">J and K move between stories. ${back}</p>`;
+        pane.innerHTML = back + Stories.articleHtml(story, { actions: extra });
         this.updateUnreadCount();
     },
 
     updateUnreadCount() {
         if (this.mode !== 'stories') return;
         const small = this.el.querySelector('.list-head small');
-        if (small) small.textContent = `${this.list.filter(s => !UserState.isRead(s.id)).length} unread of ${this.list.length}`;
+        if (small) small.textContent = `${this.list.length} · ${this.list.filter(s => !UserState.isRead(s.id)).length} unread`;
     },
 
     currentStory() {
@@ -289,7 +324,7 @@ const Reader = {
 
     toggleRead(story) {
         const read = !UserState.isRead(story.id);
-        UserState.setRead(story.id, read);
+        Stories.markRead(story, read);
         this.el.querySelector(`.rows li[data-id="${CSS.escape(story.id)}"]`)?.classList.toggle('is-read', read);
         this.updateUnreadCount();
         Util.toast(read ? 'Marked as read.' : 'Marked as unread.');

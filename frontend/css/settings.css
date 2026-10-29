@@ -1,17 +1,17 @@
 /* Settings: preferences, my sources, account, and the admin screens */
 
-.settings { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: calc(100vh - var(--topbar-h)); }
-.settings-nav { background: var(--panel); border-right: 1px solid var(--rule); padding: 22px 12px; display: grid; gap: 2px; align-content: start; }
-.settings-nav h2 { font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--muted); margin: 14px 12px 4px; }
+.settings { display: grid; grid-template-columns: 210px minmax(0, 1fr); min-height: calc(100vh - var(--topbar-h)); }
+.settings-nav { background: var(--panel); border-right: 1px solid var(--rule); padding: 18px 10px; display: grid; gap: 2px; align-content: start; }
+.settings-nav h2 { font-family: var(--sans); font-size: 11.5px; font-weight: 600; color: var(--muted); margin: 12px 10px 4px; }
 .settings-nav h2:first-child { margin-top: 0; }
-.settings-nav a { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 7px; font-size: 14px; color: var(--text); text-decoration: none; }
+.settings-nav a { display: flex; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 6px; font-size: 13px; color: var(--text); text-decoration: none; }
 .settings-nav a:hover { background: var(--surface); }
 .settings-nav a[aria-current="page"] { background: var(--ink); color: var(--ink-fg); }
 .settings-nav .admin-group { margin-top: 6px; border-top: 1px solid var(--rule); padding-top: 6px; display: grid; gap: 2px; }
 
-.settings-body { padding: 30px 56px 60px; display: grid; gap: 18px; align-content: start; min-width: 0; }
+.settings-body { padding: 26px 40px 60px; display: grid; gap: 16px; align-content: start; min-width: 0; }
 .settings-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
-.settings-head h1 { font-size: 30px; letter-spacing: -.01em; }
+.settings-head h1 { font-size: 26px; letter-spacing: -.01em; }
 .settings-head .right { margin-left: auto; }
 .settings-lede { color: var(--muted); max-width: 62ch; margin-top: -8px; }
 
@@ -70,6 +70,39 @@ td.num { font-variant-numeric: tabular-nums; }
 .nav-badge { margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--manila); color: var(--text); font-size: 12px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
 .settings-nav a[aria-current="page"] .nav-badge { background: var(--ink-fg); color: var(--ink); }
 .section-title { font-family: var(--sans); font-size: 14.5px; font-weight: 600; margin-top: 8px; }
-.request-form { max-width: 520px; }
+.request-form {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 170px; gap: 12px; align-items: end;
+    padding: 16px; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); max-width: 980px;
+}
+.request-form .field { gap: 5px; }
+.request-form label { font-size: 12.5px; }
+.request-form input, .request-form select { padding: 7px 10px; font-size: 13px; }
+.request-form .wide { grid-column: 1 / 3; }
+.request-form .hint, .request-form .form-error { margin: 0; }
+.request-form .form-error:empty { display: none; }
+.request-send { align-self: end; }
+
+/* Admin review: one card per waiting request */
+.review { display: grid; gap: 12px; max-width: 980px; }
+.req { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 20px; }
+.req-main { display: grid; gap: 6px; }
+.req h2 { font-family: var(--sans); font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+.req h2 .muted { font-weight: 400; font-size: 12.5px; }
+.req h2 a { color: inherit; }
+.req-why { font-family: var(--serif); font-size: 15px; }
+.req-facts { font-size: 12px; color: var(--muted); }
+.req-facts b { color: var(--text); font-weight: 600; }
+.req-acts { display: flex; gap: 8px; align-items: start; }
+.reasons { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding-top: 10px; border-top: 1px dashed var(--rule); font-size: 12.5px; }
+.reasons .reject-form { flex: 1 1 300px; min-width: 0; flex-wrap: wrap; }
+.reasons .reject-form input { flex: 1 1 160px; width: auto; min-width: 0; }
+@media (max-width: 860px) {
+    .request-form { grid-template-columns: 1fr; }
+    .request-form .wide { grid-column: auto; }
+    .req { grid-template-columns: 1fr; }
+}
 .row-actions, .reject-form { display: flex; gap: 8px; align-items: center; }
 .reject-form input { width: 220px; padding: 5px 10px; font-size: 13px; }
+.request-form .hint { font-size: 12px; color: var(--muted); }
+.status { white-space: nowrap; }
+.review + .section-title, .empty-state + .section-title { margin-top: 12px; }

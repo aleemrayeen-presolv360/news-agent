@@ -77,6 +77,7 @@ const Notices = {
                 <div class="notice notice-breaking" role="status">
                     <span class="label label-breaking">Breaking</span>
                     <a class="notice-text" href="${this.storyLink(top)}">${Util.esc(top.headline)}</a>
+                    <span class="meta notice-meta">${Util.esc(top.source)}${top.publishedAt ? ` · ${Util.esc(Util.relative(top.publishedAt))}` : ''}</span>
                     ${more ? `<a class="notice-more" href="#/stories?folder=breaking">${more} more</a>` : ''}
                     <button type="button" class="notice-close" data-dismiss="${Util.esc(top.id)}" aria-label="Dismiss this notice">✕</button>
                 </div>`);

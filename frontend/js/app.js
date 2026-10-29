@@ -177,7 +177,7 @@ const App = {
             return;
         }
 
-        const handlers = { today: Today, stories: Reader, saved: Reader, notes: Notes };
+        const handlers = { today: Today, stories: Reader, saved: Reader, notes: Notes, settings: Settings };
         const handler = handlers[this.currentView];
         if (handler?.onKey?.(e)) e.preventDefault();
     }

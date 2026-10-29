@@ -65,6 +65,12 @@ const Util = {
         return this._fmt('weekday', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(value));
     },
 
+    /** "9:40 AM" */
+    clock(value) {
+        const d = new Date(value);
+        return isNaN(d) ? '' : this._fmt('clock', { hour: 'numeric', minute: '2-digit', hour12: true }).format(d).toUpperCase();
+    },
+
     /** "Today, 09:12", "12 Oct, 17:30" */
     dateTime(value) {
         const d = new Date(value);

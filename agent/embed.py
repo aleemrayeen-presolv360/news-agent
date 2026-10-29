@@ -97,7 +97,7 @@ def insert_embeddings(conn, items: list[dict], embeddings: list[list[float]]) ->
                     (id, headline, one_liner, source_url, source_name, 
                      published_at, embedding)
                 SELECT 
-                    r.id, r.title, COALESCE(LEFT(r.feed_summary, 200), ''),
+                    r.id, r.title, COALESCE(LEFT(r.feed_summary, 400), ''),
                     r.url_canonical, s.name, r.published_at, %s::vector
                 FROM raw_items r
                 JOIN sources s ON r.source_id = s.id

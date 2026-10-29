@@ -34,7 +34,7 @@ from agent.embed import get_unembedded_items  # noqa: E402
 from agent.db import backed_off_source_ids  # noqa: E402
 from agent.trends import parse_picks  # noqa: E402
 from agent.config import DOMAINS, supabase_settings  # noqa: E402
-from agent.publish_static import item_to_dict, split_by_label  # noqa: E402
+from agent.publish_static import coverage_for, item_to_dict, split_by_label  # noqa: E402
 from agent.ingest import gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
 from agent.triage import check_arxiv_gate  # noqa: E402
 import agent.score as score_mod  # noqa: E402
@@ -321,6 +321,17 @@ check("Google News story shows its publisher", (_d["headline"], _d["source"]),
 check("trend-watch story is trending", _d["trending"], True)
 check("story in 3 sources is trending", item_to_dict({**row, "cluster_count": 3})["trending"], True)
 check("ordinary story is not trending", item_to_dict({**row, "source_id": "electrek"})["trending"], False)
+_members = [
+    {"id": 1, "headline": "PHP patches two flaws", "source_name": "The Hacker News", "source_url": "https://thn/a"},
+    {"id": 2, "headline": "PHP flaws explained - MediaNama", "source_name": "Trending: php",
+     "source_url": "https://news.google.com/rss/articles/b"},
+    {"id": 3, "headline": "Same link again", "source_name": "Wired", "source_url": "https://thn/a"},
+    {"id": 4, "headline": "Hackers used the PHP flaw", "source_name": "Wired", "source_url": "https://wired/c"},
+]
+check("coverage lists the other outlets, not the story itself",
+      [c["source"] for c in coverage_for({"id": 1, "source_url": "https://thn/a"}, _members)],
+      ["MediaNama", "Wired"])
+check("story without a cluster has no coverage", item_to_dict(row)["coverage"], [])
 
 # ------------------------------------------------------------ trends
 print("\ntrends")

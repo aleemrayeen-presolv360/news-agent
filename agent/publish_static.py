@@ -45,6 +45,25 @@ def get_week_items(conn, window) -> list[dict]:
         return cur.fetchall()
 
 
+COVERAGE_MAX = 12   # other outlets listed under one story
+
+
+def get_cluster_members(conn, cluster_ids: list[int]) -> dict[int, list[dict]]:
+    """Every article in these clusters, scored or not: the outlets that covered each event."""
+    if not cluster_ids:
+        return {}
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT id, cluster_id, headline, source_name, source_url, published_at
+            FROM news_memory WHERE cluster_id = ANY(%s)
+            ORDER BY published_at NULLS LAST
+        """, (cluster_ids,))
+        members: dict[int, list[dict]] = {}
+        for row in cur.fetchall():
+            members.setdefault(row["cluster_id"], []).append(row)
+        return members
+
+
 def get_source_health(conn) -> dict:
     """Get source health stats."""
     with conn.cursor() as cur:
@@ -143,14 +162,33 @@ def get_new_sources(conn) -> list[dict]:
 TRENDING_SOURCES = 3   # a story carried by this many of our sources counts as trending
 
 
-def item_to_dict(item: dict) -> dict:
-    """Convert DB row to frontend-friendly dict."""
-    # Stories scored before domains existed have none; the website guesses those from keywords
-    domain = (item.get("score_breakdown") or {}).get("domain")
-    headline, source = item["headline"] or "Untitled", item["source_name"] or "Unknown"
-    if "news.google.com" in (item["source_url"] or "") and " - " in headline:
+def display_names(headline: str | None, source: str | None, url: str | None) -> tuple[str, str]:
+    """Headline and outlet as readers should see them."""
+    headline, source = headline or "Untitled", source or "Unknown"
+    if "news.google.com" in (url or "") and " - " in headline:
         # Google News titles end in " - Publisher"; show the publisher, not the search
         headline, source = headline.rsplit(" - ", 1)
+    return headline, source
+
+
+def coverage_for(item: dict, members: list[dict]) -> list[dict]:
+    """The other outlets in this story's cluster, oldest first, one entry per article."""
+    seen = {item.get("source_url")}
+    out = []
+    for m in members:
+        if m["id"] == item.get("id") or m["source_url"] in seen:
+            continue
+        seen.add(m["source_url"])
+        headline, source = display_names(m["headline"], m["source_name"], m["source_url"])
+        out.append({"source": source, "headline": headline, "url": m["source_url"]})
+    return out[:COVERAGE_MAX]
+
+
+def item_to_dict(item: dict, members: list[dict] | None = None) -> dict:
+    """Convert DB row to frontend-friendly dict. `members` is the story's cluster, if it has one."""
+    # Stories scored before domains existed have none; the website guesses those from keywords
+    domain = (item.get("score_breakdown") or {}).get("domain")
+    headline, source = display_names(item["headline"], item["source_name"], item["source_url"])
     cluster_count = item["cluster_count"] or 1
     return {
         "headline": headline,
@@ -164,6 +202,8 @@ def item_to_dict(item: dict) -> dict:
         "domain": domain,
         "category": DOMAINS.get(domain),
         "cluster_count": cluster_count,
+        "cluster_id": item.get("cluster_id"),
+        "coverage": coverage_for(item, members or []),
         "trending": (item.get("source_id") or "").startswith("trend_") or cluster_count >= TRENDING_SOURCES,
         "published_at": item["published_at"].isoformat() if item.get("published_at") else None,
     }
@@ -184,6 +224,7 @@ def generate_data(conn, window) -> dict:
     health = get_source_health(conn)
     stats = get_run_stats(conn, window)
     groups = split_by_label(items)
+    members = get_cluster_members(conn, sorted({i["cluster_id"] for i in items if i.get("cluster_id")}))
 
     return {
         "week_label": window.label,
@@ -197,7 +238,8 @@ def generate_data(conn, window) -> dict:
         },
         "new_sources": get_new_sources(conn),
         "health": get_health(conn),
-        **{label: [item_to_dict(i) for i in group] for label, group in groups.items()},
+        **{label: [item_to_dict(i, members.get(i.get("cluster_id"))) for i in group]
+           for label, group in groups.items()},
     }
 
 

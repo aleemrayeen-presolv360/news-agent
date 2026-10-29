@@ -399,8 +399,8 @@ const Settings = {
 
     REQUEST_STATUS: {
         pending: { text: 'Waiting for an admin', css: 'status-wait' },
-        approved: { text: 'Approved', css: 'status-ok' },
-        rejected: { text: 'Rejected', css: 'status-off' },
+        approved: { text: 'Live', css: 'status-ok' },
+        rejected: { text: 'Not added', css: 'status-off' },
         withdrawn: { text: 'Withdrawn', css: 'status-off' }
     },
 
@@ -434,8 +434,11 @@ const Settings = {
 
     requestStatus(r) {
         const s = this.REQUEST_STATUS[r.status] || { text: r.status, css: 'status-off' };
-        return `<span class="status ${s.css}">${s.text}</span>`;
+        const n = r.status === 'approved' ? this.storyCount(r) : 0;
+        return `<span class="status ${s.css}">${s.text}${n ? ` · ${n} ${n === 1 ? 'story' : 'stories'}` : ''}</span>`;
     },
+
+    REJECT_REASONS: ['Paywalled', 'Duplicate', 'Off-topic', 'Too many posts', 'Feed broken'],
 
     requestSourceCell(r) {
         return `${Util.esc(r.name)}<small><a href="${Util.esc(r.url)}" target="_blank" rel="noopener">${Util.esc(r.url)}</a></small>`;
@@ -446,11 +449,10 @@ const Settings = {
         return `
             <div class="settings-head"><h1>Request a source</h1></div>
             <p class="settings-lede">Know a news site, blog or newsletter the team should follow? Ask for it here. An admin approves or rejects each request, and you'll see the answer on this page and at the top of the site.</p>
-            <form class="account-form request-form" id="request-form" novalidate>
+            <form class="request-form" id="request-form" novalidate>
                 <div class="field">
                     <label for="request-url">Feed address</label>
-                    <input id="request-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="laravel-news.com/feed…">
-                    <span class="hint">An RSS or Atom feed works best. Most news sites have one at /feed or /rss.</span>
+                    <input id="request-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="laravel-news.com/feed…" aria-describedby="request-url-hint">
                 </div>
                 <div class="field">
                     <label for="request-name">Name</label>
@@ -460,14 +462,14 @@ const Settings = {
                     <label for="request-category">Category</label>
                     <select id="request-category">${Object.entries(CONFIG.CATEGORIES).map(option).join('')}</select>
                 </div>
-                <div class="field">
+                <div class="field wide">
                     <label for="request-reason">Why is it useful? <span class="muted">(optional)</span></label>
-                    <textarea id="request-reason" rows="2" maxlength="300" placeholder="Covers PHP releases we build on…"></textarea>
+                    <input id="request-reason" type="text" maxlength="300" autocomplete="off" placeholder="We build on Laravel; releases and security notices matter to us…">
                 </div>
-                <p class="form-error" id="request-error" aria-live="polite"></p>
-                <div><button type="submit" class="btn btn-primary">Send request</button></div>
+                <div class="request-send"><button type="submit" class="btn btn-primary">Send request</button></div>
+                <p class="hint wide" id="request-url-hint">An RSS or Atom feed works best. Most news sites have one at /feed or /rss.</p>
+                <p class="form-error wide" id="request-error" aria-live="polite"></p>
             </form>
-            <h2 class="section-title">Your requests</h2>
             <div class="table-wrap" id="request-table">${this.myRequestsTable()}</div>`;
     },
 
@@ -475,19 +477,18 @@ const Settings = {
         if (!this.requests.length) return '<p class="empty-state">No requests yet.</p>';
         return `
             <table>
-                <thead><tr><th scope="col">Source</th><th scope="col">Asked</th><th scope="col">Status</th><th scope="col">Admin's note</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+                <thead><tr><th scope="col">Source</th><th scope="col">Asked</th><th scope="col">Status</th><th scope="col">Note</th></tr></thead>
                 <tbody>${this.requests.map(r => {
-                    const n = r.status === 'approved' ? this.storyCount(r) : 0;
+                    const newest = r.status === 'approved' ? Stories.fromSource(r.name)[0] : null;
                     const note = r.status === 'approved'
-                        ? (n ? `${n} ${n === 1 ? 'story' : 'stories'} so far` : 'Stories appear after the next morning update')
-                        : (r.review_note || '');
+                        ? (newest ? `Newest: “${newest.headline}”` : 'Stories appear after the next morning update')
+                        : r.status === 'pending' ? 'You can withdraw it while it waits' : (r.review_note || '');
                     return `
                     <tr class="${r.status === 'withdrawn' ? 'is-off' : ''}">
                         <td>${this.requestSourceCell(r)}</td>
                         <td>${Util.esc(Util.relative(r.created_at))}</td>
                         <td>${this.requestStatus(r)}</td>
-                        <td>${Util.esc(note)}</td>
-                        <td>${r.status === 'pending' ? `<button type="button" class="btn btn-small" data-withdraw="${Util.esc(r.id)}">Withdraw</button>` : ''}</td>
+                        <td><span class="${r.status === 'rejected' ? '' : 'muted'}">${Util.esc(note)}</span>${r.status === 'pending' ? ` <button type="button" class="btn btn-small" data-withdraw="${Util.esc(r.id)}">Withdraw</button>` : ''}</td>
                     </tr>`;
                 }).join('')}</tbody>
             </table>`;
@@ -551,33 +552,33 @@ const Settings = {
         const decided = this.requests.filter(r => r.status === 'approved' || r.status === 'rejected').slice(0, 50);
         const asked = r => `${Util.esc(r.requester_email || 'Unknown')}<small>${Util.esc(Util.relative(r.created_at))}</small>`;
 
-        const actions = r => this.rejecting === String(r.id)
-            ? `<form class="reject-form" data-reject-form="${Util.esc(r.id)}" novalidate>
+        const reasons = r => `
+            <div class="reasons">
+                <span class="muted">Reason the requester will see:</span>
+                ${this.REJECT_REASONS.map(t => `<button type="button" class="chip" data-reason="${t}">${t}</button>`).join('')}
+                <form class="reject-form" data-reject-form="${Util.esc(r.id)}" novalidate>
                     <label class="sr-only" for="reject-${Util.esc(r.id)}">Reason for rejecting ${Util.esc(r.name)}</label>
-                    <input id="reject-${Util.esc(r.id)}" type="text" maxlength="200" required placeholder="Paywalled, duplicate, off-topic…">
+                    <input id="reject-${Util.esc(r.id)}" type="text" maxlength="200" required placeholder="Pick one or write your own…">
                     <button type="submit" class="btn btn-small btn-danger">Reject</button>
                     <button type="button" class="btn btn-small" data-cancel-reject>Cancel</button>
-               </form>`
-            : `<div class="row-actions">
-                    <button type="button" class="btn btn-small btn-primary" data-approve="${Util.esc(r.id)}">Approve</button>
-                    <button type="button" class="btn btn-small" data-reject="${Util.esc(r.id)}">Reject</button>
-               </div>`;
+                </form>
+            </div>`;
 
         return `
-            <h2 class="section-title">Waiting</h2>
             ${waiting.length ? `
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th scope="col">Source</th><th scope="col">Category</th><th scope="col">Asked by</th><th scope="col">Why</th><th scope="col">Decision</th></tr></thead>
-                    <tbody>${waiting.map(r => `
-                        <tr>
-                            <td>${this.requestSourceCell(r)}</td>
-                            <td>${Util.esc(CONFIG.CATEGORIES[r.category] || r.category)}</td>
-                            <td>${asked(r)}</td>
-                            <td>${Util.esc(r.reason || '')}</td>
-                            <td>${actions(r)}</td>
-                        </tr>`).join('')}</tbody>
-                </table>
+            <div class="review">${waiting.map(r => `
+                <article class="req" data-request="${Util.esc(r.id)}">
+                    <div class="req-main">
+                        <h2>${Util.esc(r.name)} <span class="muted">· <a href="${Util.esc(r.url)}" target="_blank" rel="noopener">${Util.esc(r.url.replace(/^https?:\/\//, ''))}</a> · ${Util.esc(CONFIG.CATEGORIES[r.category] || r.category)}</span></h2>
+                        ${r.reason ? `<p class="req-why">“${Util.esc(r.reason)}”</p>` : ''}
+                        <p class="req-facts">Asked by <b>${Util.esc(r.requester_email || 'Unknown')}</b>, ${Util.esc(Util.relative(r.created_at))}</p>
+                    </div>
+                    <div class="req-acts">
+                        <button type="button" class="btn btn-small btn-primary" data-approve="${Util.esc(r.id)}"><kbd>A</kbd>Approve</button>
+                        <button type="button" class="btn btn-small" data-reject="${Util.esc(r.id)}" aria-expanded="${this.rejecting === String(r.id)}"><kbd>R</kbd>Reject</button>
+                    </div>
+                    ${this.rejecting === String(r.id) ? reasons(r) : ''}
+                </article>`).join('')}
             </div>` : '<p class="empty-state">No requests waiting.</p>'}
             ${decided.length ? `
             <h2 class="section-title">Decided</h2>
@@ -794,6 +795,11 @@ const Settings = {
             this.setSourceGlobal(target.dataset.globalSource, on);
         }
 
+        if (target.dataset.reason) {
+            const input = target.closest('.reasons').querySelector('input');
+            input.value = target.dataset.reason;
+            input.focus();
+        }
         if (target.dataset.approve) this.decideRequest(target.dataset.approve, 'approved');
         if (target.dataset.withdraw) this.decideRequest(target.dataset.withdraw, 'withdrawn');
         if (target.dataset.reject || target.hasAttribute('data-cancel-reject')) {
@@ -801,6 +807,16 @@ const Settings = {
             this.el.querySelector('#request-table').innerHTML = this.adminRequestsTables();
             if (this.rejecting) this.el.querySelector(`#reject-${CSS.escape(this.rejecting)}`)?.focus();
         }
+    },
+
+    /** On the admin queue, A approves and R starts rejecting the oldest waiting request. */
+    onKey(e) {
+        if (this.page !== 'admin-requests' || !Auth.isAdmin()) return false;
+        const first = this.el.querySelector('.req');
+        const key = e.key.toLowerCase();
+        if (!first || (key !== 'a' && key !== 'r')) return false;
+        first.querySelector(key === 'a' ? '[data-approve]' : '[data-reject]').click();
+        return true;
     },
 
     submitReject(form) {

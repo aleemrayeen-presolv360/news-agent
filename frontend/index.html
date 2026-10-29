@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Public+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
 
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/auth.css">
@@ -153,19 +153,16 @@
             <a class="brand" href="#/today">News Intel</a>
             <nav class="topnav" aria-label="Main">
                 <a href="#/today" data-nav="today">Today</a>
-                <a href="#/stories" data-nav="stories">All stories <span class="count" id="nav-count-stories"></span></a>
+                <a href="#/stories" data-nav="stories">All<span class="wide-only"> stories</span> <span class="count" id="nav-count-stories"></span></a>
                 <a href="#/saved" data-nav="saved">Saved <span class="count" id="nav-count-saved"></span></a>
                 <a href="#/notes" data-nav="notes">Notes <span class="count" id="nav-count-notes"></span></a>
             </nav>
             <span class="spacer"></span>
             <button type="button" class="search-trigger" id="open-palette">
-                <svg class="icon"><use href="#i-search"/></svg>
+                <svg class="icon search-icon"><use href="#i-search"/></svg>
                 <span>Search stories, notes, people…</span>
                 <kbd>Ctrl K</kbd>
             </button>
-            <a class="icon-btn" href="#/settings" data-nav="settings" aria-label="Settings">
-                <svg class="icon"><use href="#i-gear"/></svg>
-            </a>
             <div class="user-menu">
                 <button type="button" class="avatar" id="user-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="user-menu">
                     <span id="user-initials">?</span>
@@ -173,6 +170,7 @@
                 </button>
                 <div class="menu" id="user-menu" role="menu" hidden>
                     <p class="menu-head"><strong id="user-name"></strong><span id="user-email"></span><span id="user-role"></span></p>
+                    <a role="menuitem" href="#/settings">Settings</a>
                     <a role="menuitem" href="#/settings/account">Account and password</a>
                     <button role="menuitem" type="button" id="show-shortcuts">Keyboard shortcuts</button>
                     <button role="menuitem" type="button" id="sign-out"><svg class="icon"><use href="#i-out"/></svg>Sign out</button>
@@ -234,6 +232,7 @@
             <dt><kbd>E</kbd></dt><dd>Mark the story read or unread</dd>
             <dt><kbd>O</kbd></dt><dd>Open the original article</dd>
             <dt><kbd>C</kbd></dt><dd>New note (on Notes)</dd>
+            <dt><kbd>A</kbd> <kbd>R</kbd></dt><dd>Approve or reject the oldest source request (admins)</dd>
             <dt><kbd>?</kbd></dt><dd>Show this list</dd>
         </dl>
         <div class="dialog-actions"><button type="button" class="btn btn-primary" data-close>Close</button></div>

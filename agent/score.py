@@ -74,7 +74,7 @@ Use the whole range; most articles land between 8 and 18 on each.
 Also extract:
 - ENTITIES: key companies, organisations, people, products (max 5)
 - TOPICS: specific topics covered (max 5, e.g. "solid-state batteries", "LLM", "satellite launch")
-- MARKET_IMPACT: one sentence on why it matters for business or users (or "none" if purely academic)
+- MARKET_IMPACT: one plain sentence on why it matters to the reader's company, Presolv360: an Indian online dispute resolution (ODR) and legal-tech platform that runs arbitration, mediation and conciliation, mostly for banks, NBFCs and fintech lenders recovering loans. Name the concrete link when there is one (lending, debt recovery, Indian courts and regulators, legal tech, AI they could use, data security, competitors). When there is no real link, do not mention Presolv360 or the missing link at all: just say why it matters to tech or business. Never invent a connection. Under 35 words. "none" if purely academic.
 
 Article:
 Title: {title}

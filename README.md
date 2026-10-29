@@ -134,8 +134,8 @@ news-agent/
 
 | Screen | Address | What it's for |
 |---|---|---|
-| **Today** | `#/today` | Home. A short list (5 by default) of the most important stories you haven't read. Read them one at a time with **→**, then it says "Up to date". |
-| **All stories** | `#/stories` | Everything, Gmail-style: folders (Trending / Breaking / Major / Notable), categories, domains, a date filter, sort, and a reading pane. |
+| **Today** | `#/today` | Home. A short list (5 by default) of the most important stories you haven't read, one per event. Read them one at a time with **→**; each shows what happened, why it matters, and every outlet that covered it. It ends with "Up to date": a recap of the five and when the next stories arrive. |
+| **All stories** | `#/stories` | Everything, Gmail-style: folders (Trending / Breaking / Major / Notable), categories, domains, a date filter, sort, and a reading pane. One row per event ("The Hacker News +7"); sorted by Newest, rows are grouped by day. Reading one article marks the whole event read. |
 | **Saved** | `#/saved` | Stories you pressed **S** on. A copy is kept, so they stay after leaving the weekly file. |
 | **Notes** | `#/notes` | Private notes that save as you type. Press **N** on any story to add it to a note. |
 | **Settings** | `#/settings` | Preferences (including the domains you follow), hide sources you don't need, **request a new source**, change your password. |
@@ -151,6 +151,13 @@ approved request. Every request and decision goes in the audit log.
 
 Every filter is in the address bar (for example `#/stories?folder=breaking&from=2026-10-01`), so
 **Back**, refresh, bookmarks and Ctrl-click all work.
+
+**Phones:** below 760 px the four main screens move to a tab bar at the bottom, and All stories
+shows the list, then the story, one at a time.
+
+**"Why it matters"** is written by the scoring model for Presolv360 (ODR, lending, Indian law,
+legal tech) when there is a real link, and for tech or business in general when there isn't.
+Stories scored before 26 Oct 2026 keep the older, general wording.
 
 **Keyboard:** `Ctrl K` or `/` search · `J`/`K` next/previous · `S` save · `N` add to note ·
 `E` read/unread · `O` open article · `C` new note · `?` all shortcuts.
@@ -425,10 +432,9 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
   but anyone holding the public anon key (which is in `config.js`) could read every note and every
   profile email directly from the database. Before storing anything sensitive, turn RLS on for
   `note` and `profile` with "owner only" policies.
-- For the same reason, "only admins approve source requests" is enforced by the website, not the
-  database: someone calling Supabase directly with the anon key could approve their own request.
-  An approved feed only adds news to score, and every decision made on the site is in the audit
-  log. RLS policies on `source_request` (insert own, update by admins) would close this.
+- Writes that matter are guarded in the database by triggers in `sql/supabase.sql` ("write
+  guards"): only an admin can change a role, remove a person, or approve or reject a source
+  request, even when someone calls Supabase directly with the anon key. Reading is not guarded.
 - News text from feeds is escaped before it is shown, so a malicious headline can't run code in
   the page. Pasted text in notes is inserted as plain text.
 - `.env` holds the pipeline secrets and must never be committed.

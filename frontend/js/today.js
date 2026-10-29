@@ -36,25 +36,28 @@ const Today = {
         const prefs = UserState.prefs();
         const count = Number(prefs.dailyCount) || CONFIG.DAILY_COUNT_DEFAULT;
         const followed = UserState.followedDomains();
-        const candidates = [...Stories.visible()].sort((a, b) =>
+        // One story per event, so two outlets' takes on the same news never fill two slots
+        const candidates = Stories.grouped([...Stories.visible()].sort((a, b) =>
             (UserState.isRead(a.id) - UserState.isRead(b.id)) ||
             (this.isRecent(b) - this.isRecent(a)) || (b.score - a.score)
-        );
+        ));
         const wanted = s => !followed || followed.includes(s.area) || s.label === 'breaking';
         const ordered = [...candidates.filter(wanted), ...candidates.filter(s => !wanted(s))];
 
         const picks = [];
         const perDomain = {};
+        const repeats = s => picks.some(p => this.sameEvent(p, s));
         for (const s of ordered) {
             if (picks.length >= count) break;
             if ((perDomain[s.area] || 0) >= this.MAX_PER_DOMAIN && s.label !== 'breaking') continue;
+            if (repeats(s)) continue;
             picks.push(s);
             perDomain[s.area] = (perDomain[s.area] || 0) + 1;
         }
         // A quiet day with too few domains: fill up regardless of the per-domain limit
         for (const s of ordered) {
             if (picks.length >= count) break;
-            if (!picks.includes(s)) picks.push(s);
+            if (!picks.includes(s) && !repeats(s)) picks.push(s);
         }
 
         if (prefs.includeLegal && picks.length && !picks.some(s => s.category === 'legal')) {
@@ -62,6 +65,20 @@ const Today = {
             if (legal) picks[picks.length - 1] = legal;
         }
         return picks.sort((a, b) => b.score - a.score).map(s => s.id);
+    },
+
+    /**
+     * The pipeline leaves many articles about one event ungrouped, so as a fallback two stories
+     * count as the same event when they lead with the same company and share a topic word
+     * ("IPO filing" and "IPO prospectus").
+     */
+    sameEvent(a, b) {
+        if (a.clusterId && a.clusterId === b.clusterId) return true;
+        if (!a.entities[0] || Util.normalize(a.entities[0]) !== Util.normalize(b.entities[0] || '')) return false;
+        const generic = new Set(['ai', 'and', 'the', 'of', 'for', 'tech', 'market', 'markets', 'industry', 'news', 'policy', 'strategy', 'corporate', 'business']);
+        const words = s => new Set(s.topics.join(' ').toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 1 && !generic.has(w)));
+        const wa = words(a);
+        return [...words(b)].some(w => wa.has(w));
     },
 
     ensureSession() {
@@ -88,11 +105,14 @@ const Today = {
         const step = parts[0];
 
         if (!stories.length) return this.renderEmpty();
-        if (step === 'done' || (!step && this.session.finished)) return this.renderDone(stories);
+        if (step === 'done') return this.renderDone(stories);
 
         const n = parseInt(step, 10);
         if (n >= 1 && n <= stories.length) return this.renderStory(stories, n);
-        return this.renderList(stories);
+        // Home opens on the next story not yet read, or the finish line when all are
+        if (this.session.finished) return this.renderDone(stories);
+        const next = stories.findIndex(s => !this.session.heard.includes(s.id));
+        location.replace(`#/today/${next === -1 ? 'done' : next + 1}`);
     },
 
     renderEmpty() {
@@ -105,52 +125,6 @@ const Today = {
             </div>`;
     },
 
-    renderList(stories) {
-        this.position = null;
-        const nextIndex = stories.findIndex(s => !this.session.heard.includes(s.id));
-        const started = this.session.heard.length > 0;
-        const startAt = nextIndex === -1 ? 1 : nextIndex + 1;
-        const stats = Stories.stats();
-        const recent = Stories.visible().filter(s => this.isRecent(s));
-        const breaking = recent.filter(s => s.label === 'breaking').length;
-        const readCount = recent.filter(s => UserState.isRead(s.id)).length;
-        const prefs = UserState.prefs();
-
-        this.el.innerHTML = `
-            <div class="today">
-                <div>
-                    <h1>${stories.length === 1 ? '1 story needs you today' : `${stories.length} stories need you today`}</h1>
-                    <p class="today-sub">${Util.esc(Util.weekdayDate())}. Picked from the last ${CONFIG.TODAY_DAYS} days${UserState.followedDomains() ? ', in the domains you follow' : ', across every domain'}.</p>
-                    <div class="today-start">
-                        <a class="btn btn-primary btn-big" href="#/today/${startAt}" id="today-start">
-                            ${started ? `Continue with story ${startAt}` : 'Start with story 1'}<kbd>Enter</kbd>
-                        </a>
-                        <span class="muted">or pick any story below</span>
-                    </div>
-                    <ol class="today-list">
-                        ${stories.map((s, i) => `
-                            <li class="${this.session.heard.includes(s.id) ? 'is-read' : ''}">
-                                <a href="#/today/${i + 1}">
-                                    <span class="today-headline">${Util.esc(s.headline)}</span>
-                                    <span class="story-meta">${Stories.labelHtml(s)}<span>${Util.esc(s.source)}</span><span>${Stories.categoryHtml(s)}</span>${s.coverage > 1 ? `<span>${Stories.coverageText(s)}</span>` : ''}</span>
-                                </a>
-                            </li>`).join('')}
-                    </ol>
-                </div>
-                <div class="side-stack">
-                    <section class="side-box">
-                        <h2>Last ${CONFIG.TODAY_DAYS} days</h2>
-                        <p>${recent.length} stories worth reading, ${breaking} of them breaking. You've read ${readCount}.</p>
-                    </section>
-                    <section class="side-box">
-                        <h2>How this list is chosen</h2>
-                        <p>The highest-ranked stories you haven't read yet, picked from ${stats.items_ingested ? `${stats.items_ingested} stories scanned` : 'everything scanned'} this week.${prefs.includeLegal ? ' At least one Legal India story is included when there is one.' : ''}</p>
-                        <a href="#/settings/preferences">Change in preferences</a>
-                    </section>
-                </div>
-            </div>`;
-    },
-
     renderStory(stories, n) {
         this.position = n;
         const story = stories[n - 1];
@@ -158,62 +132,100 @@ const Today = {
 
         if (!this.session.heard.includes(story.id)) {
             this.session.heard.push(story.id);
+            this.session.startedAt = this.session.startedAt || Date.now();
             UserState.saveTodaySession(this.session);
         }
-        UserState.setRead(story.id);
+        Stories.markRead(story);
 
-        const nextLabel = isLast ? 'Finish' : 'Next story';
-        const primary = `<a class="btn btn-primary btn-big" href="#/today/${isLast ? 'done' : n + 1}">${nextLabel}<kbd>→</kbd></a>`;
-        const actions = n > 1 ? `<a class="btn" href="#/today/${n - 1}"><svg class="icon"><use href="#i-prev"/></svg>Previous<kbd>←</kbd></a>` : '';
+        const primary = `<a class="btn btn-primary" href="#/today/${isLast ? 'done' : n + 1}">${isLast ? 'Finish' : 'Next story'}<kbd>→</kbd></a>`;
+        const left = isLast ? 'last story' : `about ${(stories.length - n) * this.MINUTES_PER_STORY} min left`;
+        const [weekday, date] = Util.weekdayDate().split(/,? (.*)/);
 
         this.el.innerHTML = `
             <div class="hearing">
-                <nav class="queue" aria-label="Today's list">
-                    <h2>Today, story ${n} of ${stories.length}</h2>
-                    <div class="progress" aria-hidden="true">${stories.map((_, i) => `<span class="${i < n ? 'is-done' : ''}"></span>`).join('')}</div>
-                    <ol>
+                <nav class="rail" aria-label="Your briefing">
+                    <div><h2>Your briefing</h2><p class="rail-date">${Util.esc(weekday)},<br>${Util.esc(date)}</p></div>
+                    <div class="rail-progress">
+                        <div class="progress" aria-hidden="true">${stories.map((_, i) => `<span class="${i < n - 1 ? 'is-done' : i === n - 1 ? 'is-now' : ''}"></span>`).join('')}</div>
+                        <p class="meta">${n} of ${stories.length} · ${left}</p>
+                    </div>
+                    <ol class="queue">
                         ${stories.map((s, i) => {
                             const heard = this.session.heard.includes(s.id) && i + 1 !== n;
+                            const mark = i + 1 === n ? '→' : heard ? '<svg class="icon"><use href="#i-check"/></svg>' : i + 1;
                             return `<li class="${heard ? 'is-done' : ''}" ${i + 1 === n ? 'aria-current="step"' : ''}>
-                                <a href="#/today/${i + 1}"><span class="mark">${heard ? '<svg class="icon"><use href="#i-check"/></svg>' : ''}</span>${Util.esc(s.headline)}</a>
+                                <a href="#/today/${i + 1}"><span class="mark" aria-hidden="true">${mark}</span>${Util.esc(s.headline)}</a>
                             </li>`;
                         }).join('')}
                     </ol>
                 </nav>
-                ${Stories.articleHtml(story, { headingTag: 'h1', primary, actions })}
+                ${Stories.articleHtml(story, { headingTag: 'h1', variant: 'brief', primary })}
+                ${this.relatedHtml(story, stories)}
             </div>`;
+    },
+
+    /**
+     * "From your domains": up to three unread stories on the same subject (same company first,
+     * then same domain) for the side column. They wait in All stories and never extend Today.
+     */
+    relatedHtml(story, todays) {
+        const lead = Util.normalize(story.entities[0] || '');
+        const pool = Stories.grouped(Stories.visible()).filter(s =>
+            s.id !== story.id && !(story.clusterId && s.clusterId === story.clusterId) &&
+            !todays.includes(s) && !UserState.isRead(s.id) && this.isRecent(s));
+        const sameCompany = lead ? pool.filter(s => s.entities.some(e => Util.normalize(e) === lead)) : [];
+        const sameDomain = pool.filter(s => s.area === story.area && !sameCompany.includes(s));
+        const picks = [...sameCompany, ...sameDomain].slice(0, 3);
+        const link = s => `#/stories?${new URLSearchParams({ story: s.id })}`;
+        return `
+            <aside class="related" aria-label="From your domains">
+                <h2>From your domains</h2>
+                ${picks.map(s => `
+                    <a class="related-item" href="${link(s)}">
+                        ${Stories.labelHtml(s)}
+                        <span>${Util.esc(s.headline)}</span>
+                        <span class="meta">${Util.esc(s.source)} · ${Util.esc(Stories.categoryName(s))}</span>
+                    </a>`).join('') || '<p class="meta">Nothing else on this subject right now.</p>'}
+                <p class="meta">Related stories wait in All stories. They never extend Today.</p>
+            </aside>`;
+    },
+
+    MINUTES_PER_STORY: 2,
+
+    /** When the next stories arrive, from the daily run's schedule (07:01 IST, done by ~7:30). */
+    nextUpdateText() {
+        const age = Notices.dataAgeHours();
+        if (age !== null && age > Notices.STALE_HOURS) return 'The daily update is late, so newer stories may be missing.';
+        return 'The next update arrives tomorrow at about 7:30 AM.';
     },
 
     renderDone(stories) {
         this.position = null;
         if (!this.session.finished) {
             this.session.finished = true;
+            this.session.finishedAt = Date.now();
             UserState.saveTodaySession(this.session);
         }
-        const savedToday = stories.filter(s => UserState.isSaved(s.id));
+        const unreadMajor = Stories.grouped(Stories.visible())
+            .filter(s => s.label !== 'notable' && !UserState.isRead(s.id) && this.isRecent(s)).length;
+        const mark = s => UserState.isSaved(s.id) ? 'Saved' : (this.session.noted.includes(s.id) ? 'Added to a note' : '');
+        const minutes = this.session.startedAt && this.session.finishedAt
+            ? Math.round((this.session.finishedAt - this.session.startedAt) / 60000) : 0;
+        const count = `${stories.length} ${stories.length === 1 ? 'story' : 'stories'}`;
+        const read = minutes >= 1 && minutes <= 120 ? `${count} in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.` : `${count} read.`;
 
         this.el.innerHTML = `
             <div class="done">
-                <div class="done-col">
-                    <div class="stamp"><strong>Up to date</strong><span>${Util.esc(Util.longDate(new Date()))}</span></div>
-                    <h1 class="sr-only">You're up to date</h1>
-                    <p class="done-text">That's everything that needs you today. Tomorrow's list is ready from midnight, India time.</p>
-                    <div class="tally">
-                        <div><strong>${this.session.heard.length}</strong><span>read</span></div>
-                        <div><strong>${savedToday.length}</strong><span>saved</span></div>
-                        <div><strong>${this.session.noted.length}</strong><span>added to notes</span></div>
-                    </div>
-                    <div class="done-actions">
-                        <a class="btn btn-primary" href="#/notes">Open my notes</a>
-                        <a class="btn" href="#/stories">Browse all ${Stories.visible().length} stories</a>
-                        <a class="btn" href="#/today/1">Go through today's list again</a>
-                    </div>
-                </div>
-                ${savedToday.length ? `
-                <section class="side-box">
-                    <h2>You saved today</h2>
-                    <ul class="plain-list">${savedToday.map(s => `<li><a href="#/saved?story=${encodeURIComponent(s.id)}">${Util.esc(s.headline)}</a></li>`).join('')}</ul>
-                </section>` : ''}
+                <span class="seal" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span>
+                <h1>You're up to date</h1>
+                <p class="done-text">${read} ${Util.esc(this.nextUpdateText())}</p>
+                <ol class="recap" aria-label="What you read">
+                    ${stories.map((s, i) => `
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><a href="#/today/${i + 1}">${Util.esc(s.headline)}</a><span>${mark(s)}</span></li>`).join('')}
+                </ol>
+                <p class="meta">${unreadMajor
+                    ? `Want more? <a href="#/stories?folder=major">All stories</a> has ${unreadMajor} unread Breaking and Major ${unreadMajor === 1 ? 'story' : 'stories'} from this week.`
+                    : 'You have also read every Breaking and Major story from this week.'}</p>
             </div>`;
     },
 
@@ -255,14 +267,7 @@ const Today = {
     /** Keyboard shortcuts while Today is open. Returns true when handled. */
     onKey(e) {
         const stories = this.session ? this.stories() : [];
-        if (!this.position) {
-            // App only passes Enter through when focus isn't on a link or button
-            if (e.key === 'Enter') {
-                document.getElementById('today-start')?.click();
-                return true;
-            }
-            return false;
-        }
+        if (!this.position) return false;
 
         const story = this.currentStory();
         const key = e.key.toLowerCase();

@@ -27,15 +27,19 @@ const Stories = {
             url: item.url,
             headline,
             source: Util.decode(item.source),
-            summary: Util.decode(item.one_liner || ''),
+            summary: this.cleanSummary(Util.decode(item.one_liner || ''), headline),
             whyItMatters: Util.decode(item.market_impact || ''),
             topics: item.topics || [],
             entities: item.entities || [],
-            coverage: Number(item.cluster_count) || 1,
+            clusterId: item.cluster_id || null,
+            others: (item.coverage || []).map(c => ({ source: Util.decode(c.source), headline: Util.decode(c.headline), url: c.url })),
             publishedAt: item.published_at || null,
             score: Number(item.score) || 0,
             domain: CONFIG.DOMAINS[item.domain] ? item.domain : null
         };
+        // Distinct outlets that covered the event; older data.js files only have the count
+        const outlets = new Set([story.source, ...story.others.map(o => o.source)]);
+        story.coverage = story.others.length ? outlets.size : (Number(item.cluster_count) || 1);
         story.label = this.labelFor(story.score);
         story.category = this.categoryFor(story, item.category);
         story.area = story.domain || this.guessDomain(story);
@@ -43,6 +47,25 @@ const Stories = {
         story.trending = Boolean(item.trending) || story.coverage >= 3;
         story.searchText = Util.normalize([headline, story.source, story.summary, CONFIG.DOMAINS[story.domain] || '', ...story.topics, ...story.entities].join(' '));
         return story;
+    },
+
+    /**
+     * The feed's summary, or '' when it adds nothing: Hacker News sends link metadata
+     * ("Article URL: ... Comments: 94") and Google News repeats the headline.
+     * Newsletter lines ("sign up here") are dropped, and since the pipeline cuts summaries
+     * at a fixed length, the text ends at the last full sentence, or at a whole word with "…".
+     */
+    cleanSummary(summary, headline) {
+        if (/^(Article URL|Comments URL):/i.test(summary)) return '';
+        const a = Util.normalize(summary), b = Util.normalize(headline);
+        if (a && b && a.startsWith(b) && a.length < b.length + 40) return '';
+        const sentences = summary.match(/.+?(?:[.!?]+["'”’)\]]*(?=\s|$)\s*|$)/g) || [];
+        const kept = sentences.filter(s => !/originally appeared|appeared first on|sign up|subscribe to|in your inbox|click here|read more/i.test(s));
+        const text = kept.join('').trim();
+        if (!text || /[.!?]["'”’)\]]*$/.test(text)) return text;
+        const whole = kept.slice(0, -1).join('').trim();
+        if (whole.length > 20) return whole;
+        return text.replace(/\s+\S*$/, '').replace(/[\s,;:–-]+$/, '') + '…';
     },
 
     /** Names of sources hidden for this user (personally or for everyone). Set by Settings.loadSources(). */
@@ -56,6 +79,26 @@ const Stories = {
 
     byId(id) {
         return this.all().find(s => s.id === id) || null;
+    },
+
+    /** Other stories on the site about the same event (same cluster). */
+    siblings(story) {
+        return story.clusterId ? this.all().filter(s => s.clusterId === story.clusterId && s.id !== story.id) : [];
+    },
+
+    /** Reading one article about an event counts as reading the event. */
+    markRead(story, read = true) {
+        UserState.setRead(story.id, read);
+        for (const s of this.siblings(story)) UserState.setRead(s.id, read);
+    },
+
+    /**
+     * One entry per event: the first story of each cluster in `list` stands for the others, so
+     * keep `list` in the order you want leads picked (most important, newest...).
+     */
+    grouped(list) {
+        const seen = new Set();
+        return list.filter(s => !s.clusterId || (!seen.has(s.clusterId) && seen.add(s.clusterId)));
     },
 
     /** 'breaking' | 'major' | 'notable'. Readers see these words, never the score. */
@@ -158,57 +201,102 @@ const Stories = {
     // ---------- Shared markup ----------
 
     labelHtml(story) {
-        return `<span class="label label-${story.label}">${this.labelText(story.label)}</span>`
-            + (story.trending ? '<span class="trend-tag">Trending</span>' : '');
+        return `<span class="label label-${story.label}">${this.labelText(story.label)}</span>`;
     },
 
-    /** The category's dot, named by the finer domain when there is one ("EVs and mobility"). */
-    categoryHtml(story) {
-        const name = story.category !== 'competitors' && story.domain
+    trendHtml(story) {
+        return story.trending ? '<span class="trend-tag">Trending</span>' : '';
+    },
+
+    /** The finer domain when there is one ("EVs and mobility"), else the category. */
+    categoryName(story) {
+        return story.category !== 'competitors' && story.domain
             ? CONFIG.DOMAINS[story.domain]
             : CONFIG.CATEGORIES[story.category];
-        return `<span class="cat-dot cat-${story.category}" aria-hidden="true"></span>${Util.esc(name)}`;
+    },
+
+    categoryHtml(story) {
+        return `<span class="tag">${Util.esc(this.categoryName(story))}</span>`;
     },
 
     coverageText(story) {
         return story.coverage > 1 ? `Covered by ${story.coverage} sources` : '';
     },
 
+    /** "+7 sources" after the outlet's name, or '' when only one outlet has it. */
+    moreSourcesText(story) {
+        const n = story.coverage - 1;
+        return n > 0 ? `+${n} ${n === 1 ? 'source' : 'sources'}` : '';
+    },
+
+    /** Every outlet that covered the story, lead outlet first, each name once. */
+    outlets(story) {
+        const seen = new Set();
+        return [{ source: story.source, headline: story.headline, url: story.url }, ...story.others]
+            .filter(o => !seen.has(o.source) && seen.add(o.source));
+    },
+
+    /** Today's card: "Covered by 8 sources" and the outlets as tags. */
+    coverageTagsHtml(story) {
+        const outlets = this.outlets(story);
+        const shown = outlets.slice(0, 4);
+        const rest = Math.max(story.coverage, outlets.length) - shown.length;
+        const title = story.coverage > 1 ? this.coverageText(story) : 'Reported by';
+        return `
+            <section class="coverage" aria-label="Coverage">
+                <strong>${title}</strong>
+                ${shown.map(o => `<a class="tag" href="${Util.esc(o.url)}" target="_blank" rel="noopener">${Util.esc(o.source)}</a>`).join('')}
+                ${rest > 0 ? `<span class="tag">+${rest}</span>` : ''}
+            </section>`;
+    },
+
+    /** The reading pane: every outlet with its own headline, the long tail folded into "+N more". */
+    coverageTableHtml(story) {
+        const outlets = this.outlets(story);
+        const rows = outlets.length > 5 ? outlets.slice(0, 4) : outlets;
+        const folded = outlets.slice(rows.length);
+        const rest = Math.max(story.coverage, outlets.length) - rows.length;
+        const row = o => `<li><b>${Util.esc(o.source)}</b><a href="${Util.esc(o.url)}" target="_blank" rel="noopener">${Util.esc(o.headline)}</a></li>`;
+        return `
+            <section class="story-block" aria-label="Coverage">
+                <h3>Coverage · ${story.coverage > 1 ? `${story.coverage} sources` : '1 source'}</h3>
+                <ul class="cov-list">
+                    ${rows.map(row).join('')}
+                    ${rest > 0 ? `<li class="cov-more"><b>+${rest} more</b><span>${Util.esc(folded.map(o => o.source).join(', ') || 'Other outlets')}</span></li>` : ''}
+                </ul>
+            </section>`;
+    },
+
     /**
-     * The full story view, used by Today and the reader.
-     * `primary` goes first in the action row (Next story), `actions` goes last.
+     * The story card, in Today's briefing ('brief') or the All stories reading pane ('pane').
+     * Same order in both: what happened, why it matters, who covered it.
+     * `primary` (Next story) sits at the end of the action row, `actions` before it.
      */
-    articleHtml(story, { headingTag = 'h2', primary = '', actions = '' } = {}) {
+    articleHtml(story, { headingTag = 'h2', variant = 'pane', primary = '', actions = '' } = {}) {
         const saved = UserState.isSaved(story.id);
-        const host = Util.hostname(story.url) || 'the source';
-        const facts = [];
-        if (story.entities.length) {
-            facts.push(`<dt>People and companies</dt><dd>${story.entities.slice(0, 8).map(e => `<span class="chip">${Util.esc(e)}</span>`).join('')}</dd>`);
-        }
-        if (story.topics.length) {
-            facts.push(`<dt>Topics</dt><dd>${story.topics.slice(0, 6).map(t => `<span class="chip">${Util.esc(t)}</span>`).join('')}</dd>`);
-        }
+        const brief = variant === 'brief';
+        const when = story.publishedAt
+            ? (brief ? `${Util.shortDate(story.publishedAt)} · ${Util.clock(story.publishedAt)}` : Util.longDate(story.publishedAt))
+            : '';
+        const meta = brief
+            ? `${this.labelHtml(story)}${this.categoryHtml(story)}${this.trendHtml(story)}${when ? `<span class="meta">${when}</span>` : ''}`
+            : `${this.labelHtml(story)}${this.trendHtml(story)}<span class="meta">${Util.esc(this.categoryName(story))}${when ? ` · ${when}` : ''}</span>`;
+        const why = story.whyItMatters && !/^none\.?$/i.test(story.whyItMatters) ? story.whyItMatters : '';
 
         return `
-            <article class="story" data-story="${Util.esc(story.id)}">
-                <div class="story-main">
-                    <div class="story-meta">${this.labelHtml(story)}<span>${this.categoryHtml(story)}</span></div>
-                    <${headingTag} class="story-title">${Util.esc(story.headline)}</${headingTag}>
-                    <p class="story-by"><strong>${Util.esc(story.source)}</strong>${story.publishedAt ? `, ${Util.longDate(story.publishedAt)}` : ''}.${story.coverage > 1 ? ` ${this.coverageText(story)}.` : ''}</p>
-                    ${story.summary ? `<p class="story-lead">${Util.esc(story.summary)}</p>` : ''}
-                    ${facts.length ? `<dl class="story-facts">${facts.join('')}</dl>` : ''}
-                    <div class="story-actions">
-                        ${primary}
-                        <a class="btn" href="${Util.esc(story.url)}" target="_blank" rel="noopener"><svg class="icon"><use href="#i-ext"/></svg>Read on ${Util.esc(host)}</a>
-                        <button type="button" class="btn" data-action="save" aria-pressed="${saved}"><svg class="icon"><use href="#i-save"/></svg><span>${saved ? 'Saved' : 'Save'}</span><kbd>S</kbd></button>
-                        <button type="button" class="btn" data-action="note"><svg class="icon"><use href="#i-note"/></svg>Add to note<kbd>N</kbd></button>
-                        ${actions}
-                    </div>
+            <article class="story story-${variant}" data-story="${Util.esc(story.id)}">
+                <div class="story-meta">${meta}</div>
+                <${headingTag} class="story-title">${Util.esc(story.headline)}</${headingTag}>
+                ${story.summary ? `<section class="story-block"><h3>${brief ? 'What happened' : 'The news'}</h3><p class="story-lead">${Util.esc(story.summary)}</p></section>` : ''}
+                ${why ? `<section class="story-block"><h3>Why it matters</h3><p class="story-lead">${Util.esc(why)}</p></section>` : ''}
+                ${brief ? this.coverageTagsHtml(story) : this.coverageTableHtml(story)}
+                <div class="story-actions">
+                    <button type="button" class="btn" data-action="save" aria-pressed="${saved}"><kbd>S</kbd><span>${saved ? 'Saved' : 'Save'}</span></button>
+                    <button type="button" class="btn" data-action="note"><kbd>N</kbd><span class="wide-only">Add to note</span><span class="phone-only">Note</span></button>
+                    <a class="btn btn-read" href="${Util.esc(story.url)}" target="_blank" rel="noopener"><kbd>O</kbd>Read at ${Util.esc(story.source || Util.hostname(story.url) || 'the source')}</a>
+                    ${actions}
+                    ${primary}
                 </div>
-                ${story.whyItMatters ? `
-                <aside class="story-margin" aria-label="Why it matters">
-                    <div><h3>Why it matters</h3><p>${Util.esc(story.whyItMatters)}</p></div>
-                </aside>` : ''}
             </article>`;
     }
 };
