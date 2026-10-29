@@ -45,6 +45,8 @@ const CONFIG = {
     // Score thresholds behind the Breaking / Major / Notable labels (scores are never shown)
     SCORE_BREAKING: 85,
     SCORE_MAJOR: 70,
+    // Breaking is news only while it's fresh; after this a Breaking-scored story shows as Major
+    BREAKING_HOURS: 48,
 
     // Today's list
     DAILY_COUNT_DEFAULT: 5,

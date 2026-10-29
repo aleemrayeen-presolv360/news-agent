@@ -31,6 +31,7 @@ const App = {
         UserState.setUser(Auth.currentUser?.id);
         this.renderUser();
 
+        Panes.init();
         Today.init();
         Reader.init();
         Notes.init();
@@ -162,6 +163,7 @@ const App = {
         if (mod || e.altKey) return;
         if (document.querySelector('dialog[open]')) return;
         if (Util.isTyping(e)) return;
+        if (e.defaultPrevented) return;   // used by a focused control (a resize line's arrow keys)
 
         // Enter on a focused link or button should do its normal job
         const focusIsNeutral = [document.body, document.getElementById('main')].includes(document.activeElement);

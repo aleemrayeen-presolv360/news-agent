@@ -40,7 +40,7 @@ const Stories = {
         // Distinct outlets that covered the event; older data.js files only have the count
         const outlets = new Set([story.source, ...story.others.map(o => o.source)]);
         story.coverage = story.others.length ? outlets.size : (Number(item.cluster_count) || 1);
-        story.label = this.labelFor(story.score);
+        story.label = this.labelFor(story.score, story.publishedAt);
         story.category = this.categoryFor(story, item.category);
         story.area = story.domain || this.guessDomain(story);
         // Older data.js files have no "trending"; wide coverage is the same signal
@@ -101,9 +101,13 @@ const Stories = {
         return list.filter(s => !s.clusterId || (!seen.has(s.clusterId) && seen.add(s.clusterId)));
     },
 
-    /** 'breaking' | 'major' | 'notable'. Readers see these words, never the score. */
-    labelFor(score) {
-        if (score >= CONFIG.SCORE_BREAKING) return 'breaking';
+    /**
+     * 'breaking' | 'major' | 'notable'. Readers see these words, never the score.
+     * Breaking lasts BREAKING_HOURS from publication; older Breaking-scored stories are Major.
+     */
+    labelFor(score, publishedAt = null) {
+        const fresh = !publishedAt || Date.now() - new Date(publishedAt).getTime() < CONFIG.BREAKING_HOURS * 3600e3;
+        if (score >= CONFIG.SCORE_BREAKING && fresh) return 'breaking';
         if (score >= CONFIG.SCORE_MAJOR) return 'major';
         return 'notable';
     },
@@ -236,17 +240,57 @@ const Stories = {
             .filter(o => !seen.has(o.source) && seen.add(o.source));
     },
 
-    /** Today's card: "Covered by 8 sources" and the outlets as tags. */
+    /**
+     * What kind of outlet this is, for the coverage strip. Indian outlets are found by name or an
+     * .in address (Google News links are redirects, so the name is what's left); labs, journals
+     * and company blogs are primary sources; beat publications are specialist press.
+     */
+    OUTLET_GROUPS: [
+        { id: 'global', name: 'Global press' },
+        { id: 'specialist', name: 'Specialist press' },
+        { id: 'primary', name: 'Research and companies' },
+        { id: 'india', name: 'Indian press' }
+    ],
+    _india: /\b(ET|Economic Times|Livemint|Mint|Inc42|MediaNama|Business Standard|Moneycontrol|Rediff|LatestLY|Siliconindia|Indian?|Times of India|Business Today|CNBC TV18|News18|Mid-Day|Fortune India|ANI|ThePrint|Firstpost|Nasscom|Kashmir\w*|TheWire|Financial Express|Jagran|NDTV|Times Now|Bhaskar|Tribune|Hindustan|Hindu|Deccan|Trak\.in|YourStory|Outlook|Free Press Journal|BusinessLine|BW|Goodreturns|Upstox|HDFC|Press Information Bureau|Bar (&|and) Bench|SCC Online|Live ?Law\w*|Lawtext|Verdictum|Gujarat|Punjab|Udaipur|Pune|Karnataka|Madhyamam|Dhanam\w*|DD News|Exchange4Media|KNN|Inshorts|Dalal Street|Kalkine India|IndiaIPO|Univest|NiftyTrader|Trade Brains|EquityBulls|Sahi|Groww|IND ?Today|Zee|Lokmat|Manorama|Mathrubhumi|Scroll\.in|Swarajya|Telegraph India|India\w*)\b/i,
+    _primary: /\b(arXiv|Nature|HF Daily Papers|Science(Daily)?|NASA|ISRO|Harvard|Caltech|ETH Zurich|Max Planck|CMU|MIT News|Stanford|Berkeley|Oxford|Cambridge|University|Research|DeepMind|OpenAI|Anthropic|Mistral|Hugging Face|NVIDIA|Meta AI|Amazon Science|Microsoft|Google|Apple ML)\b/i,
+    _specialist: /\b(Hacker News$|Krebs|Bleeping|Dark Reading|SecurityWeek|The Record|Electrek|InsideEVs|SpaceNews|EE Times|SemiAnalysis|Utility Dive|Canary Media|Robot Report|Endpoints|Law\.com|Law360|Above the Law|Arbitration|Legal|Law Review|Lawyer|Solicitors|ICLG|Law\.asia|Fintech|FinTech|IBS Intelligence|Crypto)/,
+
+    outletGroup(outlet) {
+        const name = outlet.source || '';
+        let host = '';
+        try { host = new URL(outlet.url).hostname; } catch { /* not a URL */ }
+        if (this._india.test(name) || /\.in$|indiatimes|livemint/.test(host)) return 'india';
+        if (this._primary.test(name)) return 'primary';
+        if (this._specialist.test(name)) return 'specialist';
+        return 'global';
+    },
+
+    /** Today's card: "Covered by 8 sources", the outlets as tags, and the mix of outlets as a strip. */
     coverageTagsHtml(story) {
         const outlets = this.outlets(story);
         const shown = outlets.slice(0, 4);
         const rest = Math.max(story.coverage, outlets.length) - shown.length;
         const title = story.coverage > 1 ? this.coverageText(story) : 'Reported by';
+        const groups = this.OUTLET_GROUPS
+            .map(g => ({ ...g, outlets: outlets.filter(o => this.outletGroup(o) === g.id) }))
+            .filter(g => g.outlets.length);
+        const lead = this.outletGroup(outlets[0]);
+        const alsoIndia = lead !== 'india' && groups.some(g => g.id === 'india');
+        // The strip needs every outlet's name; older data only has a count
+        const strip = outlets.length > 1 && outlets.length >= story.coverage;
+        const phoneText = `${outlets.slice(0, 3).map(o => o.source).join(', ')}${story.coverage > 3 ? ` +${story.coverage - 3}` : ''}`;
         return `
             <section class="coverage" aria-label="Coverage">
-                <strong>${title}</strong>
-                ${shown.map(o => `<a class="tag" href="${Util.esc(o.url)}" target="_blank" rel="noopener">${Util.esc(o.source)}</a>`).join('')}
-                ${rest > 0 ? `<span class="tag">+${rest}</span>` : ''}
+                <div class="coverage-row">
+                    <strong>${title}</strong>
+                    ${shown.map(o => `<a class="tag" href="${Util.esc(o.url)}" target="_blank" rel="noopener">${Util.esc(o.source)}</a>`).join('')}
+                    ${rest > 0 ? `<span class="tag">+${rest}</span>` : ''}
+                    ${alsoIndia ? '<span class="tag tag-india">Also in Indian press</span>' : ''}
+                    <span class="coverage-phone">${story.coverage > 1 ? ` · ${Util.esc(phoneText)}` : ` ${Util.esc(story.source)}`}</span>
+                </div>
+                ${strip ? `
+                <div class="spread" aria-hidden="true">${groups.map(g => `<i class="g-${g.id}" style="flex:${g.outlets.length}"></i>`).join('')}</div>
+                <p class="legend">${groups.map(g => `<span class="g-${g.id}">${g.name} ${g.outlets.length}${g.id === 'india' ? ` (${Util.esc(g.outlets.slice(0, 3).map(o => o.source).join(', '))}${g.outlets.length > 3 ? '…' : ''})` : ''}</span>`).join('')}</p>` : ''}
             </section>`;
     },
 
@@ -255,14 +299,13 @@ const Stories = {
         const outlets = this.outlets(story);
         const rows = outlets.length > 5 ? outlets.slice(0, 4) : outlets;
         const folded = outlets.slice(rows.length);
-        const rest = Math.max(story.coverage, outlets.length) - rows.length;
         const row = o => `<li><b>${Util.esc(o.source)}</b><a href="${Util.esc(o.url)}" target="_blank" rel="noopener">${Util.esc(o.headline)}</a></li>`;
         return `
             <section class="story-block" aria-label="Coverage">
                 <h3>Coverage · ${story.coverage > 1 ? `${story.coverage} sources` : '1 source'}</h3>
                 <ul class="cov-list">
                     ${rows.map(row).join('')}
-                    ${rest > 0 ? `<li class="cov-more"><b>+${rest} more</b><span>${Util.esc(folded.map(o => o.source).join(', ') || 'Other outlets')}</span></li>` : ''}
+                    ${folded.length ? `<li class="cov-more"><b>+${folded.length} more</b><span>${Util.esc(folded.map(o => o.source).join(', '))}</span></li>` : ''}
                 </ul>
             </section>`;
     },

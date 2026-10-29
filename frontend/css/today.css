@@ -2,8 +2,8 @@
 
 .story-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
-/* Briefing rail | story card | related stories */
-.hearing { display: grid; grid-template-columns: 230px minmax(0, 1fr) 250px; min-width: 0; min-height: calc(100vh - var(--topbar-h)); }
+/* Briefing rail | story card | related stories; the side columns can be dragged wider (panes.js) */
+.hearing { display: grid; grid-template-columns: var(--pane-a, 230px) 0 minmax(0, 1fr) 0 var(--pane-c, 250px); min-width: 0; min-height: calc(100vh - var(--topbar-h)); }
 .rail { background: var(--panel); border-right: 1px solid var(--rule); padding: 24px 18px; display: grid; gap: 18px; align-content: start; }
 .rail h2, .related h2 { font-family: var(--sans); font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 .rail-date { font-family: var(--serif); font-size: 22px; line-height: 1.15; margin-top: 4px; }
@@ -29,8 +29,20 @@
 .story-block { display: grid; gap: 4px; max-width: 64ch; }
 .story-block h3 { font-family: var(--sans); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
 .story-lead { font-family: var(--serif); font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }
-.coverage { border-top: 1px solid var(--rule); padding-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* Who covered it: outlet tags, then the mix of outlets as a strip with its legend */
+.coverage { border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 10px; }
+.coverage-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .coverage strong { font-size: 13.5px; margin-right: 2px; }
+.coverage .tag-india { border-color: var(--warn); color: var(--warn); }
+.coverage-phone { display: none; }
+.g-global { --g: var(--ink); }
+.g-specialist { --g: color-mix(in srgb, var(--ink) 55%, var(--surface)); }
+.g-primary { --g: color-mix(in srgb, var(--muted) 45%, var(--surface)); }
+.g-india { --g: var(--warn); }
+.spread { display: flex; gap: 2px; height: 8px; max-width: 420px; border-radius: 4px; overflow: hidden; }
+.spread i { background: var(--g); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; background: var(--g); }
 a.tag { text-decoration: none; }
 a.tag:hover { border-color: var(--ink); color: var(--ink); }
 .cov-list { list-style: none; padding: 0; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); font-size: 12.5px; }
@@ -68,8 +80,8 @@ a.tag:hover { border-color: var(--ink); color: var(--ink); }
 }
 
 @media (max-width: 1000px) {
-    .hearing { grid-template-columns: 210px minmax(0, 1fr); }
-    .related { display: none; }
+    .hearing { grid-template-columns: var(--pane-a, 210px) 0 minmax(0, 1fr); }
+    .related, .hearing > .pane-handle[data-pane="c"] { display: none; }
     .story-brief { padding: 28px 32px; }
 }
 @media (max-width: 760px) {
@@ -80,6 +92,10 @@ a.tag:hover { border-color: var(--ink); color: var(--ink); }
     .story .story-title { font-size: 24px; line-height: 1.2; }
     .story-lead { font-size: 15.5px; }
     .cov-list li { grid-template-columns: 1fr; gap: 2px; }
+    /* Phones: "Covered by 8 sources · The Hacker News, Wired, Krebs +5" on one line */
+    .coverage-row .tag, .spread, .legend { display: none; }
+    .coverage-phone { display: inline; font-size: 12.5px; color: var(--muted); }
+    .coverage-row { display: block; }
     .story-actions .btn kbd { display: none; }
     .story-brief .btn-read, .story-actions .wide-only { display: none; }
     .story-actions .phone-only { display: inline; }

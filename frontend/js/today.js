@@ -143,7 +143,7 @@ const Today = {
 
         this.el.innerHTML = `
             <div class="hearing">
-                <nav class="rail" aria-label="Your briefing">
+                <nav class="rail" id="rail" aria-label="Your briefing">
                     <div><h2>Your briefing</h2><p class="rail-date">${Util.esc(weekday)},<br>${Util.esc(date)}</p></div>
                     <div class="rail-progress">
                         <div class="progress" aria-hidden="true">${stories.map((_, i) => `<span class="${i < n - 1 ? 'is-done' : i === n - 1 ? 'is-now' : ''}"></span>`).join('')}</div>
@@ -159,9 +159,12 @@ const Today = {
                         }).join('')}
                     </ol>
                 </nav>
+                ${Panes.handleHtml('a', 'rail', 'Resize the briefing column')}
                 ${Stories.articleHtml(story, { headingTag: 'h1', variant: 'brief', primary })}
+                ${Panes.handleHtml('c', 'related', 'Resize the related stories column')}
                 ${this.relatedHtml(story, stories)}
             </div>`;
+        Panes.restore(this.el.querySelector('.hearing'), 'today');
     },
 
     /**
@@ -178,7 +181,7 @@ const Today = {
         const picks = [...sameCompany, ...sameDomain].slice(0, 3);
         const link = s => `#/stories?${new URLSearchParams({ story: s.id })}`;
         return `
-            <aside class="related" aria-label="From your domains">
+            <aside class="related" id="related" aria-label="From your domains">
                 <h2>From your domains</h2>
                 ${picks.map(s => `
                     <a class="related-item" href="${link(s)}">

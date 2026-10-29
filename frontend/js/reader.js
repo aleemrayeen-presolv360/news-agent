@@ -22,8 +22,8 @@ const Reader = {
     ],
 
     SORTS: [
-        { id: 'important', name: 'Most important' },
         { id: 'newest', name: 'Newest first' },
+        { id: 'important', name: 'Most important' },
         { id: 'covered', name: 'Most covered' }
     ],
 
@@ -80,8 +80,13 @@ const Reader = {
         return folder === 'trending' ? story.trending : story.label === folder;
     },
 
+    /** The sort in use: the URL's, else the first one listed (newest first; newest saved in Saved). */
+    sortId() {
+        return this.get('sort') || (this.mode === 'saved' ? 'saved' : this.SORTS[0].id);
+    },
+
     sorted(list) {
-        const sort = this.get('sort') || (this.mode === 'saved' ? 'saved' : 'important');
+        const sort = this.sortId();
         const byDate = s => new Date(s.publishedAt || 0).getTime();
         const copy = [...list];
         if (sort === 'newest') copy.sort((a, b) => byDate(b) - byDate(a));
@@ -125,14 +130,17 @@ const Reader = {
 
         this.el.innerHTML = `
             <div class="reader">
-                <nav class="folders" aria-label="Folders">${this.foldersHtml()}</nav>
-                <section class="story-list" aria-label="Story list">
+                <nav class="folders" id="folders" aria-label="Folders">${this.foldersHtml()}</nav>
+                ${Panes.handleHtml('a', 'folders', 'Resize the folders column')}
+                <section class="story-list" id="story-list" aria-label="Story list">
                     <div class="list-head">${this.listHeadHtml()}</div>
                     ${this.list.length ? `<ol class="rows">${this.rowsHtml()}</ol>` : this.emptyListHtml()}
                     <p class="list-keys" aria-hidden="true"><span><kbd>J</kbd><kbd>K</kbd> move</span><span><kbd>E</kbd> done</span><span><kbd>S</kbd> save</span><span><kbd>N</kbd> note</span><span><kbd>O</kbd> open</span></p>
                 </section>
+                ${Panes.handleHtml('b', 'story-list', 'Resize the story list')}
                 <section class="pane" aria-label="Story" aria-live="polite"></section>
             </div>`;
+        Panes.restore(this.el.querySelector('.reader'), 'reader');
     },
 
     foldersHtml() {
@@ -207,8 +215,7 @@ const Reader = {
 
     /** Rows, with a heading for each day when the list is sorted by date. */
     rowsHtml() {
-        const sort = this.get('sort');
-        if (sort !== 'newest') return this.list.map(s => this.rowHtml(s)).join('');
+        if (this.sortId() !== 'newest') return this.list.map(s => this.rowHtml(s)).join('');
         let day = null;
         return this.list.map(s => {
             const key = s.publishedAt ? Util.dayKey(new Date(s.publishedAt)) : 'none';
@@ -218,21 +225,23 @@ const Reader = {
         }).join('');
     },
 
-    /** Tags, headline, then "Source +7 sources · 9:40 AM". The label shows unless the folder already says it. */
+    /**
+     * Domain and Trending tags, headline, then "Source +7 sources · 9:40 AM". No Breaking/Major
+     * label: the folders say it, and a red label on every row drowns the list.
+     * Phones drop the tags and name the domain in the meta line instead.
+     */
     rowHtml(s) {
         const read = this.mode === 'stories' && UserState.isRead(s.id);
-        const byDay = this.get('sort') === 'newest';
+        const byDay = this.sortId() === 'newest';
         const when = this.mode === 'saved' && s.savedAt ? `Saved ${Util.shortDate(s.savedAt)}`
             : byDay ? Util.clock(s.publishedAt) : Util.shortDate(s.publishedAt);
-        const folder = this.get('folder');
-        const showLabel = this.mode === 'saved' || !['breaking', 'major', 'notable'].includes(folder);
         const more = Stories.moreSourcesText(s);
         return `
             <li class="${read || this.mode === 'saved' ? 'is-read' : ''}" data-id="${Util.esc(s.id)}">
                 <a href="${this.link({ story: s.id })}">
-                    <span class="story-meta">${showLabel ? Stories.labelHtml(s) : ''}${Stories.categoryHtml(s)}${Stories.trendHtml(s)}</span>
+                    <span class="story-meta">${Stories.categoryHtml(s)}${Stories.trendHtml(s)}</span>
                     <span class="row-title">${Util.esc(s.headline)}</span>
-                    <span class="meta">${Util.esc(s.source)}${more ? ` <b>${more}</b>` : ''}${when ? ` · ${Util.esc(when)}` : ''}${read ? '<span class="sr-only">, read</span>' : ''}</span>
+                    <span class="meta">${Util.esc(s.source)}${more ? ` <b>${more}</b>` : ''}${when ? `<span class="row-when"> · ${Util.esc(when)}</span>` : ''}<span class="row-area"> · ${Util.esc(Stories.categoryName(s))}</span>${read ? '<span class="sr-only">, read</span>' : ''}</span>
                 </a>
             </li>`;
     },
