@@ -100,6 +100,8 @@ const Auth = {
         if (/invalid login credentials/i.test(msg)) return "That email and password don't match. Try again or reset your password.";
         if (/email not confirmed/i.test(msg)) return 'Confirm your email first. Check your inbox for the confirmation link.';
         if (/already registered/i.test(msg)) return 'An account with this email already exists. Sign in instead.';
+        // The database refuses sign-ups outside the team's domain (sql/security.sql)
+        if (/presolv360\.com|database error saving new user/i.test(msg)) return `News Intel is for the Presolv360 team. Sign up with your @${CONFIG.TEAM_EMAIL_DOMAIN} email.`;
         if (/rate limit/i.test(msg)) return 'Too many attempts. Wait a minute and try again.';
         if (/fetch|network/i.test(msg)) return "Can't reach the server. Check your connection and try again.";
         return msg || 'Something went wrong. Try again.';
@@ -179,6 +181,9 @@ const Auth = {
 
         if (!name) return this._error('signup-error', 'Enter your full name.', nameEl);
         if (!email) return this._error('signup-error', 'Enter your work email.', emailEl);
+        if (!email.endsWith(`@${CONFIG.TEAM_EMAIL_DOMAIN}`)) {
+            return this._error('signup-error', `News Intel is for the Presolv360 team. Sign up with your @${CONFIG.TEAM_EMAIL_DOMAIN} email.`, emailEl);
+        }
         if (password.length < 8) return this._error('signup-error', 'Use a password with at least 8 characters.', passEl);
         this._error('signup-error', '');
 

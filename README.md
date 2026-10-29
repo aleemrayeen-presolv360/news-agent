@@ -428,13 +428,15 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
 
 ## Security notes
 
-- **Row Level Security is off in Supabase.** The website only shows each person their own notes,
-  but anyone holding the public anon key (which is in `config.js`) could read every note and every
-  profile email directly from the database. Before storing anything sensitive, turn RLS on for
-  `note` and `profile` with "owner only" policies.
-- Writes that matter are guarded in the database by triggers in `sql/supabase.sql` ("write
-  guards"): only an admin can change a role, remove a person, or approve or reject a source
-  request, even when someone calls Supabase directly with the anon key. Reading is not guarded.
+- **Who may read and change what is enforced by the database**, not just the website:
+  `sql/security.sql` turns on Row Level Security for every Supabase table. The public anon key in
+  `config.js` gets nothing without signing in; members see only their own profile, notes and
+  requests; only admins change roles, sources and request decisions. The file lists every rule.
+- **New accounts need an `@presolv360.com` email** (a trigger on sign-up; the form checks first).
+- The pipeline reads approved source requests through `approved_source_feeds()`, which returns
+  only id, name and feed address, so it needs no extra secret.
+- **If the website breaks after a security change:** run `sql/security_rollback.sql` in the
+  SQL Editor. The SQL Editor and Table Editor always skip RLS, so you can't lock yourself out.
 - News text from feeds is escaped before it is shown, so a malicious headline can't run code in
   the page. Pasted text in notes is inserted as plain text.
 - `.env` holds the pipeline secrets and must never be committed.

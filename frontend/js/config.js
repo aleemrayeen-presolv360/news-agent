@@ -42,6 +42,9 @@ const CONFIG = {
         'Clio', 'Smokeball', 'PracticePanther', 'LegalZoom'
     ],
 
+    // Only this email domain can sign up (enforced in the database by sql/security.sql)
+    TEAM_EMAIL_DOMAIN: 'presolv360.com',
+
     // Score thresholds behind the Breaking / Major / Notable labels (scores are never shown)
     SCORE_BREAKING: 85,
     SCORE_MAJOR: 70,

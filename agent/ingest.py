@@ -157,16 +157,23 @@ async def fetch_all(sources: list[Source]) -> list[FetchResult]:
 
 
 def fetch_requested_sources() -> list[Source]:
-    """Approved source requests from the website. Supabase being down only skips them this run."""
+    """Approved source requests from the website. Supabase being down only skips them this run.
+
+    Reads them through approved_source_feeds() (sql/security.sql), which works with Row Level
+    Security on. Before that SQL has been run the function doesn't exist (404), so the table is
+    read directly as before.
+    """
     url, key = supabase_settings()
     if not url or not key:
         return []
+    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
     try:
-        resp = httpx.get(f"{url}/rest/v1/source_request",
-                         params={"status": "eq.approved", "select": "id,name,url,requester_email",
-                                 "order": "id"},
-                         headers={"apikey": key, "Authorization": f"Bearer {key}"},
-                         timeout=FEED_TIMEOUT)
+        resp = httpx.post(f"{url}/rest/v1/rpc/approved_source_feeds", json={},
+                          headers=headers, timeout=FEED_TIMEOUT)
+        if resp.status_code == 404:
+            resp = httpx.get(f"{url}/rest/v1/source_request",
+                             params={"status": "eq.approved", "select": "id,name,url", "order": "id"},
+                             headers=headers, timeout=FEED_TIMEOUT)
         resp.raise_for_status()
         return requested_sources(resp.json())
     except (httpx.HTTPError, ValueError) as e:

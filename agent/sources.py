@@ -240,7 +240,7 @@ def requested_sources(rows: list[dict]) -> list[Source]:
             continue
         known.add(url.rstrip("/").lower())
         out.append(Source(id=f"{REQUEST_PREFIX}{r['id']}", name=name[:120], tier="D", url=url,
-                          note=f"requested on the website by {r.get('requester_email') or 'a member'}"))
+                          note="requested on the website"))
     return out
 
 
