@@ -5,14 +5,17 @@ The website has no API: it loads this file directly.
 
     python -m agent.publish_static              # generate data.js
     python -m agent.publish_static --dry-run    # preview without writing
+    python -m agent.publish_static --stamp-only # only refresh the ?v= links in index.html
 
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -257,6 +260,32 @@ window.digestData = {json.dumps(data, indent=4, ensure_ascii=False)};
     print(f"publish_static: wrote {output_path}")
 
 
+ASSET_REF = re.compile(r'((?:href|src)=")((?:css|js)/[\w.-]+\.(?:css|js)|data\.js)(?:\?v=\w+)?(")')
+
+
+def stamp_assets(html: str, frontend_dir: Path) -> str:
+    """Add ?v=<content hash> to local css/js links. The host's CDN caches these
+    files for 4 hours by name, so without a new name visitors get stale code and
+    yesterday's news."""
+    def repl(m):
+        path = frontend_dir / m.group(2)
+        if not path.exists():
+            return m.group(0)
+        digest = hashlib.md5(path.read_bytes()).hexdigest()[:8]
+        return f"{m.group(1)}{m.group(2)}?v={digest}{m.group(3)}"
+    return ASSET_REF.sub(repl, html)
+
+
+def write_index_html() -> None:
+    """Re-stamp index.html so every changed css/js/data file gets a fresh URL."""
+    path = FRONTEND_DIR / "index.html"
+    html = path.read_text(encoding="utf-8")
+    stamped = stamp_assets(html, FRONTEND_DIR)
+    if stamped != html:
+        path.write_text(stamped, encoding="utf-8")
+        print(f"publish_static: re-stamped {path}")
+
+
 def run(dry_run: bool = False, week_offset: int = 0) -> int:
     """Main entry point."""
     from . import db
@@ -299,7 +328,8 @@ def run(dry_run: bool = False, week_offset: int = 0) -> int:
             return 0
 
         write_data_js(data)
-        
+        write_index_html()
+
         print(f"publish_static: {window.label}")
         print(f"  breaking={len(data['breaking'])}, major={len(data['major'])}, notable={len(data['notable'])}")
 
@@ -310,7 +340,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Generate static frontend data.")
     ap.add_argument("--dry-run", action="store_true", help="preview without writing")
     ap.add_argument("--week-offset", type=int, default=0, help="-1 for last week, -2 for two weeks ago")
+    ap.add_argument("--stamp-only", action="store_true",
+                    help="only refresh the ?v= links in index.html (after a css/js change)")
     args = ap.parse_args()
+    if args.stamp_only:
+        write_index_html()
+        return 0
     return run(dry_run=args.dry_run, week_offset=args.week_offset)
 
 

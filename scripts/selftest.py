@@ -34,7 +34,7 @@ from agent.embed import get_unembedded_items  # noqa: E402
 from agent.db import backed_off_source_ids  # noqa: E402
 from agent.trends import parse_picks  # noqa: E402
 from agent.config import DOMAINS, supabase_settings  # noqa: E402
-from agent.publish_static import coverage_for, item_to_dict, split_by_label  # noqa: E402
+from agent.publish_static import coverage_for, item_to_dict, split_by_label, stamp_assets  # noqa: E402
 from agent.ingest import gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
 from agent.triage import check_arxiv_gate  # noqa: E402
 import agent.score as score_mod  # noqa: E402
@@ -440,6 +440,16 @@ js_config = (Path(__file__).resolve().parent.parent / "frontend/js/config.js").r
 js_domains = re.search(r"DOMAINS:\s*\{(.*?)\}", js_config, re.S).group(1)
 check("website config names every domain but other",
       set(re.findall(r"^\s*(\w+):", js_domains, re.M)), set(DOMAINS) - {"other"})
+
+_frontend = Path(__file__).resolve().parent.parent / "frontend"
+_stamped = stamp_assets('<link href="css/base.css?v=old"><script src="js/app.js"></script>'
+                        '<script src="data.js"></script><script src="https://cdn.x/y.js"></script>', _frontend)
+check("css/js/data links get a content hash, old hash replaced, CDN links untouched",
+      re.sub(r"\?v=[0-9a-f]{8}", "?v=H", _stamped),
+      '<link href="css/base.css?v=H"><script src="js/app.js?v=H"></script>'
+      '<script src="data.js?v=H"></script><script src="https://cdn.x/y.js"></script>')
+_index = (_frontend / "index.html").read_text(encoding="utf-8")
+check("index.html links are stamped with current hashes", stamp_assets(_index, _frontend), _index)
 
 print(f"\n{'=' * 50}\n  {PASS} passed, {FAIL} failed\n{'=' * 50}")
 print(f"  enabled sources : {len(enabled_sources())}")
