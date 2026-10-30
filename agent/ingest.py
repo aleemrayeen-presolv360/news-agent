@@ -29,9 +29,9 @@ import httpx
 
 from .config import (
     FEED_CONCURRENCY, FEED_TIMEOUT, FIRST_FETCH_HOURS, MAX_ITEM_AGE_DAYS, USER_AGENT,
-    supabase_settings,
+    env, supabase_settings,
 )
-from .normalize import normalize_entry, normalize_hf_paper
+from .normalize import normalize_cisa_kev, normalize_entry, normalize_hf_paper, normalize_newsdata
 from .sources import Source, _google_news, enabled_sources, requested_sources
 
 
@@ -48,11 +48,15 @@ class FetchResult:
 
 async def _fetch_one(client: httpx.AsyncClient, source: Source,
                      sem: asyncio.Semaphore) -> FetchResult:
+    # An API key goes in a header, never the URL, so it can't end up in error messages or logs
+    headers = {"X-ACCESS-KEY": env(source.key_env)} if source.key_env else None
     async with sem:
         try:
-            resp = await client.get(source.url, timeout=FEED_TIMEOUT)
+            resp = await client.get(source.url, headers=headers, timeout=FEED_TIMEOUT)
             resp.raise_for_status()
             body = resp.content
+        except httpx.HTTPStatusError as exc:
+            return FetchResult(source, [], f"HTTP {exc.response.status_code}")
         except Exception as exc:                      # noqa: BLE001
             return FetchResult(source, [], f"{type(exc).__name__}: {exc}")
 
@@ -60,6 +64,10 @@ async def _fetch_one(client: httpx.AsyncClient, source: Source,
         if source.kind == "json":
             payload = json.loads(body)
             raw = [normalize_hf_paper(p) for p in payload]
+        elif source.kind == "cisa_kev":
+            raw = [normalize_cisa_kev(v, source) for v in json.loads(body)["vulnerabilities"]]
+        elif source.kind == "newsdata":
+            raw = [normalize_newsdata(a, source) for a in json.loads(body).get("results") or []]
         else:
             parsed = feedparser.parse(body)
             if parsed.bozo and not parsed.entries:

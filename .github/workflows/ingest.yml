@@ -38,3 +38,4 @@ jobs:
         run: python -m agent.ingest
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
+          NEWSDATA_API_KEY: ${{ secrets.NEWSDATA_API_KEY }}   # optional: Indian news from NewsData.io

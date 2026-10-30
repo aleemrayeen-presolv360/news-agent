@@ -56,7 +56,7 @@ def sync_sources(conn, extra: Sequence[Source] = ()) -> None:
                 enabled  = EXCLUDED.enabled,
                 note     = EXCLUDED.note
             """,
-            [(s.id, s.name, s.tier, s.kind, s.url, s.enabled, s.note)
+            [(s.id, s.name, s.tier, s.kind, s.url, s.usable, s.note)
              for s in (*SOURCES, *extra)],
         )
         # Expired trend watches stay in the table (raw_items point at them) but switch off

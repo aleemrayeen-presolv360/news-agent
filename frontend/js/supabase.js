@@ -13,7 +13,10 @@ function initSupabase() {
         console.warn('Supabase not available. Running in local demo mode.');
         return null;
     }
-    supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    // Stay signed in until "Sign out": the session is kept in this browser and refreshed as needed
+    supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
     return supabaseClient;
 }
 

@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS source (
     id          BIGSERIAL PRIMARY KEY,
     name        TEXT NOT NULL,
     url         TEXT NOT NULL,
-    category    TEXT NOT NULL,                     -- tech | legal | market | competitors
+    category    TEXT NOT NULL,                     -- tech | legal | market | competitors | other
     enabled     BOOLEAN NOT NULL DEFAULT true,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS source_request (
     id                BIGSERIAL PRIMARY KEY,
     name              TEXT NOT NULL,
     url               TEXT NOT NULL,
-    category          TEXT NOT NULL,               -- tech | legal | market | competitors
+    category          TEXT NOT NULL,               -- tech | legal | market | competitors | other
     reason            TEXT,                        -- why the requester wants it
     status            TEXT NOT NULL DEFAULT 'pending'
                       CHECK (status IN ('pending', 'approved', 'rejected', 'withdrawn')),

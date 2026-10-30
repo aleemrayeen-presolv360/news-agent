@@ -168,8 +168,9 @@ TRENDING_SOURCES = 3   # a story carried by this many of our sources counts as t
 def display_names(headline: str | None, source: str | None, url: str | None) -> tuple[str, str]:
     """Headline and outlet as readers should see them."""
     headline, source = headline or "Untitled", source or "Unknown"
-    if "news.google.com" in (url or "") and " - " in headline:
-        # Google News titles end in " - Publisher"; show the publisher, not the search
+    aggregated = "news.google.com" in (url or "") or source.endswith("(NewsData)")
+    if aggregated and " - " in headline:
+        # Google News and NewsData titles end in " - Publisher"; show the publisher, not the search
         headline, source = headline.rsplit(" - ", 1)
     return headline, source
 

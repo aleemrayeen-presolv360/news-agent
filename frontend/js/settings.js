@@ -159,7 +159,7 @@ const Settings = {
 
     sourceToolbarHtml() {
         const counts = { all: this.sources.length };
-        for (const id of Object.keys(CONFIG.CATEGORIES)) counts[id] = this.sources.filter(s => s.category === id).length;
+        for (const id of Object.keys(CONFIG.SOURCE_CATEGORIES)) counts[id] = this.sources.filter(s => s.category === id).length;
         const hiddenCount = UserState.hiddenSources().length;
         const f = this.sourceFilter;
         const chip = (id, text, n) => `<button type="button" class="chip" data-source-cat="${id}" aria-pressed="${f.category === id}">${text} ${n}</button>`;
@@ -169,7 +169,7 @@ const Settings = {
                 <label class="sr-only" for="source-search">Find a source</label>
                 <input type="text" id="source-search" autocomplete="off" placeholder="Find a source…" value="${Util.esc(f.query)}">
                 ${chip('all', 'All', counts.all)}
-                ${Object.entries(CONFIG.CATEGORIES).map(([id, name]) => chip(id, Util.esc(name), counts[id])).join('')}
+                ${Object.entries(CONFIG.SOURCE_CATEGORIES).map(([id, name]) => chip(id, Util.esc(name), counts[id])).join('')}
                 ${this.page === 'sources' ? chip('hidden', 'Hidden', hiddenCount) : ''}
             </div>`;
     },
@@ -208,7 +208,7 @@ const Settings = {
                     return `
                     <tr class="${isHidden || globallyOff ? 'is-off' : ''}">
                         <td>${Util.esc(s.name)}<small>${globallyOff ? 'Turned off for everyone by an admin' : Util.esc(Util.hostname(s.url))}</small></td>
-                        <td>${Util.esc(CONFIG.CATEGORIES[s.category] || s.category)}</td>
+                        <td>${Util.esc(CONFIG.SOURCE_CATEGORIES[s.category] || s.category)}</td>
                         <td class="num">${n ? `${n} ${n === 1 ? 'story' : 'stories'}` : '<span class="muted">None</span>'}</td>
                         <td>${globallyOff
                             ? '<span class="status status-off">Off for everyone</span>'
@@ -303,7 +303,7 @@ const Settings = {
                     return `
                     <tr class="${on ? '' : 'is-off'}">
                         <td>${Util.esc(s.name)}${added ? ` <span class="tag-new" title="First fetched ${Util.esc(Util.dateTime(added))}">Added ${Util.esc(Util.relative(added))}</span>` : ''}<small>${Util.esc(s.url)}</small></td>
-                        <td>${Util.esc(CONFIG.CATEGORIES[s.category] || s.category)}</td>
+                        <td>${Util.esc(CONFIG.SOURCE_CATEGORIES[s.category] || s.category)}</td>
                         <td class="num">${n || '<span class="muted">None</span>'}</td>
                         <td><span class="status ${on ? 'status-ok' : 'status-off'}">${on ? 'On' : 'Off for everyone'}</span></td>
                         <td><button type="button" class="switch" role="switch" aria-checked="${on}" aria-label="${Util.esc(s.name)} on for everyone" data-global-source="${Util.esc(s.id)}"></button></td>
@@ -460,7 +460,7 @@ const Settings = {
                 </div>
                 <div class="field">
                     <label for="request-category">Category</label>
-                    <select id="request-category">${Object.entries(CONFIG.CATEGORIES).map(option).join('')}</select>
+                    <select id="request-category">${Object.entries(CONFIG.SOURCE_CATEGORIES).map(option).join('')}</select>
                 </div>
                 <div class="field wide">
                     <label for="request-reason">Why is it useful? <span class="muted">(optional)</span></label>
@@ -569,7 +569,7 @@ const Settings = {
             <div class="review">${waiting.map(r => `
                 <article class="req" data-request="${Util.esc(r.id)}">
                     <div class="req-main">
-                        <h2>${Util.esc(r.name)} <span class="muted">· <a href="${Util.esc(r.url)}" target="_blank" rel="noopener">${Util.esc(r.url.replace(/^https?:\/\//, ''))}</a> · ${Util.esc(CONFIG.CATEGORIES[r.category] || r.category)}</span></h2>
+                        <h2>${Util.esc(r.name)} <span class="muted">· <a href="${Util.esc(r.url)}" target="_blank" rel="noopener">${Util.esc(r.url.replace(/^https?:\/\//, ''))}</a> · ${Util.esc(CONFIG.SOURCE_CATEGORIES[r.category] || r.category)}</span></h2>
                         ${r.reason ? `<p class="req-why">“${Util.esc(r.reason)}”</p>` : ''}
                         <p class="req-facts">Asked by <b>${Util.esc(r.requester_email || 'Unknown')}</b>, ${Util.esc(Util.relative(r.created_at))}</p>
                     </div>

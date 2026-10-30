@@ -1,7 +1,8 @@
 """Phase 3a: LLM scoring + entity extraction.
 
 Uses the Groq API (model in GROQ_MODEL below) to score items 0-100 and
-extract entities/topics. Cloudflare Workers AI is the fallback if Groq fails.
+extract entities/topics. If Groq fails: Google Gemini, then Cerebras, then
+Cloudflare Workers AI, each only when its key is set.
 
 Scoring rubric:
 - Source authority: A=25, B=22, C=20, D=12
@@ -25,7 +26,7 @@ import time
 from dataclasses import dataclass
 
 import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import RetryError, retry, stop_after_attempt, wait_exponential
 
 from .config import env, DOMAINS, PROCESS_DAYS, SCORE_BREAKING, SCORE_MAJOR, SCORE_NOTABLE
 from .sources import PAPER_SOURCES
@@ -39,6 +40,11 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 # Cloudflare Workers AI config (fallback)
 CF_MODEL = "@cf/meta/llama-3-8b-instruct"
+# First fallback, used only when GEMINI_API_KEY is set (free key from aistudio.google.com).
+# Google's OpenAI-compatible endpoint; "gemini-flash-latest" follows Google's current Flash
+# model, so a retired model name can't break scoring. GEMINI_MODEL overrides it.
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+GEMINI_DEFAULT_MODEL = "gemini-flash-latest"
 # Optional middle fallback, used only when CEREBRAS_API_KEY is set. Same Qwen
 # family as Groq, so its scores line up; Cloudflare's 8B model is the last resort.
 CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
@@ -185,6 +191,45 @@ def _call_groq(prompt: str, attempts: int = 4) -> str:
     raise RuntimeError("unreachable")
 
 
+GEMINI_MAX_WAIT = 65        # seconds; a longer wait, or a per-day limit, means today's quota is gone
+_gemini_exhausted = False   # set once Gemini's quota is gone, so the rest of the run skips it
+
+
+def _call_gemini(prompt: str, attempts: int = 3) -> str:
+    """Google Gemini, waiting out per-minute limits. Raises when no key is set, so the caller moves on."""
+    global _gemini_exhausted
+    if _gemini_exhausted:
+        raise RuntimeError("Gemini quota used up earlier in this run")
+    api_key = env("GEMINI_API_KEY", required=True)
+
+    for attempt in range(attempts):
+        resp = httpx.post(
+            GEMINI_URL,
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": env("GEMINI_MODEL") or GEMINI_DEFAULT_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                # Flash models think before answering and that counts against max_tokens
+                "reasoning_effort": "low",
+                "max_tokens": 2000,
+            },
+            timeout=60,
+        )
+        if resp.status_code == 429:
+            # Google puts the wait in the body ("retryDelay": "36s") rather than a header
+            delay = re.search(r'retryDelay"?\s*:\s*"(\d+)', resp.text)
+            wait = float(resp.headers.get("retry-after") or (delay.group(1) if delay else 15))
+            if wait > GEMINI_MAX_WAIT or "PerDay" in resp.text or attempt == attempts - 1:
+                _gemini_exhausted = True
+                raise RuntimeError("Gemini free quota used up")
+            time.sleep(wait + 1)
+            continue
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
+    raise RuntimeError("unreachable")
+
+
 def _call_cerebras(prompt: str) -> str:
     """Cerebras (OpenAI-compatible). Raises when no key is set, so the caller moves on."""
     api_key = env("CEREBRAS_API_KEY", required=True)
@@ -256,7 +301,7 @@ def _result(item: dict, parsed: dict, model: str) -> ScoreResult:
 
 
 def score_item(item: dict) -> ScoreResult:
-    """Score a single item using Groq (with CF fallback)."""
+    """Score a single item: Groq, then each backup model whose key is set."""
     prompt = SCORING_PROMPT.format(
         title=item["title"],
         source_name=item["source_name"],
@@ -264,33 +309,42 @@ def score_item(item: dict) -> ScoreResult:
         summary=(item.get("article_text") or item.get("feed_summary") or "")[:SUMMARY_CHARS],
     )
 
-    # Try Groq first
-    try:
-        return _result(item, _parse_score_response(_call_groq(prompt), item["tier"]), "groq")
-    except Exception as e:  # noqa: BLE001
-        groq_error = str(e)
-
-    if env("CEREBRAS_API_KEY"):
+    models = [("groq", _call_groq, True),
+              ("gemini", _call_gemini, env("GEMINI_API_KEY")),
+              ("cerebras", _call_cerebras, env("CEREBRAS_API_KEY")),
+              ("cloudflare", _call_cloudflare, env("CF_ACCOUNT_ID") and env("CF_API_TOKEN"))]
+    errors = []
+    for name, call, has_key in models:
+        if not has_key:
+            continue
         try:
-            return _result(item, _parse_score_response(_call_cerebras(prompt), item["tier"]), "cerebras")
+            return _result(item, _parse_score_response(call(prompt), item["tier"]), name)
         except Exception as e:  # noqa: BLE001
-            groq_error += f" | cerebras: {str(e)[:80]}"
+            errors.append(f"{name}: {_short_error(e)}")
+    if len(errors) == 1:
+        errors.append("no backup model has a key set")
+    return ScoreResult(
+        item_id=item["id"],
+        score=0,
+        novelty=0,
+        impact=0,
+        relevance=0,
+        entities=[],
+        topics=[],
+        market_impact=None,
+        error="; ".join(errors),
+    )
 
-    # Last resort: Cloudflare
-    try:
-        return _result(item, _parse_score_response(_call_cloudflare(prompt), item["tier"]), "cloudflare")
-    except Exception as e:  # noqa: BLE001
-        return ScoreResult(
-            item_id=item["id"],
-            score=0,
-            novelty=0,
-            impact=0,
-            relevance=0,
-            entities=[],
-            topics=[],
-            market_impact=None,
-            error=f"groq: {groq_error[:100]}, cf: {str(e)[:100]}",
-        )
+
+def _short_error(e: Exception) -> str:
+    """A reason an admin can act on, never a URL or key."""
+    if isinstance(e, RetryError):
+        e = e.last_attempt.exception() or e
+    if isinstance(e, httpx.HTTPStatusError):
+        code = e.response.status_code
+        return {401: "key rejected (401)", 403: "key not allowed (403)", 404: "model not found (404)",
+                429: "rate limited (429)"}.get(code, f"HTTP {code}")
+    return str(e)[:80]
 
 
 def get_unscored_items(conn, limit: int | None = None,
@@ -320,7 +374,7 @@ def get_unscored_items(conn, limit: int | None = None,
 
 def update_scores(conn, results: list[ScoreResult]) -> dict:
     """Update news_memory with scores."""
-    stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "cloudflare": 0, "cerebras": 0}
+    stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "gemini": 0, "cerebras": 0, "cloudflare": 0}
     
     with conn.cursor() as cur:
         for r in results:
@@ -356,8 +410,8 @@ def update_scores(conn, results: list[ScoreResult]) -> dict:
                 ),
             )
             stats["scored"] += 1
-            stats["cloudflare"] += r.model == "cloudflare"
-            stats["cerebras"] += r.model == "cerebras"
+            for backup in ("gemini", "cerebras", "cloudflare"):
+                stats[backup] += r.model == backup
             
             # Track score distribution
             if r.score >= SCORE_BREAKING:
@@ -389,7 +443,7 @@ def run(dry_run: bool = False, limit: int | None = None, ingested_hours: int | N
             "feed_summary": None,
         }
 
-        print(f"  Model: {GROQ_MODEL} (Cloudflare {CF_MODEL} fallback)")
+        print(f"  Model: {GROQ_MODEL} (backups: Gemini, Cerebras, Cloudflare {CF_MODEL})")
         print(f"  Tier scores: {TIER_SCORES}")
         print(f"  Thresholds: breaking={SCORE_BREAKING}, major={SCORE_MAJOR}, notable={SCORE_NOTABLE}\n")
         
@@ -434,11 +488,14 @@ def run(dry_run: bool = False, limit: int | None = None, ingested_hours: int | N
 
     print(f"score: processing {len(items)} items...")
 
-    total_stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "cloudflare": 0, "cerebras": 0}
+    total_stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "gemini": 0, "cerebras": 0, "cloudflare": 0}
     batch_results = []
-    
+    first_error = None   # why scoring failed, for the website's warning
+
     for i, item in enumerate(items):
-        batch_results.append(score_item(item))
+        result = score_item(item)
+        first_error = first_error or result.error
+        batch_results.append(result)
         
         # Save batch to DB periodically
         if len(batch_results) >= BATCH_SIZE or i == len(items) - 1:
@@ -454,13 +511,14 @@ def run(dry_run: bool = False, limit: int | None = None, ingested_hours: int | N
     print(
         f"score: {total_stats['scored']} scored, {total_stats['failed']} failed | "
         f"breaking={total_stats['breaking']}, major={total_stats['major']}, notable={total_stats['notable']} | "
-        f"cerebras={total_stats['cerebras']}, cloudflare={total_stats['cloudflare']} | "
+        f"gemini={total_stats['gemini']}, cerebras={total_stats['cerebras']}, "
+        f"cloudflare={total_stats['cloudflare']} | "
         f"groq calls left today={_groq_remaining if _groq_remaining is not None else '?'}"
     )
 
     # Kept in Neon (the runner is wiped after each run); publish_static shows the warnings
     # on the website's pipeline health panel
-    warnings = budget_warnings(total_stats, _groq_remaining, _groq_exhausted)
+    warnings = budget_warnings(total_stats, _groq_remaining, _groq_exhausted, first_error)
     with db.connect() as conn:
         waiting = len(get_unscored_items(conn))
         db.record_run(conn, "score", {"detail": {
@@ -474,19 +532,22 @@ def run(dry_run: bool = False, limit: int | None = None, ingested_hours: int | N
     return 0
 
 
-def budget_warnings(stats: dict, groq_remaining: int | None, groq_exhausted: bool) -> list[str]:
+def budget_warnings(stats: dict, groq_remaining: int | None, groq_exhausted: bool,
+                    error: str | None = None) -> list[str]:
     """Plain-English problems with the free LLM budget in this run, if any."""
     problems = []
     if groq_exhausted:
         problems.append("Groq's free daily quota ran out during scoring")
     elif groq_remaining is not None and groq_remaining < GROQ_WARN_REMAINING:
         problems.append(f"Only {groq_remaining} Groq calls were left for the day")
-    fallback = stats.get("cerebras", 0) + stats.get("cloudflare", 0)
-    if fallback:
-        problems.append(f"{fallback} stories were scored by a backup model "
-                        f"(Cerebras {stats.get('cerebras', 0)}, Cloudflare {stats.get('cloudflare', 0)})")
+    backups = {"Gemini": stats.get("gemini", 0), "Cerebras": stats.get("cerebras", 0),
+               "Cloudflare": stats.get("cloudflare", 0)}
+    if sum(backups.values()):
+        used = ", ".join(f"{name} {n}" for name, n in backups.items() if n)
+        problems.append(f"{sum(backups.values())} stories were scored by a backup model ({used})")
     if stats.get("failed"):
-        problems.append(f"{stats['failed']} stories could not be scored")
+        problems.append(f"{stats['failed']} stories could not be scored"
+                        + (f" ({error})" if error else "") + "; they wait for the next run")
     return problems
 
 

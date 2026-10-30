@@ -15,6 +15,16 @@ const CONFIG = {
         competitors: 'Competitors'
     },
 
+    // Categories a source can be filed under: the four above, plus Other for a site that fits none.
+    // Stories are still sorted into the four by their content, whatever their source's category.
+    SOURCE_CATEGORIES: {
+        tech: 'Tech and science',
+        legal: 'Legal India',
+        market: 'Market',
+        competitors: 'Competitors',
+        other: 'Other'
+    },
+
     // The finer domain the scoring model gives each story. The pipeline maps each one to a
     // category above (agent/config.py DOMAINS); keep the ids in step.
     DOMAINS: {

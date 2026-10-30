@@ -130,6 +130,53 @@ def normalize_entry(entry, source) -> dict | None:
     }
 
 
+def normalize_cisa_kev(vuln: dict, source) -> dict | None:
+    """One entry of CISA's Known Exploited Vulnerabilities catalogue -> our row shape.
+
+    Each entry is a flaw attackers are using right now. It links to the CVE's NVD page,
+    which describes it in full.
+    """
+    cve = vuln.get("cveID")
+    name = clean_text(vuln.get("vulnerabilityName"), 400)
+    if not cve or not name:
+        return None
+    ransomware = " Used in ransomware campaigns." if vuln.get("knownRansomwareCampaignUse") == "Known" else ""
+    return {
+        "url_canonical": f"https://nvd.nist.gov/vuln/detail/{cve}",
+        "url_original": f"https://nvd.nist.gov/vuln/detail/{cve}",
+        "title": f"Actively exploited: {name} ({cve})",
+        "source_id": source.id,
+        "published_at": parse_date(vuln.get("dateAdded")),
+        "feed_summary": clean_text(
+            f"CISA added {cve} ({vuln.get('vendorProject', '')} {vuln.get('product', '')}) to its list of "
+            f"vulnerabilities attackers are exploiting. {vuln.get('shortDescription', '')}{ransomware} "
+            f"US agencies must fix it by {vuln.get('dueDate', 'the due date')}."
+        ),
+    }
+
+
+def normalize_newsdata(article: dict, source) -> dict | None:
+    """One NewsData.io article -> our row shape.
+
+    The title gets " - Outlet" appended, like Google News titles, so the website shows the
+    real publisher instead of the NewsData search (publish_static.display_names).
+    """
+    link = article.get("link")
+    title = clean_text(article.get("title"), 450)
+    if not link or not title or article.get("duplicate"):
+        return None
+    outlet = clean_text(article.get("source_name") or article.get("source_id"), 60)
+    return {
+        "url_canonical": canonical_url(link),
+        "url_original": link,
+        "title": f"{title} - {outlet}" if outlet else title,
+        "source_id": source.id,
+        # NewsData dates are UTC without a zone: "2026-10-30 06:12:45"
+        "published_at": parse_date(article.get("pubDate")),
+        "feed_summary": clean_text(article.get("description")),
+    }
+
+
 def normalize_hf_paper(paper: dict) -> dict | None:
     """Hugging Face Daily Papers JSON -> our row shape.
 

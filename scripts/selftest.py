@@ -22,7 +22,7 @@ import feedparser  # noqa: E402
 
 from agent.config import IST, addendum_window, week_window  # noqa: E402
 from agent.normalize import (  # noqa: E402
-    canonical_url, clean_text, normalize_entry, normalize_hf_paper,
+    canonical_url, clean_text, normalize_cisa_kev, normalize_entry, normalize_hf_paper, normalize_newsdata,
 )
 from agent.sources import (  # noqa: E402
     ARXIV_SOURCES, PAPER_SOURCES, SOURCES, by_id, enabled_sources, requested_sources,
@@ -34,7 +34,7 @@ from agent.embed import get_unembedded_items  # noqa: E402
 from agent.db import backed_off_source_ids  # noqa: E402
 from agent.trends import parse_picks  # noqa: E402
 from agent.config import DOMAINS, supabase_settings  # noqa: E402
-from agent.publish_static import coverage_for, item_to_dict, split_by_label, stamp_assets  # noqa: E402
+from agent.publish_static import coverage_for, display_names, item_to_dict, split_by_label, stamp_assets  # noqa: E402
 from agent.ingest import gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
 from agent.triage import check_arxiv_gate  # noqa: E402
 import agent.score as score_mod  # noqa: E402
@@ -166,6 +166,29 @@ check("upvotes preserved for the signal gate",
 
 check("clean_text truncates", len(clean_text("x" * 5000, 100)), 100)
 
+_kev = normalize_cisa_kev({"cveID": "CVE-2026-1", "vulnerabilityName": "Linux Kernel Flaw", "vendorProject": "Linux",
+                           "product": "Kernel", "dateAdded": "2026-10-28", "shortDescription": "Root via sockets.",
+                           "dueDate": "2026-11-18", "knownRansomwareCampaignUse": "Known"}, by_id("cisa_kev"))
+check("CISA entry -> NVD link, dated, ransomware noted",
+      (_kev["url_canonical"], _kev["title"], _kev["published_at"].isoformat(), "ransomware" in _kev["feed_summary"]),
+      ("https://nvd.nist.gov/vuln/detail/CVE-2026-1", "Actively exploited: Linux Kernel Flaw (CVE-2026-1)",
+       "2026-10-28T00:00:00+00:00", True))
+_nd_src = by_id("newsdata_india_tech")
+_nd = normalize_newsdata({"title": "Jio launches AI cloud", "link": "https://www.livemint.com/x?utm_source=nd",
+                          "source_name": "Mint", "pubDate": "2026-10-30 06:12:45", "description": "<p>Big.</p>",
+                          "duplicate": False}, _nd_src)
+check("NewsData article -> row with outlet in the title, UTC date",
+      (_nd["url_canonical"], _nd["title"], _nd["published_at"].isoformat(), _nd["feed_summary"]),
+      ("https://livemint.com/x", "Jio launches AI cloud - Mint", "2026-10-30T06:12:45+00:00", "Big."))
+check("NewsData duplicates are dropped",
+      normalize_newsdata({"title": "t", "link": "https://a/b", "duplicate": True}, _nd_src), None)
+check("website shows the NewsData outlet, not the search",
+      display_names("Jio launches AI cloud - Mint", _nd_src.name, "https://livemint.com/x"),
+      ("Jio launches AI cloud", "Mint"))
+check("other headlines with a dash are left alone",
+      display_names("GPT-6 - what we know", "The Verge AI", "https://theverge.com/x"),
+      ("GPT-6 - what we know", "The Verge AI"))
+
 # ------------------------------------------------------------ sources
 print("\nsources")
 ids = [s.id for s in SOURCES]
@@ -178,6 +201,14 @@ check("disabled sources carry an explanatory note",
       all(s.note for s in SOURCES if not s.enabled), True)
 check("arxiv polled per-category, never combined",
       all("+" not in s.url for s in SOURCES if "arxiv" in s.id), True)
+with mock.patch.dict(os.environ, {"NEWSDATA_API_KEY": ""}):
+    check("a source needing an API key is skipped until the key is set",
+          ("newsdata_india_tech" in {s.id for s in enabled_sources()}, by_id("newsdata_india_tech").usable),
+          (False, False))
+with mock.patch.dict(os.environ, {"NEWSDATA_API_KEY": "k"}):
+    check("...and polled once it is", "newsdata_india_tech" in {s.id for s in enabled_sources()}, True)
+check("every source kind has a parser",
+      {s.kind for s in SOURCES if s.enabled} <= {"rss", "json", "cisa_kev", "newsdata"}, True)
 
 # ------------------------------------------------------------ source requests
 print("\nsource requests")
@@ -353,7 +384,9 @@ _item = {"id": 1, "title": "t", "source_name": "s", "tier": "A"}
 with mock.patch.object(score_mod, "_call_groq", return_value=_reply):
     check("Groq score records its model", score_mod.score_item(_item).model, "groq")
 with mock.patch.object(score_mod, "_call_groq", side_effect=RuntimeError("429")), \
-     mock.patch.object(score_mod, "_call_cloudflare", return_value=_reply):
+     mock.patch.object(score_mod, "_call_cloudflare", return_value=_reply), \
+     mock.patch.dict(os.environ, {"GEMINI_API_KEY": "", "CEREBRAS_API_KEY": "",
+                                  "CF_ACCOUNT_ID": "a", "CF_API_TOKEN": "t"}):
     check("fallback score records cloudflare", score_mod.score_item(_item).model, "cloudflare")
 
 
@@ -396,6 +429,57 @@ check("warns when Groq runs low", "Only 90 Groq calls" in score_mod.budget_warni
 check("warns when the quota ran out", "ran out" in score_mod.budget_warnings(_ok, 0, True)[0], True)
 check("warns on fallback scores",
       "Cloudflare 3" in score_mod.budget_warnings({**_ok, "cloudflare": 3}, 600, False)[0], True)
+check("names the backup that scored",
+      score_mod.budget_warnings({**_ok, "gemini": 40}, 600, False), ["40 stories were scored by a backup model (Gemini 40)"])
+check("says why stories went unscored",
+      "(groq: quota; no backup model has a key set)" in score_mod.budget_warnings(
+          {**_ok, "failed": 5}, 0, True, "groq: quota; no backup model has a key set")[1], True)
+
+_item = {"id": 1, "title": "t", "source_name": "s", "tier": "D", "feed_summary": "x"}
+_json = '{"domain": "ai", "novelty": 10, "impact": 10, "relevance": 10}'
+
+
+def _chain(groq, gemini, keys):
+    """Which model scores, given what Groq and Gemini do and which backup keys are set."""
+    def fail(*a):
+        raise RuntimeError("down")
+    with mock.patch.object(score_mod, "_call_groq", groq or fail),          mock.patch.object(score_mod, "_call_gemini", gemini or fail),          mock.patch.object(score_mod, "_call_cerebras", fail),          mock.patch.object(score_mod, "_call_cloudflare", fail),          mock.patch.dict(os.environ, {"GEMINI_API_KEY": "", "CEREBRAS_API_KEY": "", "CF_ACCOUNT_ID": "",
+                                      "CF_API_TOKEN": "", **keys}):
+        r = score_mod.score_item(_item)
+    return r.model or r.error
+
+
+check("Groq scores when it works", _chain(lambda p: _json, None, {"GEMINI_API_KEY": "k"}), "groq")
+check("Gemini scores when Groq fails", _chain(None, lambda p: _json, {"GEMINI_API_KEY": "k"}), "gemini")
+check("Gemini is skipped without a key", _chain(None, lambda p: _json, {}), "groq: down; no backup model has a key set")
+check("every failed model is named", _chain(None, None, {"GEMINI_API_KEY": "k", "CF_ACCOUNT_ID": "a", "CF_API_TOKEN": "t"}),
+      "groq: down; gemini: down; cloudflare: down")
+
+
+class _GemResp(_FakeResp):
+    def __init__(self, status, text=""):
+        super().__init__(status)
+        self.text = text
+
+
+def _fake_gemini(responses):
+    queue, sleeps = list(responses), []
+    score_mod._gemini_exhausted = False
+    with mock.patch.object(score_mod.httpx, "post", lambda *a, **k: queue.pop(0)),          mock.patch.object(score_mod.time, "sleep", sleeps.append),          mock.patch.dict(os.environ, {"GEMINI_API_KEY": "k"}):
+        try:
+            out = score_mod._call_gemini("p")
+        except RuntimeError as e:
+            out = str(e)
+    return out, sleeps, score_mod._gemini_exhausted
+
+
+check("Gemini waits out a per-minute limit using the delay in its body",
+      _fake_gemini([_GemResp(429, '[{"error": {"details": [{"retryDelay": "12s"}]}}]'), _GemResp(200)]),
+      ("ok", [13.0], False))
+check("Gemini's daily limit stops it for the rest of the run, no waiting",
+      _fake_gemini([_GemResp(429, 'GenerateRequestsPerDayPerProjectPerModel-FreeTier')]),
+      ("Gemini free quota used up", [], True))
+score_mod._gemini_exhausted = False
 
 for _fn in (get_unextracted_items, get_unembedded_items):
     _c = _FakeConn()

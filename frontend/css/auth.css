@@ -9,6 +9,13 @@
 .auth-form h1 { font-size: 34px; letter-spacing: -.01em; }
 .auth-alt { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; font-size: 13.5px; color: var(--muted); }
 
+.google-signin { display: grid; gap: 18px; }
+.google-signin[hidden] { display: none; }
+.btn-google { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--surface); font-weight: 600; }
+.google-g { width: 18px; height: 18px; flex: none; }
+.or-rule { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--muted); }
+.or-rule::before, .or-rule::after { content: ""; flex: 1; border-top: 1px solid var(--rule); }
+
 .notice-card { display: grid; gap: 10px; border: 1px solid var(--rule); border-radius: 12px; padding: 20px; background: var(--paper); }
 .notice-card .icon { color: var(--ink); }
 .notice-card h2 { font-size: 22px; }

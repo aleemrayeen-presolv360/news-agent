@@ -14,6 +14,7 @@ than silently pretending they do not exist.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from urllib.parse import quote
 
@@ -32,10 +33,15 @@ class Source:
     id: str
     name: str
     tier: str
-    kind: str = "rss"          # rss | json | gdelt | exa
+    kind: str = "rss"          # rss | json | cisa_kev | newsdata
     url: str = ""
     enabled: bool = True
     note: str = ""
+    key_env: str = ""          # API key's environment variable; the source is skipped until it's set
+
+    @property
+    def usable(self) -> bool:
+        return self.enabled and bool(self.url) and (not self.key_env or bool(os.environ.get(self.key_env)))
 
 
 SOURCES: list[Source] = [
@@ -178,6 +184,9 @@ SOURCES: list[Source] = [
     Source("thehackernews", "The Hacker News", "D",
            url="https://feeds.feedburner.com/TheHackersNews", note="~16/day"),
     Source("krebs", "Krebs on Security", "D", url="https://krebsonsecurity.com/feed/"),
+    Source("cisa_kev", "CISA: actively exploited flaws", "B", kind="cisa_kev",
+           url="https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+           note="US government list of flaws attackers are using now; free, no key; ~3-10 a week"),
     Source("robotreport", "The Robot Report", "D", url="https://www.therobotreport.com/feed/"),
     Source("quanta", "Quanta Magazine", "D", url="https://www.quantamagazine.org/feed/"),
     Source("sciencedaily", "ScienceDaily (tech)", "D",
@@ -195,6 +204,10 @@ SOURCES: list[Source] = [
     Source("economic_times", "Economic Times", "D",
            url="https://economictimes.indiatimes.com/rssfeedsdefault.cms"),
     Source("inc42", "Inc42", "D", url="https://inc42.com/feed/"),
+    Source("newsdata_india_tech", "Indian tech press (NewsData)", "D", kind="newsdata",
+           url="https://newsdata.io/api/1/latest?country=in&category=technology&language=en",
+           key_env="NEWSDATA_API_KEY",
+           note="newest 10 Indian tech articles per call; free plan: 200 calls/day, articles 12h late"),
     Source("gn_startups_india", "Startup funding India (Google News)", "D",
            url=_google_news("startup funding india"), note=_GN_NOTE),
     Source("gn_fintech_india", "Fintech India (Google News)", "D",
@@ -245,7 +258,7 @@ def requested_sources(rows: list[dict]) -> list[Source]:
 
 
 def enabled_sources() -> list[Source]:
-    return [s for s in SOURCES if s.enabled and s.url]
+    return [s for s in SOURCES if s.usable]
 
 
 def by_id(source_id: str) -> Source | None:

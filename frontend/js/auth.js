@@ -5,6 +5,8 @@
 
 // Read before the Supabase client starts, because it clears the recovery token from the URL
 const RECOVERY_IN_URL = /type=recovery/.test(window.location.hash);
+// A refused Google sign-in comes back as #error_description=... (for example, a non-team email)
+const OAUTH_ERROR = new URLSearchParams(window.location.hash.slice(1)).get('error_description');
 
 const Auth = {
     currentUser: null,
@@ -16,13 +18,52 @@ const Auth = {
 
         const supabase = db.getSupabase();
         if (supabase) {
-            // A password-reset email link brings the user back here with a recovery session
-            supabase.auth.onAuthStateChange(event => {
+            supabase.auth.onAuthStateChange((event, session) => {
+                // A password-reset email link brings the user back here with a recovery session
                 if (event === 'PASSWORD_RECOVERY') this.showRecovery();
+                // The saved session came back after the sign-in screen was shown (the network
+                // was slow to wake): go straight in instead of asking for the password again.
+                // Deferred, because a Supabase call inside this callback can deadlock the client.
+                if (['SIGNED_IN', 'TOKEN_REFRESHED'].includes(event) && session && !RECOVERY_IN_URL) {
+                    setTimeout(async () => {
+                        if (this.currentUser) return;
+                        await this._setUser(session.user);
+                        this.showApp();
+                    }, 0);
+                }
             });
+            this.offerGoogle();
         }
 
         await this.checkSession();
+        if (OAUTH_ERROR) {
+            history.replaceState(null, '', window.location.pathname);
+            this._error('signin-error', this._friendly({ message: OAUTH_ERROR }));
+        }
+    },
+
+    /** Show "Continue with Google" once Google sign-in is switched on in Supabase (Auth > Providers). */
+    async offerGoogle() {
+        try {
+            const resp = await fetch(`${CONFIG.SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: CONFIG.SUPABASE_ANON_KEY } });
+            const settings = await resp.json();
+            if (!settings.external?.google) return;
+            document.querySelectorAll('.google-signin').forEach(el => { el.hidden = false; });
+        } catch { /* offline: password sign-in still works */ }
+    },
+
+    async signInWithGoogle() {
+        this._error('signin-error', '');
+        const { error } = await db.getSupabase().auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                // Back to this page; Supabase must list it under Auth > URL configuration
+                redirectTo: window.location.origin + window.location.pathname,
+                // Suggest the work account; the database still refuses any other domain
+                queryParams: { hd: CONFIG.TEAM_EMAIL_DOMAIN, prompt: 'select_account' }
+            }
+        });
+        if (error) this._error('signin-error', this._friendly(error));
     },
 
     bindEvents() {
@@ -48,6 +89,7 @@ const Auth = {
         document.getElementById('reset-form').addEventListener('submit', e => { e.preventDefault(); this.sendReset(); });
         document.getElementById('reset-again').addEventListener('click', () => this.sendReset());
         document.getElementById('newpass-form').addEventListener('submit', e => { e.preventDefault(); this.setNewPassword(); });
+        document.querySelectorAll('[data-google-signin]').forEach(btn => btn.addEventListener('click', () => this.signInWithGoogle()));
     },
 
     /** Show one of: signin, signup, reset, newpass. */
@@ -102,6 +144,8 @@ const Auth = {
         if (/already registered/i.test(msg)) return 'An account with this email already exists. Sign in instead.';
         // The database refuses sign-ups outside the team's domain (sql/security.sql)
         if (/presolv360\.com|database error saving new user/i.test(msg)) return `News Intel is for the Presolv360 team. Sign up with your @${CONFIG.TEAM_EMAIL_DOMAIN} email.`;
+        if (/provider is not enabled/i.test(msg)) return 'Google sign-in is not switched on yet. Use your email and password.';
+        if (/access_denied|cancel/i.test(msg)) return 'Google sign-in was cancelled. Try again, or use your email and password.';
         if (/rate limit/i.test(msg)) return 'Too many attempts. Wait a minute and try again.';
         if (/fetch|network/i.test(msg)) return "Can't reach the server. Check your connection and try again.";
         return msg || 'Something went wrong. Try again.';
@@ -112,7 +156,7 @@ const Auth = {
     async checkSession() {
         const supabase = db.getSupabase();
         if (supabase) {
-            const { data: { session } } = await supabase.auth.getSession();
+            const session = await this._savedSession(supabase);
             if (session) {
                 await this._setUser(session.user);
                 if (RECOVERY_IN_URL) this.showRecovery();
@@ -129,6 +173,20 @@ const Auth = {
             }
         }
         this.showAuth();
+    },
+
+    /**
+     * The session saved in this browser. Sign-in lasts until "Sign out", across closed tabs and
+     * new versions of the site. Opening the laptop, the network can take a few seconds to come
+     * back; refreshing the session fails meanwhile, so retry instead of showing the sign-in form.
+     */
+    async _savedSession(supabase) {
+        for (let attempt = 0; ; attempt++) {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (session || !error || attempt === 3) return session;
+            if (!/fetch|network|retryable/i.test(`${error.name} ${error.message}`)) return null;
+            await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+        }
     },
 
     async _setUser(user) {
