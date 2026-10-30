@@ -9,7 +9,8 @@
 --   2. Keeps the write guards (triggers) that stop members making themselves admin
 --      or deciding their own source requests.
 --   3. Gives the news pipeline a read-only list of approved feeds (no emails).
---   4. Limits new sign-ups to @presolv360.com addresses. Existing accounts are untouched.
+--   4. Lets anyone sign up (email or Google). Until 30 Oct 2026 only @presolv360.com could;
+--      the rules above keep each person to their own notes, saves and settings.
 --
 -- WHAT IT DOES NOT AFFECT
 --   The SQL Editor and the Table Editor run as "postgres", which skips RLS: you can
@@ -191,23 +192,7 @@ GRANT EXECUTE ON FUNCTION public.approved_source_feeds() TO anon, authenticated;
 
 
 -- ---------------------------------------------------------------- sign-ups
--- Only @presolv360.com addresses can create an account. The website says so before
--- sending the form; this is the check that can't be skipped.
--- To allow another domain later, edit the LIKE line and run this section again.
-CREATE OR REPLACE FUNCTION public.only_team_emails()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    IF lower(NEW.email) NOT LIKE '%@presolv360.com' THEN
-        RAISE EXCEPTION 'News Intel is for the Presolv360 team: sign up with your @presolv360.com email'
-            USING ERRCODE = '42501';
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
+-- Open to anyone since 30 Oct 2026, so the old @presolv360.com-only check is removed.
+-- To limit sign-ups to the team again, see git history for the "only_team_emails" trigger.
 DROP TRIGGER IF EXISTS only_team_emails ON auth.users;
-CREATE TRIGGER only_team_emails
-    BEFORE INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.only_team_emails();
+DROP FUNCTION IF EXISTS public.only_team_emails();

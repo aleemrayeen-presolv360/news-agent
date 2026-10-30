@@ -432,7 +432,8 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
   `sql/security.sql` turns on Row Level Security for every Supabase table. The public anon key in
   `config.js` gets nothing without signing in; members see only their own profile, notes and
   requests; only admins change roles, sources and request decisions. The file lists every rule.
-- **New accounts need an `@presolv360.com` email** (a trigger on sign-up; the form checks first).
+- **Anyone can create an account**, with email or Google (since 30 Oct 2026; `sql/open_signups.sql`
+  removed the old `@presolv360.com`-only check). The rules above still keep each person to their own data.
 - The pipeline reads approved source requests through `approved_source_feeds()`, which returns
   only id, name and feed address, so it needs no extra secret.
 - **If the website breaks after a security change:** run `sql/security_rollback.sql` in the
