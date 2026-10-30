@@ -41,10 +41,11 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 # Cloudflare Workers AI config (fallback)
 CF_MODEL = "@cf/meta/llama-3-8b-instruct"
 # First fallback, used only when GEMINI_API_KEY is set (free key from aistudio.google.com).
-# Google's OpenAI-compatible endpoint; "gemini-flash-latest" follows Google's current Flash
-# model, so a retired model name can't break scoring. GEMINI_MODEL overrides it.
+# Google's OpenAI-compatible endpoint. GEMINI_MODEL overrides the model. Flash-Lite, because on the
+# free tier (Oct 2026) it scored a story in ~2s with the same judgement, while 3.8 Flash took
+# 25-150s or returned "high demand". Google retires old models for new keys (2.5 Flash was refused).
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-GEMINI_DEFAULT_MODEL = "gemini-flash-latest"
+GEMINI_DEFAULT_MODEL = "gemini-3.5-flash-lite"
 # Optional middle fallback, used only when CEREBRAS_API_KEY is set. Same Qwen
 # family as Groq, so its scores line up; Cloudflare's 8B model is the last resort.
 CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
@@ -192,30 +193,35 @@ def _call_groq(prompt: str, attempts: int = 4) -> str:
 
 
 GEMINI_MAX_WAIT = 65        # seconds; a longer wait, or a per-day limit, means today's quota is gone
+# The free tier answered in 24s to 150s+ per story (Oct 2026). These keep a slow day from
+# running the daily job past its 50-minute timeout: Gemini is dropped for the rest of the run.
+GEMINI_TIMEOUT = 90         # seconds per story
+GEMINI_MAX_TIMEOUTS = 3
+GEMINI_RUN_BUDGET = 15 * 60  # seconds of Gemini time per run
 _gemini_exhausted = False   # set once Gemini's quota is gone, so the rest of the run skips it
+_gemini_timeouts = 0
+_gemini_seconds = 0.0
 
 
 def _call_gemini(prompt: str, attempts: int = 3) -> str:
     """Google Gemini, waiting out per-minute limits. Raises when no key is set, so the caller moves on."""
-    global _gemini_exhausted
+    global _gemini_exhausted, _gemini_timeouts, _gemini_seconds
     if _gemini_exhausted:
-        raise RuntimeError("Gemini quota used up earlier in this run")
+        raise RuntimeError("Gemini skipped for the rest of this run (quota, timeouts or time budget)")
     api_key = env("GEMINI_API_KEY", required=True)
 
     for attempt in range(attempts):
-        resp = httpx.post(
-            GEMINI_URL,
-            headers={"Authorization": f"Bearer {api_key}"},
-            json={
-                "model": env("GEMINI_MODEL") or GEMINI_DEFAULT_MODEL,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.1,
-                # Flash models think before answering and that counts against max_tokens
-                "reasoning_effort": "low",
-                "max_tokens": 2000,
-            },
-            timeout=60,
-        )
+        started = time.monotonic()
+        try:
+            resp = _post_gemini(api_key, prompt)
+        except httpx.TimeoutException:
+            _gemini_timeouts += 1
+            _gemini_exhausted = _gemini_timeouts >= GEMINI_MAX_TIMEOUTS
+            raise RuntimeError(f"Gemini took over {GEMINI_TIMEOUT}s") from None
+        finally:
+            _gemini_seconds += time.monotonic() - started
+            if _gemini_seconds > GEMINI_RUN_BUDGET:
+                _gemini_exhausted = True
         if resp.status_code == 429:
             # Google puts the wait in the body ("retryDelay": "36s") rather than a header
             delay = re.search(r'retryDelay"?\s*:\s*"(\d+)', resp.text)
@@ -228,6 +234,22 @@ def _call_gemini(prompt: str, attempts: int = 3) -> str:
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
     raise RuntimeError("unreachable")
+
+
+def _post_gemini(api_key: str, prompt: str) -> httpx.Response:
+    return httpx.post(
+        GEMINI_URL,
+        headers={"Authorization": f"Bearer {api_key}"},
+        json={
+            "model": env("GEMINI_MODEL") or GEMINI_DEFAULT_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            # Flash models think before answering and that counts against max_tokens
+            "reasoning_effort": "low",
+            "max_tokens": 2000,
+        },
+        timeout=GEMINI_TIMEOUT,
+    )
 
 
 def _call_cerebras(prompt: str) -> str:

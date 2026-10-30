@@ -464,7 +464,7 @@ class _GemResp(_FakeResp):
 
 def _fake_gemini(responses):
     queue, sleeps = list(responses), []
-    score_mod._gemini_exhausted = False
+    score_mod._gemini_exhausted, score_mod._gemini_timeouts, score_mod._gemini_seconds = False, 0, 0.0
     with mock.patch.object(score_mod.httpx, "post", lambda *a, **k: queue.pop(0)),          mock.patch.object(score_mod.time, "sleep", sleeps.append),          mock.patch.dict(os.environ, {"GEMINI_API_KEY": "k"}):
         try:
             out = score_mod._call_gemini("p")
@@ -480,6 +480,26 @@ check("Gemini's daily limit stops it for the rest of the run, no waiting",
       _fake_gemini([_GemResp(429, 'GenerateRequestsPerDayPerProjectPerModel-FreeTier')]),
       ("Gemini free quota used up", [], True))
 score_mod._gemini_exhausted = False
+
+
+def _gemini_timeouts_then():
+    """Three slow answers in a row: Gemini is dropped for the rest of the run."""
+    score_mod._gemini_exhausted, score_mod._gemini_timeouts, score_mod._gemini_seconds = False, 0, 0.0
+    def slow(*a, **k):
+        raise score_mod.httpx.ReadTimeout("slow")
+    out = []
+    with mock.patch.object(score_mod.httpx, "post", slow), mock.patch.dict(os.environ, {"GEMINI_API_KEY": "k"}):
+        for _ in range(4):
+            try:
+                score_mod._call_gemini("p")
+            except RuntimeError as e:
+                out.append("skipped" if "skipped" in str(e) else "timeout")
+    return out, score_mod._gemini_exhausted
+
+
+check("Gemini is dropped for the run after 3 timeouts", _gemini_timeouts_then(),
+      (["timeout", "timeout", "timeout", "skipped"], True))
+score_mod._gemini_exhausted, score_mod._gemini_timeouts, score_mod._gemini_seconds = False, 0, 0.0
 
 for _fn in (get_unextracted_items, get_unembedded_items):
     _c = _FakeConn()
