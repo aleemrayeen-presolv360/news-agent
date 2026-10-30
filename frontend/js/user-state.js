@@ -58,12 +58,17 @@ const UserState = {
         if (index > -1) {
             list.splice(index, 1);
         } else {
-            const { searchText, ...copy } = story;
-            list.unshift({ id: story.id, savedAt: new Date().toISOString(), story: copy });
+            list.unshift(this._savedEntry(story, new Date().toISOString()));
         }
         Util.save(this._key('saved'), list);
         App.updateCounts();
         return index === -1;
+    },
+
+    /** A saved story keeps a copy, so it still shows after it leaves data.js. The search index is rebuilt on load. */
+    _savedEntry(story, savedAt) {
+        const { searchText, ...copy } = story;  // eslint-disable-line no-unused-vars
+        return { id: story.id, savedAt, story: copy };
     },
 
     /** Saved stories as story objects, newest save first. */
@@ -83,10 +88,7 @@ const UserState = {
         const migrated = old
             .map(url => Stories.byId(url))
             .filter(Boolean)
-            .map(story => {
-                const { searchText, ...copy } = story;
-                return { id: story.id, savedAt: now, story: copy };
-            });
+            .map(story => this._savedEntry(story, now));
         Util.save(this._key('saved'), migrated);
     },
 

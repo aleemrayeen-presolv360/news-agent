@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .config import (
-    DOMAINS, IST, week_window,
+    DOMAINS, IST,
     SCORE_BREAKING, SCORE_MAJOR, SCORE_NOTABLE, WEBSITE_DAYS,
 )
 
@@ -28,7 +28,7 @@ from .config import (
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
 
-def get_week_items(conn, window) -> list[dict]:
+def get_website_items(conn) -> list[dict]:
     """Every story scored Notable or above from the last WEBSITE_DAYS, highest score first."""
     with conn.cursor() as cur:
         # Not just this week, so the site's date filter has something to work with
@@ -76,20 +76,6 @@ def get_source_health(conn) -> dict:
                 COUNT(*) FILTER (WHERE enabled AND consecutive_failures = 0) as healthy
             FROM sources
         """)
-        return cur.fetchone()
-
-
-def get_run_stats(conn, window) -> dict:
-    """Get ingest run stats for the week."""
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT 
-                COALESCE(SUM(items_new), 0) as items_new
-            FROM runs
-            WHERE job = 'ingest'
-              AND finished_at >= %s
-              AND finished_at < %s
-        """, (window.start, window.end))
         return cur.fetchone()
 
 
@@ -222,23 +208,18 @@ def split_by_label(items: list[dict]) -> dict[str, list[dict]]:
     }
 
 
-def generate_data(conn, window) -> dict:
+def generate_data(conn) -> dict:
     """Generate the full data structure for frontend."""
-    items = get_week_items(conn, window)
+    items = get_website_items(conn)
     health = get_source_health(conn)
-    stats = get_run_stats(conn, window)
     groups = split_by_label(items)
     members = get_cluster_members(conn, sorted({i["cluster_id"] for i in items if i.get("cluster_id")}))
 
     return {
-        "week_label": window.label,
         "generated_at": datetime.now(IST).isoformat(timespec="seconds"),
         "stats": {
             "sources_total": health["total"] or 40,
             "sources_healthy": health["healthy"] or 0,
-            "items_ingested": stats["items_new"] or 0,
-            "major_stories": len(groups["breaking"]) + len(groups["major"]),
-            "notable_stories": len(groups["notable"]),
         },
         "new_sources": get_new_sources(conn),
         "health": get_health(conn),
@@ -287,34 +268,19 @@ def write_index_html() -> None:
         print(f"publish_static: re-stamped {path}")
 
 
-def run(dry_run: bool = False, week_offset: int = 0) -> int:
+def run(dry_run: bool = False) -> int:
     """Main entry point."""
     from . import db
-    from datetime import timedelta
 
-    window = week_window()
-    
-    # Allow generating for previous weeks
-    if week_offset != 0:
-        from dataclasses import replace
-        days = week_offset * 7
-        window = replace(
-            window,
-            start=window.start - timedelta(days=days),
-            end=window.end - timedelta(days=days),
-            label=f"Week {int(window.label.split()[1]) + week_offset} (offset {week_offset})"
-        )
-    
     with db.connect() as conn:
-        data = generate_data(conn, window)
+        data = generate_data(conn)
 
         if dry_run:
             print(f"\n{'=' * 60}")
-            print(f"  DRY RUN - {window.label}")
+            print(f"  DRY RUN - last {WEBSITE_DAYS} days")
             print(f"{'=' * 60}\n")
-            
+
             print(f"  Sources: {data['stats']['sources_healthy']}/{data['stats']['sources_total']}")
-            print(f"  Items: {data['stats']['items_ingested']}")
             print(f"\n  Breaking (>={SCORE_BREAKING}): {len(data['breaking'])}")
             for i in data['breaking'][:5]:
                 print(f"    [{i['score']}] {i['headline'][:50]}")
@@ -331,7 +297,7 @@ def run(dry_run: bool = False, week_offset: int = 0) -> int:
         write_data_js(data)
         write_index_html()
 
-        print(f"publish_static: {window.label}")
+        print(f"publish_static: last {WEBSITE_DAYS} days")
         print(f"  breaking={len(data['breaking'])}, major={len(data['major'])}, notable={len(data['notable'])}")
 
     return 0
@@ -340,14 +306,13 @@ def run(dry_run: bool = False, week_offset: int = 0) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Generate static frontend data.")
     ap.add_argument("--dry-run", action="store_true", help="preview without writing")
-    ap.add_argument("--week-offset", type=int, default=0, help="-1 for last week, -2 for two weeks ago")
     ap.add_argument("--stamp-only", action="store_true",
                     help="only refresh the ?v= links in index.html (after a css/js change)")
     args = ap.parse_args()
     if args.stamp_only:
         write_index_html()
         return 0
-    return run(dry_run=args.dry_run, week_offset=args.week_offset)
+    return run(dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

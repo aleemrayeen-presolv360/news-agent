@@ -43,11 +43,6 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     return [e.tolist() for e in embeddings]
 
 
-def embed_one(text: str) -> list[float]:
-    """Generate embedding for a single text."""
-    return embed_texts([text])[0]
-
-
 def prepare_text(title: str, article_text: str | None, feed_summary: str | None) -> str:
     """Combine title + content for embedding.
     

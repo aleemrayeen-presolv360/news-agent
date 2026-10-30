@@ -101,7 +101,7 @@ td.num { font-variant-numeric: tabular-nums; }
     .request-form .wide { grid-column: auto; }
     .req { grid-template-columns: 1fr; }
 }
-.row-actions, .reject-form { display: flex; gap: 8px; align-items: center; }
+.reject-form { display: flex; gap: 8px; align-items: center; }
 .reject-form input { width: 220px; padding: 5px 10px; font-size: 13px; }
 .request-form .hint { font-size: 12px; color: var(--muted); }
 .status { white-space: nowrap; }

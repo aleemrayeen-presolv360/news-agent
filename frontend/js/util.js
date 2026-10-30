@@ -25,14 +25,6 @@ const Util = {
         return String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
     },
 
-    debounce(fn, ms) {
-        let timer;
-        return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(() => fn(...args), ms);
-        };
-    },
-
     // ---------- Dates (always shown in IST) ----------
 
     _formatters: {},

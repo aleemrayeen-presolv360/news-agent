@@ -185,10 +185,6 @@ const Stories = {
         });
     },
 
-    weekLabel() {
-        return window.digestData?.week_label || '';
-    },
-
     stats() {
         return window.digestData?.stats || {};
     },
