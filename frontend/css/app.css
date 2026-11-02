@@ -8,7 +8,7 @@
     display: flex; align-items: center; gap: 22px; padding: 0 22px;
     background: var(--surface); border-bottom: 1px solid var(--rule);
 }
-.topbar .brand { font-family: var(--serif); font-size: 20px; font-weight: 600; color: var(--ink); text-decoration: none; }
+.topbar .brand { font-size: 18px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); text-decoration: none; }
 .topnav { display: flex; gap: 18px; align-self: stretch; }
 .topnav a {
     display: flex; align-items: center; gap: 5px; color: var(--muted); text-decoration: none; font-size: 13.5px;
@@ -79,7 +79,7 @@ main { min-height: 0; outline: none; }
 
 /* ---------- Add to note ---------- */
 .atn-story { font-size: 13.5px; color: var(--muted); }
-.atn-story strong { display: block; color: var(--text); font-family: var(--serif); font-size: 16px; font-weight: 500; }
+.atn-story strong { display: block; color: var(--text); font-size: 15px; font-weight: 500; }
 .atn-choices { display: grid; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; max-height: 220px; overflow-y: auto; }
 .atn-choices label { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--rule); font-size: 14px; cursor: pointer; }
 .atn-choices label:last-child { border-bottom: 0; }

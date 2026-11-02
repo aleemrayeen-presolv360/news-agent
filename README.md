@@ -232,7 +232,7 @@ than 2 of the slots, so one busy domain can't fill the list.
 
 Colours come from a lawyer's desk: **signature ink** `#1E3570` for anything you can act on,
 **red tape** `#B8282B` only for Breaking, **manila** `#EFE5CC` for things you kept.
-Headlines use *Newsreader*, the interface uses *Public Sans*. Light and dark themes follow
+Everything uses *Geist* (headlines and interface), with *Geist Mono* for shortcuts and numbers. Light and dark themes follow
 the laptop's setting. Built for 1366 × 768 laptops first. All tokens are at the top of
 `frontend/css/base.css`.
 

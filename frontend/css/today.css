@@ -5,8 +5,8 @@
 /* Briefing rail | story card | related stories; the side columns can be dragged wider (panes.js) */
 .hearing { display: grid; grid-template-columns: var(--pane-a, 230px) 0 minmax(0, 1fr) 0 var(--pane-c, 250px); min-width: 0; min-height: calc(100vh - var(--topbar-h)); }
 .rail { background: var(--panel); border-right: 1px solid var(--rule); padding: 24px 18px; display: grid; gap: 18px; align-content: start; }
-.rail h2, .related h2 { font-family: var(--sans); font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-.rail-date { font-family: var(--serif); font-size: 22px; line-height: 1.15; margin-top: 4px; }
+.rail h2, .related h2 { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.rail-date { font-size: 20px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; margin-top: 4px; }
 .rail-progress { display: grid; gap: 6px; }
 .progress { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
 .progress span { height: 5px; border-radius: 3px; background: var(--rule); }
@@ -25,10 +25,10 @@
 /* The story card, shared with the All stories reading pane: what happened, why it matters, who covered it */
 .story { display: grid; gap: 18px; align-content: start; background: var(--surface); min-width: 0; }
 .story-brief { padding: 34px 44px; }
-.story .story-title { font-size: 32px; line-height: 1.15; letter-spacing: -.01em; max-width: 24ch; }
+.story .story-title { font-size: 30px; line-height: 1.18; letter-spacing: -.025em; max-width: 26ch; }
 .story-block { display: grid; gap: 4px; max-width: 64ch; }
-.story-block h3 { font-family: var(--sans); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
-.story-lead { font-family: var(--serif); font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }
+.story-block h3 { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
+.story-lead { font-size: 16.5px; line-height: 1.6; overflow-wrap: anywhere; }
 /* Who covered it: outlet tags, then the mix of outlets as a strip with its legend */
 .coverage { border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 10px; }
 .coverage-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -66,7 +66,7 @@ a.tag:hover { border-color: var(--ink); color: var(--ink); }
 .done { max-width: 560px; margin: 0 auto; padding: 72px 24px 56px; display: grid; gap: 16px; justify-items: center; align-content: center; text-align: center; }
 .seal { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--ink); display: grid; place-items: center; color: var(--ink); }
 .seal .icon { width: 28px; height: 28px; stroke-width: 2.2; }
-.done h1 { font-size: 40px; letter-spacing: -.015em; }
+.done h1 { font-size: 36px; letter-spacing: -.025em; }
 .done-text { color: var(--muted); }
 .recap { list-style: none; padding: 14px 0 0; width: 100%; border-top: 1px solid var(--rule); display: grid; gap: 6px; text-align: left; font-size: 13px; }
 .recap li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }

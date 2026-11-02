@@ -29,9 +29,8 @@
     --cat-market: #2E7D4F;
     --cat-competitors: #9A5E00;
 
-    --serif: "Newsreader", Georgia, "Times New Roman", serif;
-    --sans: "Public Sans", "Segoe UI", system-ui, sans-serif;
-    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    --sans: "Geist", "Segoe UI", system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, Consolas, monospace;
 
     --radius: 8px;
     --topbar-h: 52px;
@@ -77,7 +76,7 @@ body {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
 }
-h1, h2, h3, h4 { margin: 0; font-family: var(--serif); font-weight: 500; line-height: 1.12; text-wrap: balance; }
+h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; text-wrap: balance; }
 p, ol, ul, dl, dd { margin: 0; }
 img { max-width: 100%; height: auto; }
 a { color: var(--ink); text-underline-offset: 3px; }
