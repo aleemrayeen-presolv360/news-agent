@@ -322,7 +322,7 @@ const Stories = {
                 <div class="story-meta">${meta}</div>
                 <${headingTag} class="story-title">${Util.esc(story.headline)}</${headingTag}>
                 ${story.summary ? `<section class="story-block"><h3>${brief ? 'What happened' : 'The news'}</h3><p class="story-lead">${Util.esc(story.summary)}</p></section>` : ''}
-                ${why ? `<section class="story-block"><h3>Why it matters</h3><p class="story-lead">${Util.esc(why)}</p></section>` : ''}
+                ${why ? `<section class="story-block"><h3>Why it matters <span class="ai-note">AI summary, may contain mistakes</span></h3><p class="story-lead">${Util.esc(why)}</p></section>` : ''}
                 ${brief ? this.coverageTagsHtml(story) : this.coverageTableHtml(story)}
                 <div class="story-actions">
                     <button type="button" class="btn" data-action="save" aria-pressed="${saved}"><kbd>S</kbd><span>${saved ? 'Saved' : 'Save'}</span></button>

@@ -3,7 +3,9 @@
 .auth { display: grid; grid-template-columns: minmax(380px, 560px) 1fr; min-height: 100vh; }
 
 .auth-form-col { background: var(--surface); padding: 64px 72px; display: grid; align-content: start; gap: 28px; }
+.auth-intro { display: grid; gap: 6px; }
 .auth-form-col .brand { font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+.auth-about { color: var(--muted); font-size: 14.5px; max-width: 40ch; }
 
 .auth-form { display: grid; gap: 18px; max-width: 400px; }
 .auth-form h1 { font-size: 32px; letter-spacing: -.025em; }

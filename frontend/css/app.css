@@ -142,6 +142,7 @@ a.notice-text:hover { text-decoration: underline; }
 .notice-more { white-space: nowrap; font-size: 13px; color: var(--ink); text-decoration: underline; }
 .notice-meta { white-space: nowrap; margin-right: auto; }
 @media (max-width: 700px) { .notice-meta { display: none; } a.notice-text { flex: 1; } }
-.notice-close { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 6px; font-size: 13px; }
+.notice-close { display: inline-grid; place-items: center; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 6px; }
+.notice-close .icon { width: 14px; height: 14px; }
 .notice-close:hover { background: var(--panel); color: var(--text); }
 @media (max-width: 700px) { .notice { padding: 9px 16px; } }

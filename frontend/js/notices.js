@@ -79,7 +79,7 @@ const Notices = {
                     <a class="notice-text" href="${this.storyLink(top)}">${Util.esc(top.headline)}</a>
                     <span class="meta notice-meta">${Util.esc(top.source)}${top.publishedAt ? ` · ${Util.esc(Util.relative(top.publishedAt))}` : ''}</span>
                     ${more ? `<a class="notice-more" href="#/stories?folder=breaking">${more} more</a>` : ''}
-                    <button type="button" class="notice-close" data-dismiss="${Util.esc(top.id)}" aria-label="Dismiss this notice">✕</button>
+                    <button type="button" class="notice-close" data-dismiss="${Util.esc(top.id)}" aria-label="Dismiss this notice"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
                 </div>`);
         }
 
@@ -108,7 +108,7 @@ const Notices = {
                 <div class="notice" role="status">
                     <p class="notice-text">${text}</p>
                     <a class="notice-more" href="#/settings/requests">Your requests</a>
-                    <button type="button" class="notice-close" data-dismiss="request-${Util.esc(r.id)}" aria-label="Dismiss this notice">✕</button>
+                    <button type="button" class="notice-close" data-dismiss="request-${Util.esc(r.id)}" aria-label="Dismiss this notice"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
                 </div>`);
         }
 

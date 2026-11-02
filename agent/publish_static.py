@@ -232,7 +232,7 @@ def generate_data(conn) -> dict:
     return {
         "generated_at": datetime.now(IST).isoformat(timespec="seconds"),
         "stats": {
-            "sources_total": health["total"] or 40,
+            "sources_total": health["total"] or 0,   # 0 hides the "feeds healthy" line; never a made-up count
             "sources_healthy": health["healthy"] or 0,
         },
         "sources": source_list(),

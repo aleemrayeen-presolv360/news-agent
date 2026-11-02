@@ -53,10 +53,10 @@ td.num { font-variant-numeric: tabular-nums; }
     .settings-nav { border-right: 0; border-bottom: 1px solid var(--rule); }
     .settings-body { padding: 24px 16px; }
 }
-.tag-new { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--manila); vertical-align: 1px; }
+.tag-new { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 4px; font-size: 11.5px; font-weight: 600; background: var(--manila); vertical-align: 1px; }
 .setting-row-wide { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .domain-picks { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-.domain-picks label { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px; font-size: 13.5px; background: var(--surface); cursor: pointer; }
+.domain-picks label { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--rule); border-radius: var(--radius); font-size: 13.5px; background: var(--surface); cursor: pointer; }
 .domain-picks label:has(input:checked) { border-color: var(--ink); background: var(--ink-soft); }
 .domain-picks input { margin: 0; accent-color: var(--ink); }
 
@@ -67,7 +67,7 @@ td.num { font-variant-numeric: tabular-nums; }
 
 /* Source requests */
 .status-wait { color: var(--warn); }
-.nav-badge { margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--manila); color: var(--text); font-size: 12px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+.nav-badge { margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: 4px; background: var(--manila); color: var(--text); font-size: 12px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
 .settings-nav a[aria-current="page"] .nav-badge { background: var(--ink-fg); color: var(--ink); }
 .section-title { font-size: 14.5px; letter-spacing: 0; font-weight: 600; margin-top: 8px; }
 .request-form {

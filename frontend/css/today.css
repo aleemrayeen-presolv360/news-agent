@@ -28,6 +28,7 @@
 .story .story-title { font-size: 30px; line-height: 1.18; letter-spacing: -.025em; max-width: 26ch; }
 .story-block { display: grid; gap: 4px; max-width: 64ch; }
 .story-block h3 { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
+.story-block h3 .ai-note { margin-left: 8px; font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); }
 .story-lead { font-size: 16.5px; line-height: 1.6; overflow-wrap: anywhere; }
 /* Who covered it: outlet tags, then the mix of outlets as a strip with its legend */
 .coverage { border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 10px; }

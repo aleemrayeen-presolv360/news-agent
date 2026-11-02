@@ -206,9 +206,9 @@ const Reader = {
                 <button type="button" class="chip ${from || to ? 'is-active' : ''}" id="date-chip" aria-expanded="false" aria-controls="date-pop">
                     <svg class="icon"><use href="#i-cal"/></svg>${Util.esc(dateText)}<svg class="icon"><use href="#i-chev"/></svg>
                 </button>
-                ${this.get('cat') ? `<a class="chip is-active" href="${this.link({ cat: null, story: null })}" aria-label="Remove ${Util.esc(CONFIG.CATEGORIES[this.get('cat')])} filter">${Util.esc(CONFIG.CATEGORIES[this.get('cat')])} ✕</a>` : ''}
-                ${this.get('domain') ? `<a class="chip is-active" href="${this.link({ domain: null, story: null })}" aria-label="Remove ${Util.esc(CONFIG.DOMAINS[this.get('domain')] || '')} filter">${Util.esc(CONFIG.DOMAINS[this.get('domain')] || this.get('domain'))} ✕</a>` : ''}
-                ${this.get('q') ? `<a class="chip is-active" href="${this.link({ q: null, story: null })}" aria-label="Remove search filter">“${Util.esc(this.get('q'))}” ✕</a>` : ''}
+                ${this.get('cat') ? `<a class="chip is-active" href="${this.link({ cat: null, story: null })}" aria-label="Remove ${Util.esc(CONFIG.CATEGORIES[this.get('cat')])} filter">${Util.esc(CONFIG.CATEGORIES[this.get('cat')])} <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></a>` : ''}
+                ${this.get('domain') ? `<a class="chip is-active" href="${this.link({ domain: null, story: null })}" aria-label="Remove ${Util.esc(CONFIG.DOMAINS[this.get('domain')] || '')} filter">${Util.esc(CONFIG.DOMAINS[this.get('domain')] || this.get('domain'))} <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></a>` : ''}
+                ${this.get('q') ? `<a class="chip is-active" href="${this.link({ q: null, story: null })}" aria-label="Remove search filter">“${Util.esc(this.get('q'))}” <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></a>` : ''}
                 ${filtersOn ? `<a class="clear" href="${this.link({ from: null, to: null, cat: null, domain: null, q: null, story: null })}">Clear all</a>` : ''}
             </div>`;
     },
