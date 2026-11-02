@@ -139,8 +139,8 @@ const Notes = {
             </div>
             <div class="editor-doc">
                 <label class="sr-only" for="note-title">Note title</label>
-                <input type="text" id="note-title" class="note-title" autocomplete="off" placeholder="Untitled note" value="${Util.esc(n.title || '')}">
-                <div id="note-body" class="note-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note text" data-placeholder="Start writing…">${n.content || ''}</div>
+                <input type="text" id="note-title" class="note-title" maxlength="500" autocomplete="off" placeholder="Untitled note" value="${Util.esc(n.title || '')}">
+                <div id="note-body" class="note-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note text" data-placeholder="Start writing…">${Util.cleanHtml(n.content || '')}</div>
                 <p class="note-private">Only you can see this note.</p>
             </div>`;
     },
@@ -353,7 +353,7 @@ const Notes = {
 
     storyBlock(story, comment) {
         const meta = [story.source, story.publishedAt ? Util.longDate(story.publishedAt) : ''].filter(Boolean).join(', ');
-        return `<blockquote class="note-story"><a href="${Util.esc(story.url)}" target="_blank" rel="noopener">${Util.esc(story.headline)}</a><br><span>${Util.esc(meta)}</span>${comment ? `<br>${Util.esc(comment)}` : ''}</blockquote><p><br></p>`;
+        return `<blockquote class="note-story"><a href="${Util.esc(Util.safeUrl(story.url))}" target="_blank" rel="noopener">${Util.esc(story.headline)}</a><br><span>${Util.esc(meta)}</span>${comment ? `<br>${Util.esc(comment)}` : ''}</blockquote><p><br></p>`;
     },
 
     async submitAddToNote() {

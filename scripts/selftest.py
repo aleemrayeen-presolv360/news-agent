@@ -34,7 +34,7 @@ from agent.embed import get_unembedded_items  # noqa: E402
 from agent.db import backed_off_source_ids  # noqa: E402
 from agent.trends import parse_picks  # noqa: E402
 from agent.config import DOMAINS, supabase_settings  # noqa: E402
-from agent.publish_static import coverage_for, display_names, item_to_dict, split_by_label, stamp_assets  # noqa: E402
+from agent.publish_static import coverage_for, display_names, item_to_dict, split_by_label, stamp_assets, stamp_csp  # noqa: E402
 from agent.ingest import gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
 from agent.triage import check_arxiv_gate  # noqa: E402
 import agent.score as score_mod  # noqa: E402
@@ -554,6 +554,13 @@ check("css/js/data links get a content hash, old hash replaced, CDN links untouc
       '<script src="data.js?v=H"></script><script src="https://cdn.x/y.js"></script>')
 _index = (_frontend / "index.html").read_text(encoding="utf-8")
 check("index.html links are stamped with current hashes", stamp_assets(_index, _frontend), _index)
+_csp = ('<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; script-src \'self\' \'sha256-old=\'; img-src data:">'
+        '<script>a()</script><script src="js/x.js"></script>')
+check("security policy gets the hash of each inline script, old hash replaced",
+      re.search(r"script-src ([^;]*);", stamp_csp(_csp)).group(1),
+      "'self' 'sha256-qVpDBgj7bpq5hMAcGp3AOc79J3Y1Z4HvySTwKrWDoy4='")
+check("index.html has a security policy that allows only known scripts",
+      bool(re.search(r"script-src 'self' https://cdn\.jsdelivr\.net/npm/@supabase/supabase-js@[\d.]+/ 'sha256-", _index)), True)
 
 print(f"\n{'=' * 50}\n  {PASS} passed, {FAIL} failed\n{'=' * 50}")
 print(f"  enabled sources : {len(enabled_sources())}")

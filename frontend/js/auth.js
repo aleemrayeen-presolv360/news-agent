@@ -1,6 +1,6 @@
 /*
    Authentication: sign in, create account, reset password, set a new password.
-   Uses Supabase Auth; without Supabase it runs a local demo mode.
+   Uses Supabase Auth; without Supabase it runs a demo mode, on localhost only.
 */
 
 // Read before the Supabase client starts, because it clears the recovery token from the URL
@@ -205,6 +205,7 @@ const Auth = {
         this._error('signin-error', '');
 
         const supabase = db.getSupabase();
+        if (!supabase && !db.DEMO_MODE_ALLOWED) return this._error('signin-error', "Can't reach the sign-in service. Check your connection, then reload the page.");
         if (!supabase) {
             if (password.length < 6) return this._error('signin-error', 'In demo mode, use any password of 6 or more characters.', passEl);
             const user = { id: `demo-${Util.normalize(email)}`, email };
@@ -242,6 +243,7 @@ const Auth = {
         this._error('signup-error', '');
 
         const supabase = db.getSupabase();
+        if (!supabase && !db.DEMO_MODE_ALLOWED) return this._error('signup-error', "Can't reach the sign-in service. Check your connection, then reload the page.");
         if (!supabase) {
             const user = { id: `demo-${Util.normalize(email)}`, email };
             const profile = { name, role: 'user' };

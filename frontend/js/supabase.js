@@ -7,6 +7,10 @@
 
 let supabaseClient = null;
 
+// Demo mode (sign in with any email, data kept in this browser) is for testing on this laptop.
+// On the live site a failed Supabase load shows an error instead of a pretend sign-in.
+const DEMO_MODE_ALLOWED = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+
 function initSupabase() {
     if (supabaseClient) return supabaseClient;
     if (!CONFIG.SUPABASE_URL || !window.supabase) {
@@ -27,6 +31,7 @@ function getSupabase() {
 // ==================== LOCAL DEMO USER ====================
 
 function getLocalUser() {
+    if (!DEMO_MODE_ALLOWED) return null;
     return Util.load('demo_user', null);
 }
 
@@ -363,6 +368,7 @@ async function updateUserRole(user, role) {
 // ==================== EXPORT ====================
 
 window.db = {
+    DEMO_MODE_ALLOWED,
     initSupabase,
     getSupabase,
     getUser,

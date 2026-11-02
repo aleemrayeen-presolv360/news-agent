@@ -19,6 +19,10 @@ concurrency:
   group: ingest
   cancel-in-progress: false   # never cut a run short; they are cheap
 
+# Read-only: this job only talks to the databases, it never pushes to the repo
+permissions:
+  contents: read
+
 jobs:
   ingest:
     runs-on: ubuntu-latest

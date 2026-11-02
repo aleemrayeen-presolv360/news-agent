@@ -279,7 +279,7 @@ const Stories = {
             <section class="coverage" aria-label="Coverage">
                 <div class="coverage-row">
                     <strong>${title}</strong>
-                    ${shown.map(o => `<a class="tag" href="${Util.esc(o.url)}" target="_blank" rel="noopener">${Util.esc(o.source)}</a>`).join('')}
+                    ${shown.map(o => `<a class="tag" href="${Util.esc(Util.safeUrl(o.url))}" target="_blank" rel="noopener">${Util.esc(o.source)}</a>`).join('')}
                     ${rest > 0 ? `<span class="tag">+${rest}</span>` : ''}
                     ${alsoIndia ? '<span class="tag tag-india">Also in Indian press</span>' : ''}
                     <span class="coverage-phone">${story.coverage > 1 ? ` · ${Util.esc(phoneText)}` : ` ${Util.esc(story.source)}`}</span>
@@ -295,7 +295,7 @@ const Stories = {
         const outlets = this.outlets(story);
         const rows = outlets.length > 5 ? outlets.slice(0, 4) : outlets;
         const folded = outlets.slice(rows.length);
-        const row = o => `<li><b>${Util.esc(o.source)}</b><a href="${Util.esc(o.url)}" target="_blank" rel="noopener">${Util.esc(o.headline)}</a></li>`;
+        const row = o => `<li><b>${Util.esc(o.source)}</b><a href="${Util.esc(Util.safeUrl(o.url))}" target="_blank" rel="noopener">${Util.esc(o.headline)}</a></li>`;
         return `
             <section class="story-block" aria-label="Coverage">
                 <h3>Coverage · ${story.coverage > 1 ? `${story.coverage} sources` : '1 source'}</h3>
@@ -332,7 +332,7 @@ const Stories = {
                 <div class="story-actions">
                     <button type="button" class="btn" data-action="save" aria-pressed="${saved}"><kbd>S</kbd><span>${saved ? 'Saved' : 'Save'}</span></button>
                     <button type="button" class="btn" data-action="note"><kbd>N</kbd><span class="wide-only">Add to note</span><span class="phone-only">Note</span></button>
-                    <a class="btn btn-read" href="${Util.esc(story.url)}" target="_blank" rel="noopener"><kbd>O</kbd>Read at ${Util.esc(story.source || Util.hostname(story.url) || 'the source')}</a>
+                    <a class="btn btn-read" href="${Util.esc(Util.safeUrl(story.url))}" target="_blank" rel="noopener"><kbd>O</kbd>Read at ${Util.esc(story.source || Util.hostname(story.url) || 'the source')}</a>
                     ${actions}
                     ${primary}
                 </div>

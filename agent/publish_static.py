@@ -12,6 +12,7 @@ The website has no API: it loads this file directly.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -255,7 +256,21 @@ def stamp_assets(html: str, frontend_dir: Path) -> str:
             return m.group(0)
         digest = hashlib.md5(path.read_bytes()).hexdigest()[:8]
         return f"{m.group(1)}{m.group(2)}?v={digest}{m.group(3)}"
-    return ASSET_REF.sub(repl, html)
+    return stamp_csp(ASSET_REF.sub(repl, html))
+
+
+INLINE_SCRIPT = re.compile(r"<script>(.*?)</script>", re.S)
+
+
+def stamp_csp(html: str) -> str:
+    """Put the hash of every inline <script> into the page's Content-Security-Policy, so the
+    policy allows exactly those scripts and nothing injected. Pages without a policy are left alone."""
+    hashes = "".join(
+        " 'sha256-%s'" % base64.b64encode(hashlib.sha256(s.replace("\r\n", "\n").encode()).digest()).decode()
+        for s in INLINE_SCRIPT.findall(html))
+    return re.sub(r'(<meta http-equiv="Content-Security-Policy" content="[^"]*?script-src[^;"]*?)'
+                  r"(?: 'sha256-[A-Za-z0-9+/=]*')*(?=[;\"])",
+                  lambda m: m.group(1) + hashes, html, count=1)
 
 
 def write_index_html() -> None:
@@ -264,7 +279,7 @@ def write_index_html() -> None:
     html = path.read_text(encoding="utf-8")
     stamped = stamp_assets(html, FRONTEND_DIR)
     if stamped != html:
-        path.write_text(stamped, encoding="utf-8")
+        path.write_text(stamped, encoding="utf-8", newline="\n")   # LF on Windows too, like the repo
         print(f"publish_static: re-stamped {path}")
 
 

@@ -2,6 +2,7 @@
 --
 -- HOW TO RUN: Supabase dashboard -> SQL Editor -> paste this whole file -> Run.
 -- Safe to run more than once. To undo everything: run sql/security_rollback.sql.
+-- Then run sql/hardening.sql: link and length checks, real emails, and write limits.
 --
 -- WHAT IT DOES
 --   1. Turns on Row Level Security (RLS) on all six tables and adds the rules below

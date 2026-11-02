@@ -3,14 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Security policy (see SECURITY.md): scripts only from this site, the pinned Supabase
+         library and the inline theme script (by hash, filled in by publish_static); data only
+         to our Supabase project; no plugins, no frames, no form posts elsewhere. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/ 'sha256-g53vBHF6/egmIMd6TuyBlRJeOl0XWSi1TNyj3jjSbpQ='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://knpcppdwpxvdbfhomylz.supabase.co wss://knpcppdwpxvdbfhomylz.supabase.co; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="color-scheme" content="light dark">
     <meta name="theme-color" content="#FBFBF9" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#12151B" media="(prefers-color-scheme: dark)">
     <title>News Intel</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231E3570'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='17' font-weight='700' fill='white' text-anchor='middle'%3ENI%3C/text%3E%3C/svg%3E">
 
-    <!-- Apply the saved theme before first paint so the page never flashes -->
+    <!-- Apply the saved theme before first paint so the page never flashes. Also refuse to show
+         inside another site's frame (clickjacking); the host can't send frame-ancestors.
+         Editing this script changes its hash: run python -m agent.publish_static --stamp-only. -->
     <script>
+        if (window.top !== window.self) document.documentElement.style.display = 'none';
         try {
             const theme = localStorage.getItem('theme');
             if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
@@ -103,7 +111,7 @@
                 </div>
                 <div class="field">
                     <label for="signup-name">Full name</label>
-                    <input id="signup-name" name="name" type="text" autocomplete="name" required placeholder="Your full name">
+                    <input id="signup-name" name="name" type="text" maxlength="100" autocomplete="name" required placeholder="Your full name">
                 </div>
                 <div class="field">
                     <label for="signup-email">Email</label>
@@ -258,11 +266,11 @@
             <h2 id="source-dialog-title">Add a source</h2>
             <div class="field">
                 <label for="source-name">Name</label>
-                <input id="source-name" name="source-name" type="text" autocomplete="off" required placeholder="TechCrunch AI…">
+                <input id="source-name" name="source-name" type="text" maxlength="200" autocomplete="off" required placeholder="TechCrunch AI…">
             </div>
             <div class="field">
                 <label for="source-url">Feed address</label>
-                <input id="source-url" name="source-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="techcrunch.com/feed…">
+                <input id="source-url" name="source-url" type="url" maxlength="2000" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="techcrunch.com/feed…">
                 <span class="hint">An RSS or Atom feed. "https://" is added if you leave it out.</span>
             </div>
             <div class="field">
@@ -288,17 +296,17 @@
     <!-- Scripts: config and data first, then helpers, then screens, then the app that wires them -->
     <script src="js/config.js?v=d650c150"></script>
     <script src="data.js?v=a20398b8"></script>
-    <script src="js/util.js?v=c0017898"></script>
-    <script src="js/supabase.js?v=8776e7b1"></script>
-    <script src="js/stories.js?v=2ea7a2db"></script>
+    <script src="js/util.js?v=f7a4aa5b"></script>
+    <script src="js/supabase.js?v=db904b98"></script>
+    <script src="js/stories.js?v=d816b3c4"></script>
     <script src="js/user-state.js?v=b1a5f738"></script>
-    <script src="js/auth.js?v=66241113"></script>
+    <script src="js/auth.js?v=bcc6fd2e"></script>
     <script src="js/panes.js?v=53eb1d9d"></script>
     <script src="js/today.js?v=51bdde9b"></script>
     <script src="js/reader.js?v=d7635cdd"></script>
-    <script src="js/notes.js?v=4e3618a0"></script>
+    <script src="js/notes.js?v=20b6d06a"></script>
     <script src="js/default-sources.js?v=b7eb999f"></script>
-    <script src="js/settings.js?v=0693060b"></script>
+    <script src="js/settings.js?v=81d2103b"></script>
     <script src="js/palette.js?v=206a2cf8"></script>
     <script src="js/notices.js?v=09c289b0"></script>
     <script src="js/app.js?v=dca7e46d"></script>

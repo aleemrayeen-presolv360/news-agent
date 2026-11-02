@@ -436,10 +436,18 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
   removed the old `@presolv360.com`-only check). The rules above still keep each person to their own data.
 - The pipeline reads approved source requests through `approved_source_feeds()`, which returns
   only id, name and feed address, so it needs no extra secret.
-- **If the website breaks after a security change:** run `sql/security_rollback.sql` in the
-  SQL Editor. The SQL Editor and Table Editor always skip RLS, so you can't lock yourself out.
-- News text from feeds is escaped before it is shown, so a malicious headline can't run code in
-  the page. Pasted text in notes is inserted as plain text.
+- `sql/hardening.sql` (run after `security.sql`) repeats the form checks in the database, where they
+  can't be skipped: http(s) links only, length limits, emails taken from the sign-in token, and
+  per-person write limits. Undo: `sql/hardening_rollback.sql`.
+- **If the website breaks after a security change:** run `sql/hardening_rollback.sql`, then if
+  needed `sql/security_rollback.sql`, in the SQL Editor. The SQL Editor and Table Editor always
+  skip RLS, so you can't lock yourself out.
+- News text from feeds is escaped before it is shown, links are only used if they start with
+  http(s), and note HTML is cleaned before it is shown, so a malicious headline, feed or note
+  can't run code in the page. Pasted text in notes is inserted as plain text.
+- `index.html` carries a Content-Security-Policy. After editing its inline theme script, run
+  `python -m agent.publish_static --stamp-only` to refresh the script's hash (the self-test checks it).
+- Every decision and what is still open: [SECURITY.md](SECURITY.md).
 - `.env` holds the pipeline secrets and must never be committed.
 
 ---

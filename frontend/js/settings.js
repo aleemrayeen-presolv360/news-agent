@@ -428,6 +428,9 @@ const Settings = {
     /** Supabase's unique index stops two open requests for the same feed. */
     saveErrorText(err, fallback) {
         if (err?.code === '23505') return 'Someone has already asked for this feed. An admin will decide on it.';
+        // Refused by a database rule (sql/hardening.sql): the message is written for people
+        if (['42501', 'P0001'].includes(err?.code) && err.message) return err.message;
+        if (err?.code === '23514') return `${fallback} Use an http or https feed address and a shorter name or reason.`;
         if (err?.code === '42P01' || /source_request/.test(err?.message || '')) return `${fallback} The source_request table is missing in Supabase; an admin needs to run sql/supabase.sql.`;
         return `${fallback} Check your connection and try again.`;
     },
@@ -441,7 +444,7 @@ const Settings = {
     REJECT_REASONS: ['Paywalled', 'Duplicate', 'Off-topic', 'Too many posts', 'Feed broken'],
 
     requestSourceCell(r) {
-        return `${Util.esc(r.name)}<small><a href="${Util.esc(r.url)}" target="_blank" rel="noopener">${Util.esc(r.url)}</a></small>`;
+        return `${Util.esc(r.name)}<small><a href="${Util.esc(Util.safeUrl(r.url))}" target="_blank" rel="noopener">${Util.esc(r.url)}</a></small>`;
     },
 
     myRequestsHtml() {
@@ -452,11 +455,11 @@ const Settings = {
             <form class="request-form" id="request-form" novalidate>
                 <div class="field">
                     <label for="request-url">Feed address</label>
-                    <input id="request-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="laravel-news.com/feed…" aria-describedby="request-url-hint">
+                    <input id="request-url" type="url" maxlength="2000" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="laravel-news.com/feed…" aria-describedby="request-url-hint">
                 </div>
                 <div class="field">
                     <label for="request-name">Name</label>
-                    <input id="request-name" type="text" autocomplete="off" required placeholder="Laravel News…">
+                    <input id="request-name" type="text" maxlength="200" autocomplete="off" required placeholder="Laravel News…">
                 </div>
                 <div class="field">
                     <label for="request-category">Category</label>
@@ -569,7 +572,7 @@ const Settings = {
             <div class="review">${waiting.map(r => `
                 <article class="req" data-request="${Util.esc(r.id)}">
                     <div class="req-main">
-                        <h2>${Util.esc(r.name)} <span class="muted">· <a href="${Util.esc(r.url)}" target="_blank" rel="noopener">${Util.esc(r.url.replace(/^https?:\/\//, ''))}</a> · ${Util.esc(CONFIG.SOURCE_CATEGORIES[r.category] || r.category)}</span></h2>
+                        <h2>${Util.esc(r.name)} <span class="muted">· <a href="${Util.esc(Util.safeUrl(r.url))}" target="_blank" rel="noopener">${Util.esc(r.url.replace(/^https?:\/\//, ''))}</a> · ${Util.esc(CONFIG.SOURCE_CATEGORIES[r.category] || r.category)}</span></h2>
                         ${r.reason ? `<p class="req-why">“${Util.esc(r.reason)}”</p>` : ''}
                         <p class="req-facts">Asked by <b>${Util.esc(r.requester_email || 'Unknown')}</b>, ${Util.esc(Util.relative(r.created_at))}</p>
                     </div>

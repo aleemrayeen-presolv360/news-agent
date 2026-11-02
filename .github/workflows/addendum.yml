@@ -16,6 +16,10 @@ concurrency:
   group: publish   # shared with daily.yml and publish.yml, so two scorers never share Groq quota
   cancel-in-progress: false
 
+# Read-only: this job only talks to the databases, it never pushes to the repo
+permissions:
+  contents: read
+
 jobs:
   addendum:
     runs-on: ubuntu-latest

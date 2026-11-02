@@ -13,6 +13,48 @@ const Util = {
             .replace(/'/g, '&#39;');
     },
 
+    /** A link safe to put in href: http(s) addresses only, so a "javascript:" link can never run. */
+    safeUrl(value) {
+        const url = String(value ?? '').trim();
+        return /^https?:\/\//i.test(url) ? url : '#';
+    },
+
+    _NOTE_TAGS: new Set(['a', 'b', 'strong', 'i', 'em', 'u', 's', 'strike', 'p', 'div', 'span', 'br', 'ul', 'ol', 'li',
+        'blockquote', 'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'hr', 'sub', 'sup', 'img']),
+    _DROP_TAGS: new Set(['script', 'style', 'iframe', 'frame', 'object', 'embed', 'template', 'noscript', 'svg', 'math',
+        'form', 'input', 'button', 'textarea', 'select', 'link', 'meta', 'base', 'title']),
+
+    /**
+     * Keep only the formatting the notes editor makes: no scripts, event handlers, styles or
+     * odd links. DOMParser builds an inert document, so nothing in the input runs while cleaning.
+     */
+    cleanHtml(html) {
+        const doc = new DOMParser().parseFromString(String(html ?? ''), 'text/html');
+        const clean = parent => {
+            [...parent.children].forEach(el => {
+                const tag = el.tagName.toLowerCase();
+                if (this._DROP_TAGS.has(tag)) return el.remove();
+                clean(el);
+                if (!this._NOTE_TAGS.has(tag)) return el.replaceWith(...el.childNodes);
+                const href = el.getAttribute('href');
+                const src = el.getAttribute('src') || '';
+                [...el.attributes].forEach(attr => el.removeAttribute(attr.name));
+                if (tag === 'a') {
+                    el.setAttribute('href', this.safeUrl(href));
+                    el.setAttribute('target', '_blank');
+                    el.setAttribute('rel', 'noopener');
+                }
+                // Images in notes are pasted-in files (data: URLs); raster formats only
+                if (tag === 'img') {
+                    if (/^data:image\/(png|jpe?g|gif|webp);base64,/i.test(src)) el.setAttribute('src', src);
+                    else el.remove();
+                }
+            });
+        };
+        clean(doc.body);
+        return doc.body.innerHTML;
+    },
+
     /** Decode entities that some feeds leave in headlines, such as &#8216; */
     decode(value) {
         const el = document.createElement('textarea');
