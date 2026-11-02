@@ -25,7 +25,7 @@ from agent.normalize import (  # noqa: E402
     canonical_url, clean_text, normalize_cisa_kev, normalize_entry, normalize_hf_paper, normalize_newsdata,
 )
 from agent.sources import (  # noqa: E402
-    ARXIV_SOURCES, PAPER_SOURCES, SOURCES, by_id, enabled_sources, requested_sources,
+    ARXIV_SOURCES, PAPER_SOURCES, SOURCES, Source, by_id, enabled_sources, requested_sources,
 )
 from agent.extract import (  # noqa: E402
     ExtractResult, _extract_text, _PAYWALL_SIGNALS, get_unextracted_items, update_extracted,
@@ -35,7 +35,8 @@ from agent.db import backed_off_source_ids  # noqa: E402
 from agent.trends import parse_picks  # noqa: E402
 from agent.config import DOMAINS, supabase_settings  # noqa: E402
 from agent.publish_static import coverage_for, display_names, item_to_dict, split_by_label, stamp_assets, stamp_csp  # noqa: E402
-from agent.ingest import feed_candidates, gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
+from agent.ingest import (feed_candidates, gap_fill_rows, needs_gap_fill,  # noqa: E402
+                          split_first_fetch, split_switched_off)
 from agent.triage import check_arxiv_gate  # noqa: E402
 import agent.score as score_mod  # noqa: E402
 
@@ -546,6 +547,15 @@ check("then the usual feed addresses on the site, without repeats",
       (_found[2], _found.count("https://epoch.ai/atom.xml")), ("https://epoch.ai/feed", 1))
 check("a page with no feed link still gets the usual addresses",
       feed_candidates("<html></html>", "https://site.in/")[0], "https://site.in/feed")
+
+_srcs = [Source("a", "TechCrunch", "B", url="https://techcrunch.com/feed/"),
+         Source("b", "Other name", "B", url="https://site.in/rss"),
+         Source("req_1", "Epoch AI", "D", url="https://epoch.ai/")]
+_keep, _off = split_switched_off(_srcs, {"https://site.in/rss", "https://epoch.ai"}, {"TechCrunch"})
+check("sources switched off on the website are skipped, by feed address or by name",
+      ([x.id for x in _keep], [x.id for x in _off]), ([], ["a", "b", "req_1"]))
+check("nothing is skipped when nothing is switched off",
+      len(split_switched_off(_srcs, set(), set())[0]), 3)
 
 check("source ids are unique", len({s.id for s in SOURCES}), len(SOURCES))
 check("Google News feeds are encoded and limited to 7 days",

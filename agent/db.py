@@ -66,6 +66,14 @@ def sync_sources(conn, extra: Sequence[Source] = ()) -> None:
         )
 
 
+def switch_off_sources(conn, ids: Sequence[str]) -> None:
+    """Mark sources an admin switched off on the website as off. Run after sync_sources."""
+    if not ids:
+        return
+    with conn.cursor() as cur:
+        cur.execute("UPDATE sources SET enabled = false WHERE id = ANY(%s::text[])", (list(ids),))
+
+
 def ensure_trend_table(conn) -> None:
     """trend_watches: one Google News search per trending topic, for a few days."""
     with conn.cursor() as cur:

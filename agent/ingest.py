@@ -243,11 +243,56 @@ def fetch_requested_sources() -> list[Source]:
         return []
 
 
+def fetch_switched_off() -> tuple[set[str], set[str]]:
+    """Feed addresses and names an admin switched off for everyone (Settings > Admin > Sources).
+
+    Read through switched_off_sources() (sql/source_switches.sql). Before that SQL has been run,
+    or when Supabase is down, nothing is skipped: the website still hides those stories.
+    """
+    url, key = supabase_settings()
+    if not url or not key:
+        return set(), set()
+    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
+    try:
+        resp = httpx.post(f"{url}/rest/v1/rpc/switched_off_sources", json={},
+                          headers=headers, timeout=FEED_TIMEOUT)
+        if resp.status_code == 404:
+            return set(), set()
+        resp.raise_for_status()
+        rows = resp.json()
+    except (httpx.HTTPError, ValueError) as e:
+        print(f"ingest: couldn't read switched-off sources from Supabase ({e}); fetching all", file=sys.stderr)
+        return set(), set()
+    return ({_url_key(r.get("url")) for r in rows if r.get("url")},
+            {str(r.get("name") or "").strip() for r in rows if r.get("name")})
+
+
+def _url_key(url: str | None) -> str:
+    return str(url or "").strip().rstrip("/").lower()
+
+
+def split_switched_off(sources: list[Source], off_urls: set[str],
+                       off_names: set[str]) -> tuple[list[Source], list[Source]]:
+    """Sources to fetch, and sources switched off on the website. Matched by feed address or by
+    name, the same name the website uses to hide a source's stories."""
+    keep, off = [], []
+    for s in sources:
+        (off if _url_key(s.url) in off_urls or s.name in off_names else keep).append(s)
+    return keep, off
+
+
 def run(dry_run: bool = False, limit: int | None = None) -> int:
     sources = enabled_sources()
     if limit:
         sources = sources[:limit]
     requested = fetch_requested_sources()
+    off_urls, off_names = fetch_switched_off()
+    sources, off = split_switched_off(sources, off_urls, off_names)
+    requested, off_requested = split_switched_off(requested, off_urls, off_names)
+    off += off_requested
+    if off:
+        print("ingest: switched off on the website, not fetched: " + ", ".join(s.name for s in off),
+              file=sys.stderr)
     backed_off: set[str] = set()
     if dry_run:
         sources += requested
@@ -257,6 +302,9 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
             db.ensure_trend_table(conn)
             trend_sources = db.active_trend_sources(conn)
             db.sync_sources(conn, trend_sources + requested)
+            # Off, so the health panel doesn't call it a quiet source; switching it back on
+            # undoes this on the next run (sync_sources writes enabled again)
+            db.switch_off_sources(conn, [s.id for s in off])
             backed_off = db.backed_off_source_ids(conn)
         sources = [s for s in sources + trend_sources + requested if s.id not in backed_off]
 

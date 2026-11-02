@@ -189,7 +189,7 @@ const Settings = {
         const shown = this.sources.filter(s => !hidden.has(String(s.id)) && s.enabled !== false).length;
         return `
             <div class="settings-head"><h1>My sources</h1></div>
-            <p class="settings-lede">Hide sources you don't need. Their stories are left out of Today and All stories, for you only. You're showing ${shown} of ${this.sources.length}.</p>
+            <p class="settings-lede">Hide sources you don't need. Their stories are left out of Today and All stories, for you only, on every device you sign in on. You're showing ${shown} of ${this.sources.length}.</p>
             ${this.sourceToolbarHtml()}
             <div class="table-wrap" id="source-table">${this.mySourcesTable()}</div>`;
     },
@@ -287,7 +287,7 @@ const Settings = {
             ${this.newSourcesCallout()}
             ${this.sourceToolbarHtml()}
             <div class="table-wrap" id="source-table">${this.adminSourcesTable()}</div>
-            <p class="callout">Turning a source off hides its stories for everyone. Every change is recorded in the audit log.</p>`;
+            <p class="callout">Turning a source off hides its stories for everyone and stops the news pipeline fetching it, from its next run (within 4 hours). Every change is recorded in the audit log.</p>`;
     },
 
     adminSourcesTable() {
@@ -786,7 +786,9 @@ const Settings = {
         }
         if (target.dataset.hideSource) {
             const show = target.getAttribute('aria-checked') !== 'true';
-            UserState.setSourceHidden(target.dataset.hideSource, !show);
+            UserState.setSourceHidden(target.dataset.hideSource, !show).then(synced => {
+                if (!synced) Util.toast("Saved on this laptop only. Couldn't reach your account; try again later.");
+            });
             this.loadSources().then(() => {
                 this.refreshSourceTable();
                 Reader.invalidate();

@@ -292,6 +292,29 @@ async function seedSources(defaults) {
     if (insertError) console.error('Failed to insert default sources:', insertError);
 }
 
+// ==================== USER SETTINGS ====================
+// Kept with the account (user_setting, private to its owner), so they follow the person to every device.
+
+/** Saved settings: {} when there are none yet, null when they can't be read (offline or demo mode). */
+async function getUserSettings(userId) {
+    if (!supabaseClient || !userId) return null;
+    const { data, error } = await supabaseClient.from('user_setting').select('preferences').eq('user_id', userId).maybeSingle();
+    if (error) {
+        console.error('getUserSettings error:', error);
+        return null;
+    }
+    return data?.preferences || {};
+}
+
+/** Merge changes into the saved settings. False when they couldn't be saved. */
+async function saveUserSettings(userId, changes) {
+    const current = await getUserSettings(userId);
+    if (current === null) return false;
+    const { error } = await supabaseClient.from('user_setting').upsert({ user_id: userId, preferences: { ...current, ...changes } });
+    if (error) console.error('saveUserSettings error:', error);
+    return !error;
+}
+
 // ==================== AUDIT LOG ====================
 
 async function logAudit(action, details) {
@@ -391,5 +414,7 @@ window.db = {
     logAudit,
     getAuditLog,
     getUsers,
-    updateUserRole
+    updateUserRole,
+    getUserSettings,
+    saveUserSettings
 };

@@ -30,8 +30,9 @@ CREATE TABLE IF NOT EXISTS note (
 );
 CREATE INDEX IF NOT EXISTS note_user_idx ON note (user_id, updated_at DESC);
 
--- Source list shown in Settings. enabled = false hides a source's stories for everyone.
--- Note: the news pipeline does NOT read this table; it uses agent/sources.py.
+-- Source list shown in Settings. enabled = false hides a source's stories for everyone, and the
+-- news pipeline stops fetching it (it reads the off ones through switched_off_sources(),
+-- sql/source_switches.sql). Its own list is agent/sources.py plus approved source requests.
 CREATE TABLE IF NOT EXISTS source (
     id          BIGSERIAL PRIMARY KEY,
     name        TEXT NOT NULL,
@@ -74,8 +75,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Per-user preferences. Exists in the live project but the website does not use it yet
--- (preferences are kept in the browser for now).
+-- Per-user settings, private to each person. Holds hidden_sources ("My sources"), so it follows
+-- them to every device; other preferences are still kept in the browser.
 CREATE TABLE IF NOT EXISTS user_setting (
     user_id     UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     preferences JSONB NOT NULL DEFAULT '{}'

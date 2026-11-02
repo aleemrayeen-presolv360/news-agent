@@ -209,9 +209,10 @@ than 2 of the slots, so one busy domain can't fill the list.
 | News | `frontend/data.js` (static file) |
 | Accounts, roles | Supabase `auth` + `profile` table |
 | Notes | Supabase `note` table, plus a browser copy so notes work offline |
-| Source on/off for everyone | Supabase `source` table |
+| Source on/off for everyone | Supabase `source` table; the pipeline skips off sources (`sql/source_switches.sql`) |
+| "My sources" (hidden for one person) | Supabase `user_setting` table, plus a browser copy |
 | Admin history | Supabase `audit_log` table |
-| Read/unread, saved stories, hidden sources, preferences, Today's list | Browser storage, per user |
+| Read/unread, saved stories, preferences, Today's list | Browser storage, per user |
 
 ### JavaScript files (`frontend/js/`), in load order
 

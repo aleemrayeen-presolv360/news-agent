@@ -1,6 +1,6 @@
 /*
    Per-user state kept on this laptop: read stories, saved stories, hidden sources,
-   preferences and today's list. Keys include the user id so people sharing a laptop
+   preferences and today's list. Hidden sources are also saved with the account. Keys include the user id so people sharing a laptop
    don't see each other's state.
 */
 
@@ -98,10 +98,27 @@ const UserState = {
         return Util.load(`disabled_sources_${this.userId}`, []);
     },
 
-    setSourceHidden(id, hidden) {
+    /** Hide or show a source for this person, here and in their account. False when only saved here. */
+    async setSourceHidden(id, hidden) {
         const list = this.hiddenSources().filter(x => x !== String(id));
         if (hidden) list.push(String(id));
         Util.save(`disabled_sources_${this.userId}`, list);
+        if (!db.getSupabase()) return true;
+        return db.saveUserSettings(this.userId, { hidden_sources: list });
+    },
+
+    /**
+     * Take "My sources" from the account, so it is the same on every device. The first time,
+     * the choices already made on this laptop are saved to the account instead of being lost.
+     */
+    async syncHiddenSources() {
+        const saved = await db.getUserSettings(this.userId);
+        if (saved === null) return;    // offline or demo mode: keep this laptop's list
+        if (Array.isArray(saved.hidden_sources)) {
+            Util.save(`disabled_sources_${this.userId}`, saved.hidden_sources.map(String));
+        } else if (this.hiddenSources().length) {
+            await db.saveUserSettings(this.userId, { hidden_sources: this.hiddenSources() });
+        }
     },
 
     // ---------- Preferences ----------

@@ -47,7 +47,9 @@ const App = {
         // Background work: notes for the counts and palette, source list for hidden sources
         Notes.load();
         Notices.loadRequests();
-        db.seedSources(window.DEFAULT_SOURCES || []).then(() => Settings.loadSources()).then(() => {
+        db.seedSources(window.DEFAULT_SOURCES || [])
+            .then(() => UserState.syncHiddenSources())
+            .then(() => Settings.loadSources()).then(() => {
             if (Stories.hiddenNames.length) {
                 Reader.invalidate();
                 this.route();
