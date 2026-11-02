@@ -80,6 +80,7 @@ jobs:
         run: python -m agent.publish_static
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
+          NEWSDATA_API_KEY: ${{ secrets.NEWSDATA_API_KEY }}   # so the source list matches what's fetched
 
       - name: Commit and push data.js
         run: |

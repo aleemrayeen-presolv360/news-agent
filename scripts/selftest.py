@@ -511,11 +511,15 @@ check("a page with no feed link still gets the usual addresses",
 _srcs = [Source("a", "TechCrunch", "B", url="https://techcrunch.com/feed/"),
          Source("b", "Other name", "B", url="https://site.in/rss"),
          Source("req_1", "Epoch AI", "D", url="https://epoch.ai/")]
-_keep, _off = split_switched_off(_srcs, {"https://site.in/rss", "https://epoch.ai"}, {"TechCrunch"})
-check("sources switched off on the website are skipped, by feed address or by name",
-      ([x.id for x in _keep], [x.id for x in _off]), ([], ["a", "b", "req_1"]))
-check("nothing is skipped when nothing is switched off",
-      len(split_switched_off(_srcs, set(), set())[0]), 3)
+_keep, _off = split_switched_off(_srcs, {"b", "req_1"})
+check("sources switched off on the website are skipped by id",
+      ([x.id for x in _keep], [x.id for x in _off]), (["a"], ["b", "req_1"]))
+check("nothing is skipped when nothing is switched off", len(split_switched_off(_srcs, set())[0]), 3)
+check("every source has a website category",
+      {s.category for s in SOURCES} <= {"tech", "legal", "market", "competitors", "other"}, True)
+check("an approved request keeps the category its requester picked, or Other",
+      [s.category for s in requested_sources([{"id": 7, "name": "A", "url": "https://a.in/", "category": "legal"},
+                                              {"id": 8, "name": "B", "url": "https://b.in/"}])], ["legal", "other"])
 
 check("source ids are unique", len({s.id for s in SOURCES}), len(SOURCES))
 check("Google News feeds are encoded and limited to 7 days",

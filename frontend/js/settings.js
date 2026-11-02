@@ -10,6 +10,7 @@ const Settings = {
     el: null,
     page: 'preferences',
     sources: [],
+    offIds: new Set(),
     sourceFilter: { query: '', category: 'all' },
     requests: [],
     rejecting: null,      // id of the request whose reject reason is being typed
@@ -33,24 +34,30 @@ const Settings = {
         this.bindSourceDialog();
     },
 
-    /** Load the source list and work out which stories to hide (personal and global switches). */
+    /** The pipeline's source list, and which of its sources to hide (personal and global switches). */
     async loadSources() {
-        this.sources = await db.getSources();
-        const hidden = new Set(UserState.hiddenSources());
-        Stories.hiddenNames = this.sources
-            .filter(s => hidden.has(String(s.id)) || s.enabled === false)
-            .map(s => s.name);
+        this.sources = Stories.sources();
+        this.offIds = new Set(await db.getSourcesOff());
+        Stories.hiddenSourceIds = new Set([...UserState.hiddenSources(), ...this.offIds]);
     },
 
-    /** Stories from a source in data.js (the last 30 days). Matched by name, since the pipeline doesn't send source ids. */
+    isOff(source) {
+        return this.offIds.has(source.id);
+    },
+
+    /** Stories from a source in data.js (the last 30 days). */
     storyCount(source) {
-        return Stories.fromSource(source.name).length;
+        return Stories.fromSource(source.id).length;
     },
 
-    /** When the pipeline first fetched this source, if that was in the last 2 days. Matched by name. */
+    /** When the pipeline first fetched this source, if that was in the last 2 days. */
     addedAt(source) {
-        const name = Util.normalize(source.name);
-        return Stories.newSources().find(s => Util.normalize(s.name) === name)?.added_at || null;
+        return Stories.newSources().find(s => s.id === source.id)?.added_at || null;
+    },
+
+    /** The pipeline's id for an approved request (agent/sources.py REQUEST_PREFIX). */
+    requestSource(r) {
+        return { id: `req_${r.id}` };
     },
 
     newSourcesCallout() {
@@ -160,7 +167,8 @@ const Settings = {
     sourceToolbarHtml() {
         const counts = { all: this.sources.length };
         for (const id of Object.keys(CONFIG.SOURCE_CATEGORIES)) counts[id] = this.sources.filter(s => s.category === id).length;
-        const hiddenCount = UserState.hiddenSources().length;
+        const hidden = new Set(UserState.hiddenSources());
+        const hiddenCount = this.sources.filter(s => hidden.has(s.id)).length;
         const f = this.sourceFilter;
         const chip = (id, text, n) => `<button type="button" class="chip" data-source-cat="${id}" aria-pressed="${f.category === id}">${text} ${n}</button>`;
 
@@ -179,14 +187,14 @@ const Settings = {
         const hidden = new Set(UserState.hiddenSources());
         return this.sources.filter(s => {
             if (q && !Util.normalize(`${s.name} ${s.url}`).includes(q)) return false;
-            if (this.sourceFilter.category === 'hidden') return hidden.has(String(s.id));
+            if (this.sourceFilter.category === 'hidden') return hidden.has(s.id);
             return this.sourceFilter.category === 'all' || s.category === this.sourceFilter.category;
         });
     },
 
     mySourcesHtml() {
         const hidden = new Set(UserState.hiddenSources());
-        const shown = this.sources.filter(s => !hidden.has(String(s.id)) && s.enabled !== false).length;
+        const shown = this.sources.filter(s => !hidden.has(s.id) && !this.isOff(s)).length;
         return `
             <div class="settings-head"><h1>My sources</h1></div>
             <p class="settings-lede">Hide sources you don't need. Their stories are left out of Today and All stories, for you only, on every device you sign in on. You're showing ${shown} of ${this.sources.length}.</p>
@@ -202,8 +210,8 @@ const Settings = {
             <table>
                 <thead><tr><th scope="col">Source</th><th scope="col">Category</th><th scope="col">Last 30 days</th><th scope="col">Show me</th></tr></thead>
                 <tbody>${rows.map(s => {
-                    const isHidden = hidden.has(String(s.id));
-                    const globallyOff = s.enabled === false;
+                    const isHidden = hidden.has(s.id);
+                    const globallyOff = this.isOff(s);
                     const n = this.storyCount(s);
                     return `
                     <tr class="${isHidden || globallyOff ? 'is-off' : ''}">
@@ -271,7 +279,7 @@ const Settings = {
 
     adminSourcesHtml() {
         const stats = Stories.stats();
-        const off = this.sources.filter(s => s.enabled === false).length;
+        const off = this.sources.filter(s => this.isOff(s)).length;
         return `
             <div class="settings-head">
                 <h1>Sources</h1>
@@ -297,7 +305,7 @@ const Settings = {
             <table>
                 <thead><tr><th scope="col">Source</th><th scope="col">Category</th><th scope="col">Last 30 days</th><th scope="col">Status</th><th scope="col">On for everyone</th></tr></thead>
                 <tbody>${rows.map(s => {
-                    const on = s.enabled !== false;
+                    const on = !this.isOff(s);
                     const n = this.storyCount(s);
                     const added = this.addedAt(s);
                     return `
@@ -313,10 +321,10 @@ const Settings = {
     },
 
     async setSourceGlobal(id, enabled, { undo = true } = {}) {
-        const source = this.sources.find(s => String(s.id) === String(id));
+        const source = this.sources.find(s => s.id === id);
         if (!source) return;
         try {
-            await db.updateSource(id, { enabled });
+            await db.setSourceOff(id, !enabled);
         } catch (e) {
             console.error(e);
             Util.toast("Couldn't change the source. Check your connection and try again.");
@@ -395,7 +403,7 @@ const Settings = {
 
     // ---------- Source requests ----------
 
-    ARRIVAL_TEXT: 'It is fetched within 4 hours, and its stories appear after the next morning update (about 7:30 AM).',
+    ARRIVAL_TEXT: 'It is fetched within 4 hours. It joins the source list, and its stories appear, after the next morning update (about 7:30 AM).',
 
     REQUEST_STATUS: {
         pending: { text: 'Waiting for an admin', css: 'status-wait' },
@@ -437,7 +445,7 @@ const Settings = {
 
     requestStatus(r) {
         const s = this.REQUEST_STATUS[r.status] || { text: r.status, css: 'status-off' };
-        const n = r.status === 'approved' ? this.storyCount(r) : 0;
+        const n = r.status === 'approved' ? this.storyCount(this.requestSource(r)) : 0;
         return `<span class="status ${s.css}">${s.text}${n ? ` · ${n} ${n === 1 ? 'story' : 'stories'}` : ''}</span>`;
     },
 
@@ -482,7 +490,7 @@ const Settings = {
             <table>
                 <thead><tr><th scope="col">Source</th><th scope="col">Asked</th><th scope="col">Status</th><th scope="col">Note</th></tr></thead>
                 <tbody>${this.requests.map(r => {
-                    const newest = r.status === 'approved' ? Stories.fromSource(r.name)[0] : null;
+                    const newest = r.status === 'approved' ? Stories.fromSource(this.requestSource(r).id)[0] : null;
                     const note = r.status === 'approved'
                         ? (newest ? `Newest: “${newest.headline}”` : 'Stories appear after the next morning update')
                         : r.status === 'pending' ? 'You can withdraw it while it waits' : (r.review_note || '');

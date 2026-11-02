@@ -1,6 +1,6 @@
 """Write frontend/data.js, the only news file the News Intel website reads.
 
-Runs after scoring in the daily, Friday and new-source workflows (and can be run by hand).
+Runs after scoring in the daily and new-source workflows (and can be run by hand).
 The website has no API: it loads this file directly.
 
     python -m agent.publish_static              # generate data.js
@@ -24,6 +24,8 @@ from .config import (
     DOMAINS, IST,
     SCORE_BREAKING, SCORE_MAJOR, SCORE_NOTABLE, WEBSITE_DAYS,
 )
+from .ingest import fetch_requested_sources
+from .sources import enabled_sources
 
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
@@ -137,16 +139,26 @@ def get_new_sources(conn) -> list[dict]:
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT s.name, min(r.ingested_at) AS added
+            SELECT s.id, s.name, min(r.ingested_at) AS added
             FROM raw_items r JOIN sources s ON s.id = r.source_id
-            GROUP BY s.name
+            WHERE left(s.id, 6) <> 'trend_'   -- trend watches aren't in the source list
+            GROUP BY s.id, s.name
             HAVING min(r.ingested_at) > now() - make_interval(days => %s)
             ORDER BY added DESC, s.name
             """,
             (NEW_SOURCE_DAYS,),
         )
-        return [{"name": r["name"], "added_at": r["added"].astimezone(IST).isoformat(timespec="seconds")}
+        return [{"id": r["id"], "name": r["name"],
+                 "added_at": r["added"].astimezone(IST).isoformat(timespec="seconds")}
                 for r in cur.fetchall()]
+
+
+def source_list() -> list[dict]:
+    """What the pipeline fetches, for the website's source settings: the feeds in sources.py plus
+    approved website requests. Sources switched off on the website stay listed, so they can be
+    switched back on; trend watches don't, as they last only a few days."""
+    return [{"id": s.id, "name": s.name, "url": s.url, "category": s.category}
+            for s in enabled_sources() + fetch_requested_sources()]
 
 
 TRENDING_SOURCES = 3   # a story carried by this many of our sources counts as trending
@@ -185,6 +197,7 @@ def item_to_dict(item: dict, members: list[dict] | None = None) -> dict:
         "headline": headline,
         "score": item["score"],
         "source": source,
+        "source_id": item.get("source_id"),
         "url": item["source_url"] or "#",
         "one_liner": item["one_liner"],
         "topics": item["topics"] or [],
@@ -222,6 +235,7 @@ def generate_data(conn) -> dict:
             "sources_total": health["total"] or 40,
             "sources_healthy": health["healthy"] or 0,
         },
+        "sources": source_list(),
         "new_sources": get_new_sources(conn),
         "health": get_health(conn),
         **{label: [item_to_dict(i, members.get(i.get("cluster_id"))) for i in group]
@@ -238,7 +252,7 @@ window.digestData = {json.dumps(data, indent=4, ensure_ascii=False)};
 """
     output_path = FRONTEND_DIR / "data.js"
     tmp_path = output_path.with_suffix(".js.tmp")
-    tmp_path.write_text(js_content, encoding="utf-8")
+    tmp_path.write_text(js_content, encoding="utf-8", newline="\n")   # LF on Windows too
     os.replace(tmp_path, output_path)
     print(f"publish_static: wrote {output_path}")
 

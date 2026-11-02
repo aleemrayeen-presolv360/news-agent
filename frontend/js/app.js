@@ -44,13 +44,13 @@ const App = {
         this.updateCounts();
         this.route();
 
-        // Background work: notes for the counts and palette, source list for hidden sources
+        // Background work: notes for the counts and palette, switches for hidden sources
         Notes.load();
         Notices.loadRequests();
-        db.seedSources(window.DEFAULT_SOURCES || [])
-            .then(() => UserState.syncHiddenSources())
+        UserState.syncHiddenSources()
+            .then(() => UserState.migrateHiddenSources(Stories.sources()))
             .then(() => Settings.loadSources()).then(() => {
-            if (Stories.hiddenNames.length) {
+            if (Stories.hiddenSourceIds.size) {
                 Reader.invalidate();
                 this.route();
             }

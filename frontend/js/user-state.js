@@ -102,9 +102,32 @@ const UserState = {
     async setSourceHidden(id, hidden) {
         const list = this.hiddenSources().filter(x => x !== String(id));
         if (hidden) list.push(String(id));
+        return this._saveHiddenSources(list);
+    },
+
+    async _saveHiddenSources(list) {
         Util.save(`disabled_sources_${this.userId}`, list);
         if (!db.getSupabase()) return true;
         return db.saveUserSettings(this.userId, { hidden_sources: list });
+    },
+
+    /**
+     * Until Nov 2026 hidden sources were rows of the old Supabase source list, with number ids.
+     * Carry them over once to the pipeline's source ids (never plain numbers), matched by feed
+     * address or name. Old ones that match nothing were sources the pipeline never fetched.
+     */
+    async migrateHiddenSources(sources) {
+        const old = this.hiddenSources().filter(id => /^\d+$/.test(id));
+        if (!old.length || !sources.length) return;
+        const oldList = await db.getOldSourceList();
+        if (!oldList) return;
+        const key = url => String(url || '').trim().replace(/\/+$/, '').toLowerCase();
+        const moved = old
+            .map(id => oldList.find(row => String(row.id) === id))
+            .map(row => row && sources.find(s => key(s.url) === key(row.url) || s.name === row.name)?.id)
+            .filter(Boolean);
+        const kept = this.hiddenSources().filter(id => !old.includes(id));
+        await this._saveHiddenSources([...new Set([...kept, ...moved])]);
     },
 
     /**

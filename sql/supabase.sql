@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS note (
 );
 CREATE INDEX IF NOT EXISTS note_user_idx ON note (user_id, updated_at DESC);
 
--- Source list shown in Settings. enabled = false hides a source's stories for everyone, and the
--- news pipeline stops fetching it (it reads the off ones through switched_off_sources(),
--- sql/source_switches.sql). Its own list is agent/sources.py plus approved source requests.
+-- The website's old source list. Unused since Nov 2026: Settings now shows the pipeline's own
+-- list (frontend/data.js), and "off for everyone" is source_off (sql/source_switches.sql).
+-- Kept so this file matches the live project.
 CREATE TABLE IF NOT EXISTS source (
     id          BIGSERIAL PRIMARY KEY,
     name        TEXT NOT NULL,

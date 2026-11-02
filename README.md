@@ -204,7 +204,8 @@ than 2 of the slots, so one busy domain can't fill the list.
 | News | `frontend/data.js` (static file) |
 | Accounts, roles | Supabase `auth` + `profile` table |
 | Notes | Supabase `note` table, plus a browser copy so notes work offline |
-| Source on/off for everyone | Supabase `source` table; the pipeline skips off sources (`sql/source_switches.sql`) |
+| Source list in Settings | `frontend/data.js` (`sources`), written by the pipeline: exactly what it fetches |
+| Source on/off for everyone | Supabase `source_off` table, by source id; the pipeline skips those (`sql/source_switches.sql`) |
 | "My sources" (hidden for one person) | Supabase `user_setting` table, plus a browser copy |
 | Admin history | Supabase `audit_log` table |
 | Read/unread, saved stories, preferences, Today's list | Browser storage, per user |
@@ -222,7 +223,6 @@ than 2 of the slots, so one busy domain can't fill the list.
 | `today.js` | The Today screen |
 | `reader.js` | All stories and Saved, including the date filter |
 | `notes.js` | Notes screen and the "Add to note" dialog |
-| `default-sources.js` | The first source list put into Supabase when its table is empty |
 | `settings.js` | Settings and admin screens |
 | `palette.js` | `Ctrl K` search |
 | `notices.js` | The notice bar (Breaking, out-of-date news, pipeline problems) and the Pipeline health panel |
@@ -439,21 +439,15 @@ Preferences. The default is `DAILY_COUNT_DEFAULT` in `frontend/js/config.js`.
 
 ## Known gaps and next steps
 
-1. **Settings → Sources only partly controls the pipeline.** `agent/sources.py` (67 enabled feeds across
-   AI, EVs, space, health, energy, chips, security, robotics, science, Indian tech, Legal India,
-   market and competitors) plus approved source requests are what gets fetched. The on/off switch
-   in the Supabase `source` list only hides stories by source name. Many feeds in it were tested on 21 Oct 2026 and don't work (LiveLaw, Mondaq, India
-   Kanoon, Financial Express, Entrackr, VCCircle and others), and some publish too much to score
-   for free (Business Today, CNBC TV18, Tax Guru), so they were left out.
+1. **Some useful sites have no working feed.** Tested on 21 Oct 2026: LiveLaw, Mondaq, India
+   Kanoon, Financial Express, Entrackr, VCCircle and others don't work, and some publish too much to
+   score for free (Business Today, CNBC TV18, Tax Guru), so they were left out of `agent/sources.py`.
 2. **Older stories have no domain.** Stories scored before 21 Oct 2026 get a keyword guess (AI by
    default) until they leave the 30-day window.
-3. **Source names differ** between the pipeline ("NVIDIA Technical Blog") and Settings
-   ("NVIDIA Blog"), so a few on/off switches don't match their stories. Same fix as 1.
-4. **Scoring is slow on the free tier.** Groq allows about 11 scoring calls a minute, so the daily
+3. **Scoring is slow on the free tier.** Groq allows about 11 scoring calls a minute, so the daily
    run scores at most 200 (to fit the private repo's 2,000 Actions minutes). With ~200 news items a day plus trend watches, older items can age out
    of the 14-day window unscored on busy days. Gemini (`GEMINI_API_KEY`) scores when Groq's daily quota runs out.
-5. **Many sites block downloads from cloud servers** (The Information, OpenAI, The Robot Report,
+4. **Many sites block downloads from cloud servers** (The Information, OpenAI, The Robot Report,
    Google News links). Those stories are scored from their feed summary or headline.
-6. **Eight feeds have no working RSS** (Anthropic, Meta AI, Stanford HAI and others, marked
+5. **Eight feeds have no working RSS** (Anthropic, Meta AI, Stanford HAI and others, marked
    `enabled=False` in `sources.py`). They need RSSHub or a search-based monitor.
-7. **Turn on Row Level Security** in Supabase (see Security notes).

@@ -38,6 +38,7 @@ class Source:
     enabled: bool = True
     note: str = ""
     key_env: str = ""          # API key's environment variable; the source is skipped until it's set
+    category: str = "tech"     # website filter: tech | legal | market | competitors | other
 
     @property
     def usable(self) -> bool:
@@ -195,36 +196,36 @@ SOURCES: list[Source] = [
     Source("et_tech", "ET Tech", "D",
            url="https://economictimes.indiatimes.com/tech/rssfeeds/13357270.cms", note="~14/day"),
     Source("medianama", "MediaNama", "D", url="https://www.medianama.com/feed/"),
-    Source("barandbench", "Bar & Bench", "D", url="https://www.barandbench.com/feed"),
-    Source("scc_online", "SCC Online Blog", "D", url="https://www.scconline.com/blog/feed"),
+    Source("barandbench", "Bar & Bench", "D", url="https://www.barandbench.com/feed", category="legal"),
+    Source("scc_online", "SCC Online Blog", "D", url="https://www.scconline.com/blog/feed", category="legal"),
     Source("gn_dispute_india", "Dispute resolution India (Google News)", "D",
            url=_google_news('arbitration OR mediation OR "online dispute resolution" OR IBC '
                             'OR SARFAESI OR "debt recovery tribunal" india'),
-           note=_GN_NOTE),
+           note=_GN_NOTE, category="legal"),
     Source("economic_times", "Economic Times", "D",
-           url="https://economictimes.indiatimes.com/rssfeedsdefault.cms"),
-    Source("inc42", "Inc42", "D", url="https://inc42.com/feed/"),
+           url="https://economictimes.indiatimes.com/rssfeedsdefault.cms", category="market"),
+    Source("inc42", "Inc42", "D", url="https://inc42.com/feed/", category="market"),
     Source("newsdata_india_tech", "Indian tech press (NewsData)", "D", kind="newsdata",
            url="https://newsdata.io/api/1/latest?country=in&category=technology&language=en",
            key_env="NEWSDATA_API_KEY",
            note="newest 10 Indian tech articles per call; free plan: 200 calls/day, articles 12h late"),
     Source("gn_startups_india", "Startup funding India (Google News)", "D",
-           url=_google_news("startup funding india"), note=_GN_NOTE),
+           url=_google_news("startup funding india"), note=_GN_NOTE, category="market"),
     Source("gn_fintech_india", "Fintech India (Google News)", "D",
-           url=_google_news("fintech india"), note=_GN_NOTE),
+           url=_google_news("fintech india"), note=_GN_NOTE, category="market"),
     # Competitors: one search per group of names, not one per company
     Source("gn_odr_competitors", "ODR competitors (Google News)", "D",
            url=_google_news('"Jupitice" OR "Webnyay" OR "SMART ODR" OR "CADRE ODR" OR "JustAct" '
                             'OR "WeVaad" OR "Sama ODR" OR "adrEdge" OR "Presolv360"'),
-           note=_GN_NOTE),
+           note=_GN_NOTE, category="competitors"),
     Source("gn_legaltech_india", "Legal tech India (Google News)", "D",
            url=_google_news('"Credgenics" OR "SpotDraft" OR "Legistify" OR "CaseMine" OR "NearLaw" '
                             'OR legaltech india'),
-           note=_GN_NOTE),
+           note=_GN_NOTE, category="competitors"),
     Source("gn_legaltech_global", "Legal tech global (Google News)", "D",
            url=_google_news('"Clio" legal OR "Smokeball" OR "PracticePanther" OR "LegalZoom" '
                             'OR "Harvey AI" legal'),
-           note=_GN_NOTE),
+           note=_GN_NOTE, category="competitors"),
 ]
 
 
@@ -258,7 +259,7 @@ def requested_sources(rows: list[dict]) -> list[Source]:
             continue
         known.add(url_key(url))
         out.append(Source(id=f"{REQUEST_PREFIX}{r['id']}", name=name[:120], tier="D", url=url,
-                          note="requested on the website"))
+                          note="requested on the website", category=str(r.get("category") or "other")))
     return out
 
 

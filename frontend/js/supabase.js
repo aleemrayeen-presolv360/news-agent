@@ -2,7 +2,7 @@
    Data access: Supabase when configured, with a localStorage fallback so the app
    keeps working in demo mode or when Supabase is unreachable.
 
-   Tables (Supabase): profile, note, source, source_request, audit_log
+   Tables (Supabase): profile, note, source_off, source_request, audit_log, user_setting
 */
 
 let supabaseClient = null;
@@ -150,49 +150,42 @@ function cacheNotes(notes) {
     Util.save(LOCAL_NOTES_KEY, notes);
 }
 
-// ==================== SOURCES ====================
+// ==================== SOURCE SWITCHES ====================
+// The source list itself comes from the pipeline (data.js). "Off for everyone" is a row per
+// source id in source_off (sql/source_switches.sql): the pipeline stops fetching those sources.
 
-async function getSources() {
-    if (!supabaseClient) return Util.load('sources', []);
+const LOCAL_OFF_KEY = 'sources_off';
 
-    try {
-        const { data, error } = await supabaseClient.from('source').select('*').order('name');
-        if (error) throw error;
-        return data || [];
-    } catch (e) {
-        console.error('getSources error:', e);
-        return Util.load('sources', []);
+/** Ids of sources an admin switched off for everyone. */
+async function getSourcesOff() {
+    if (!supabaseClient) return Util.load(LOCAL_OFF_KEY, []);
+    const { data, error } = await supabaseClient.from('source_off').select('source_id');
+    if (error) {
+        console.error('getSourcesOff error:', error);
+        return [];
     }
+    return data.map(r => r.source_id);
 }
 
-async function addSource(source, { log = true } = {}) {
-    let saved;
+async function setSourceOff(sourceId, off) {
     if (!supabaseClient) {
-        const sources = Util.load('sources', []);
-        saved = { ...source, id: Date.now(), created_at: new Date().toISOString() };
-        sources.push(saved);
-        Util.save('sources', sources);
-    } else {
-        const { data, error } = await supabaseClient.from('source').insert(source).select().single();
-        if (error) throw error;
-        saved = data;
+        const list = Util.load(LOCAL_OFF_KEY, []).filter(id => id !== sourceId);
+        Util.save(LOCAL_OFF_KEY, off ? [...list, sourceId] : list);
+        return;
     }
-    if (log) await logAudit('source_add', `Added source: ${source.name}`);
-    return saved;
-}
-
-async function updateSource(id, updates) {
-    if (!supabaseClient) {
-        const sources = Util.load('sources', []);
-        const index = sources.findIndex(s => String(s.id) === String(id));
-        if (index === -1) return null;
-        sources[index] = { ...sources[index], ...updates };
-        Util.save('sources', sources);
-        return sources[index];
-    }
-
-    const { data, error } = await supabaseClient.from('source').update(updates).eq('id', id).select().single();
+    const table = supabaseClient.from('source_off');
+    const { error } = off ? await table.upsert({ source_id: sourceId }) : await table.delete().eq('source_id', sourceId);
     if (error) throw error;
+}
+
+/** The old Supabase source list (until Nov 2026), read once to carry hidden sources over. Null on error. */
+async function getOldSourceList() {
+    if (!supabaseClient) return [];
+    const { data, error } = await supabaseClient.from('source').select('id, name, url');
+    if (error) {
+        console.error('getOldSourceList error:', error);
+        return null;
+    }
     return data;
 }
 
@@ -241,7 +234,7 @@ async function requestSource({ name, url, category, reason }, { approve = false 
         if (error) throw error;
         saved = data;
     }
-    if (approve) await addSource({ name, url, category, enabled: true });
+    if (approve) await logAudit('source_add', `Added source: ${name} (${url})`);
     else await logAudit('source_request', `Requested source: ${name} (${url})`);
     return saved;
 }
@@ -267,29 +260,11 @@ async function reviewSourceRequest(request, status, note = '') {
     }
 
     if (status === 'approved') {
-        // List it in Settings so it can be hidden or turned off like any other source
-        const sources = await getSources();
-        if (!sources.some(s => s.url === request.url)) {
-            await addSource({ name: request.name, url: request.url, category: request.category, enabled: true }, { log: false });
-        }
         await logAudit('source_approve', `Approved ${request.name} (${request.url}), requested by ${request.requester_email || 'unknown'}`);
     }
     if (status === 'rejected') {
         await logAudit('source_reject', `Rejected ${request.name} (${request.url}), requested by ${request.requester_email || 'unknown'}: ${note}`);
     }
-}
-
-/** Fill an empty source table with the default feed list (first run only). */
-async function seedSources(defaults) {
-    if (!supabaseClient) {
-        if (Util.load('sources', []).length) return;
-        Util.save('sources', defaults.map((s, i) => ({ ...s, id: Date.now() + i, created_at: new Date().toISOString() })));
-        return;
-    }
-    const { data, error } = await supabaseClient.from('source').select('id').limit(1);
-    if (error || (data && data.length)) return;
-    const { error: insertError } = await supabaseClient.from('source').insert(defaults);
-    if (insertError) console.error('Failed to insert default sources:', insertError);
 }
 
 // ==================== USER SETTINGS ====================
@@ -404,10 +379,9 @@ window.db = {
     saveNote,
     deleteNote,
     cacheNotes,
-    getSources,
-    addSource,
-    updateSource,
-    seedSources,
+    getSourcesOff,
+    setSourceOff,
+    getOldSourceList,
     getSourceRequests,
     requestSource,
     reviewSourceRequest,

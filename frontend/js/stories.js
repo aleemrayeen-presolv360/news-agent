@@ -27,6 +27,7 @@ const Stories = {
             url: item.url,
             headline,
             source: Util.decode(item.source),
+            sourceId: item.source_id || null,
             summary: this.cleanSummary(Util.decode(item.one_liner || ''), headline),
             whyItMatters: Util.decode(item.market_impact || ''),
             topics: item.topics || [],
@@ -68,13 +69,13 @@ const Stories = {
         return text.replace(/\s+\S*$/, '').replace(/[\s,;:–-]+$/, '') + '…';
     },
 
-    /** Names of sources hidden for this user (personally or for everyone). Set by Settings.loadSources(). */
-    hiddenNames: [],
+    /** Ids of sources hidden for this user (personally or for everyone). Set by Settings.loadSources(). */
+    hiddenSourceIds: new Set(),
 
     /** Stories minus the ones from hidden sources. */
     visible() {
-        if (!this.hiddenNames.length) return this.all();
-        return this.all().filter(s => !this.hiddenNames.some(name => this.sourceMatches(s.source, name)));
+        if (!this.hiddenSourceIds.size) return this.all();
+        return this.all().filter(s => !this.hiddenSourceIds.has(s.sourceId));
     },
 
     byId(id) {
@@ -151,20 +152,9 @@ const Stories = {
         return (rules.find(([, re]) => re.test(text)) || ['ai'])[0];
     },
 
-    /**
-     * Does a story's source belong to a source-list entry? Names differ slightly between the
-     * pipeline and the source list ("OpenAI" vs "OpenAI Blog"), so a shared prefix counts.
-     */
-    sourceMatches(storySource, sourceName) {
-        const a = Util.normalize(storySource);
-        const b = Util.normalize(sourceName);
-        if (!a || !b) return false;
-        if (a === b) return true;
-        return Math.min(a.length, b.length) >= 5 && (a.startsWith(b) || b.startsWith(a));
-    },
-
-    fromSource(sourceName) {
-        return this.all().filter(s => this.sourceMatches(s.source, sourceName));
+    /** Stories from one source in the list (by its pipeline id), highest score first. */
+    fromSource(sourceId) {
+        return this.all().filter(s => s.sourceId === sourceId);
     },
 
     /** Forgiving search: punctuation and spacing are ignored, every word must match. */
@@ -189,7 +179,12 @@ const Stories = {
         return window.digestData?.stats || {};
     },
 
-    /** Pipeline sources added in the last 2 days: [{ name, added_at }]. */
+    /** Every source the pipeline fetches: [{ id, name, url, category }]. */
+    sources() {
+        return window.digestData?.sources || [];
+    },
+
+    /** Pipeline sources added in the last 2 days: [{ id, name, added_at }]. */
     newSources() {
         return window.digestData?.new_sources || [];
     },

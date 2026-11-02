@@ -33,7 +33,7 @@ from .config import (
     env, supabase_settings,
 )
 from .normalize import normalize_cisa_kev, normalize_entry, normalize_hf_paper, normalize_newsdata
-from .sources import REQUEST_PREFIX, Source, _google_news, enabled_sources, requested_sources, url_key
+from .sources import REQUEST_PREFIX, Source, _google_news, enabled_sources, requested_sources
 
 
 class FetchResult:
@@ -242,22 +242,19 @@ def fetch_requested_sources() -> list[Source]:
     return requested_sources(_supabase_rpc("approved_source_feeds") or [])
 
 
-def fetch_switched_off() -> tuple[set[str], set[str]]:
-    """Feed addresses and names an admin switched off for everyone (Settings > Admin > Sources),
-    through switched_off_sources() (sql/source_switches.sql). Nothing is skipped when it can't
-    be read: the website still hides those stories."""
+def fetch_switched_off() -> set[str]:
+    """Ids of sources an admin switched off for everyone (Settings > Admin > Sources), through
+    switched_off_sources() (sql/source_switches.sql). Nothing is skipped when it can't be read:
+    the website still hides those stories."""
     rows = _supabase_rpc("switched_off_sources") or []
-    return ({url_key(r["url"]) for r in rows if r.get("url")},
-            {str(r["name"]).strip() for r in rows if r.get("name")})
+    return {r["source_id"] for r in rows if r.get("source_id")}
 
 
-def split_switched_off(sources: list[Source], off_urls: set[str],
-                       off_names: set[str]) -> tuple[list[Source], list[Source]]:
-    """Sources to fetch, and sources switched off on the website. Matched by feed address or by
-    name, the same name the website uses to hide a source's stories."""
+def split_switched_off(sources: list[Source], off_ids: set[str]) -> tuple[list[Source], list[Source]]:
+    """Sources to fetch, and sources switched off on the website."""
     keep, off = [], []
     for s in sources:
-        (off if url_key(s.url) in off_urls or s.name in off_names else keep).append(s)
+        (off if s.id in off_ids else keep).append(s)
     return keep, off
 
 
@@ -266,9 +263,9 @@ def run(dry_run: bool = False, limit: int | None = None) -> int:
     if limit:
         sources = sources[:limit]
     requested = fetch_requested_sources()
-    off_urls, off_names = fetch_switched_off()
-    sources, off = split_switched_off(sources, off_urls, off_names)
-    requested, off_requested = split_switched_off(requested, off_urls, off_names)
+    off_ids = fetch_switched_off()
+    sources, off = split_switched_off(sources, off_ids)
+    requested, off_requested = split_switched_off(requested, off_ids)
     off += off_requested
     if off:
         print("ingest: switched off on the website, not fetched: " + ", ".join(s.name for s in off),

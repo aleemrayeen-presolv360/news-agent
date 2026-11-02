@@ -2,15 +2,15 @@
 --
 -- HOW TO RUN: Supabase dashboard -> SQL Editor -> paste this whole file -> Run.
 -- Safe to run more than once. To undo everything: run sql/security_rollback.sql.
--- Then run sql/hardening.sql: link and length checks, real emails, and write limits.
+-- Then run sql/hardening.sql (link and length checks, real emails, write limits) and
+-- sql/source_switches.sql (source switches, and the pipeline's list of approved requests).
 --
 -- WHAT IT DOES
 --   1. Turns on Row Level Security (RLS) on all six tables and adds the rules below
 --      in the same run, so the website never sees a moment with RLS on and no rules.
 --   2. Keeps the write guards (triggers) that stop members making themselves admin
 --      or deciding their own source requests.
---   3. Gives the news pipeline a read-only list of approved feeds (no emails).
---   4. Lets anyone sign up (email or Google). Until 30 Oct 2026 only @presolv360.com could;
+--   3. Lets anyone sign up (email or Google). Until 30 Oct 2026 only @presolv360.com could;
 --      the rules above keep each person to their own notes, saves and settings.
 --
 -- WHAT IT DOES NOT AFFECT
@@ -176,20 +176,8 @@ CREATE POLICY audit_log_read ON audit_log FOR SELECT TO authenticated
     USING (public.is_admin());
 
 
--- ---------------------------------------------------------------- news pipeline
--- agent/ingest.py reads approved feeds every 4 hours with the public key. RLS hides
--- source_request from that key, so this function hands over just what the pipeline
--- needs: id, name and feed address of approved requests. No emails or reasons.
-CREATE OR REPLACE FUNCTION public.approved_source_feeds()
-RETURNS TABLE (id bigint, name text, url text)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER SET search_path = public
-AS $$
-    SELECT id, name, url FROM source_request WHERE status = 'approved' ORDER BY id;
-$$;
-REVOKE ALL ON FUNCTION public.approved_source_feeds() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.approved_source_feeds() TO anon, authenticated;
+-- The news pipeline reads approved requests through approved_source_feeds(): see
+-- sql/source_switches.sql.
 
 
 -- ---------------------------------------------------------------- sign-ups
