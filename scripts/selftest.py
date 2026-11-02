@@ -20,7 +20,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import feedparser  # noqa: E402
 
-from agent.config import IST, addendum_window, week_window  # noqa: E402
 from agent.normalize import (  # noqa: E402
     canonical_url, clean_text, normalize_cisa_kev, normalize_entry, normalize_hf_paper, normalize_newsdata,
 )
@@ -78,43 +77,6 @@ check("two trackers on the same story collapse",
       == canonical_url("https://a.com/x?utm_source=twitter&gclid=1"),
       True)
 check("empty stays empty", canonical_url(""), "")
-
-# --------------------------------------------------------- week window
-print("\nweek_window (Sunday 00:00 IST -> Friday 12:00 IST)")
-
-# Thursday 8 Oct 2026, mid-week
-w = week_window(datetime(2026, 10, 8, 15, 0, tzinfo=IST))
-check("thu -> starts Sun 4 Oct 00:00", w.start.isoformat(), "2026-10-04T00:00:00+05:30")
-check("thu -> ends Fri 9 Oct 12:00", w.end.isoformat(), "2026-10-09T12:00:00+05:30")
-
-# Sunday itself must start that same day, not a week earlier
-w = week_window(datetime(2026, 10, 4, 0, 30, tzinfo=IST))
-check("sun 00:30 -> same-day start", w.start.isoformat(), "2026-10-04T00:00:00+05:30")
-
-# Friday 12:01, the moment the digest runs
-w = week_window(datetime(2026, 10, 9, 12, 1, tzinfo=IST))
-check("fri 12:01 -> window already closed",
-      w.end.isoformat(), "2026-10-09T12:00:00+05:30")
-check("fri 12:01 is NOT in the window",
-      datetime(2026, 10, 9, 12, 1, tzinfo=IST) in w, False)
-check("fri 11:59 IS in the window",
-      datetime(2026, 10, 9, 11, 59, tzinfo=IST) in w, True)
-check("sat is not in the window",
-      datetime(2026, 10, 10, 9, 0, tzinfo=IST) in w, False)
-
-# The Friday-afternoon gap -- drawback 1
-a = addendum_window(datetime(2026, 10, 10, 8, 0, tzinfo=IST))  # Sat 08:00
-check("addendum starts Fri 12:00", a.start.isoformat(), "2026-10-09T12:00:00+05:30")
-check("addendum ends Sat 00:00", a.end.isoformat(), "2026-10-10T00:00:00+05:30")
-check("fri 18:00 news lands in the addendum",
-      datetime(2026, 10, 9, 18, 0, tzinfo=IST) in a, True)
-check("fri 23:59 news lands in the addendum",
-      datetime(2026, 10, 9, 23, 59, tzinfo=IST) in a, True)
-
-# UTC input must be converted, not assumed
-w = week_window(datetime(2026, 10, 8, 20, 0, tzinfo=timezone.utc))  # 01:30 IST Fri
-check("utc input converts to IST correctly",
-      w.start.isoformat(), "2026-10-04T00:00:00+05:30")
 
 # ----------------------------------------------------- feed parsing
 print("\nfeed parsing")
@@ -385,10 +347,9 @@ _item = {"id": 1, "title": "t", "source_name": "s", "tier": "A"}
 with mock.patch.object(score_mod, "_call_groq", return_value=_reply):
     check("Groq score records its model", score_mod.score_item(_item).model, "groq")
 with mock.patch.object(score_mod, "_call_groq", side_effect=RuntimeError("429")), \
-     mock.patch.object(score_mod, "_call_cloudflare", return_value=_reply), \
-     mock.patch.dict(os.environ, {"GEMINI_API_KEY": "", "CEREBRAS_API_KEY": "",
-                                  "CF_ACCOUNT_ID": "a", "CF_API_TOKEN": "t"}):
-    check("fallback score records cloudflare", score_mod.score_item(_item).model, "cloudflare")
+     mock.patch.object(score_mod, "_call_gemini", return_value=_reply), \
+     mock.patch.dict(os.environ, {"GEMINI_API_KEY": "k"}):
+    check("fallback score records gemini", score_mod.score_item(_item).model, "gemini")
 
 
 class _FakeCur:
@@ -424,37 +385,36 @@ backed_off_source_ids(_c)
 check("failing sources back off for a day",
       ("consecutive_failures >=" in _c.cur.sql[0][0], _c.cur.sql[0][1]), (True, (3, 24)))
 
-_ok = {"scored": 200, "failed": 0, "cerebras": 0, "cloudflare": 0}
+_ok = {"scored": 200, "failed": 0, "gemini": 0}
 check("no warning on a healthy run", score_mod.budget_warnings(_ok, 600, False), [])
 check("warns when Groq runs low", "Only 90 Groq calls" in score_mod.budget_warnings(_ok, 90, False)[0], True)
 check("warns when the quota ran out", "ran out" in score_mod.budget_warnings(_ok, 0, True)[0], True)
-check("warns on fallback scores",
-      "Cloudflare 3" in score_mod.budget_warnings({**_ok, "cloudflare": 3}, 600, False)[0], True)
-check("names the backup that scored",
-      score_mod.budget_warnings({**_ok, "gemini": 40}, 600, False), ["40 stories were scored by a backup model (Gemini 40)"])
+check("warns on backup scores and names the backup",
+      score_mod.budget_warnings({**_ok, "gemini": 40}, 600, False), ["40 stories were scored by the backup model (Gemini)"])
 check("says why stories went unscored",
-      "(groq: quota; no backup model has a key set)" in score_mod.budget_warnings(
-          {**_ok, "failed": 5}, 0, True, "groq: quota; no backup model has a key set")[1], True)
+      "(groq: quota; the backup model (Gemini) has no key set)" in score_mod.budget_warnings(
+          {**_ok, "failed": 5}, 0, True, "groq: quota; the backup model (Gemini) has no key set")[1], True)
 
 _item = {"id": 1, "title": "t", "source_name": "s", "tier": "D", "feed_summary": "x"}
 _json = '{"domain": "ai", "novelty": 10, "impact": 10, "relevance": 10}'
 
 
 def _chain(groq, gemini, keys):
-    """Which model scores, given what Groq and Gemini do and which backup keys are set."""
+    """Which model scores, given what Groq and Gemini do and whether Gemini's key is set."""
     def fail(*a):
         raise RuntimeError("down")
-    with mock.patch.object(score_mod, "_call_groq", groq or fail),          mock.patch.object(score_mod, "_call_gemini", gemini or fail),          mock.patch.object(score_mod, "_call_cerebras", fail),          mock.patch.object(score_mod, "_call_cloudflare", fail),          mock.patch.dict(os.environ, {"GEMINI_API_KEY": "", "CEREBRAS_API_KEY": "", "CF_ACCOUNT_ID": "",
-                                      "CF_API_TOKEN": "", **keys}):
+    with mock.patch.object(score_mod, "_call_groq", groq or fail), \
+         mock.patch.object(score_mod, "_call_gemini", gemini or fail), \
+         mock.patch.dict(os.environ, {"GEMINI_API_KEY": "", **keys}):
         r = score_mod.score_item(_item)
     return r.model or r.error
 
 
 check("Groq scores when it works", _chain(lambda p: _json, None, {"GEMINI_API_KEY": "k"}), "groq")
 check("Gemini scores when Groq fails", _chain(None, lambda p: _json, {"GEMINI_API_KEY": "k"}), "gemini")
-check("Gemini is skipped without a key", _chain(None, lambda p: _json, {}), "groq: down; no backup model has a key set")
-check("every failed model is named", _chain(None, None, {"GEMINI_API_KEY": "k", "CF_ACCOUNT_ID": "a", "CF_API_TOKEN": "t"}),
-      "groq: down; gemini: down; cloudflare: down")
+check("Gemini is skipped without a key", _chain(None, lambda p: _json, {}),
+      "groq: down; the backup model (Gemini) has no key set")
+check("every failed model is named", _chain(None, None, {"GEMINI_API_KEY": "k"}), "groq: down; gemini: down")
 
 
 class _GemResp(_FakeResp):

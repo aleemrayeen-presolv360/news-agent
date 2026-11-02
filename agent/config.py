@@ -1,19 +1,9 @@
-"""Configuration and the week-window maths.
-
-The week window is the most bug-prone part of this project, so it lives
-here on its own and is covered by scripts/selftest.py.
-
-Week = Sunday 00:00 IST  ->  Friday 12:00 IST (noon).
-Digest publishes Friday 12:01 IST.
-Addendum covers Friday 12:00 IST -> Saturday 00:00 IST.
-"""
+"""Configuration: settings, thresholds and environment variables for the pipeline."""
 
 from __future__ import annotations
 
 import os
 import re
-from dataclasses import dataclass
-from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -84,8 +74,6 @@ USER_AGENT = (
 SCORE_BREAKING = 85   # Breaking: red label, and a banner on the website until read
 SCORE_MAJOR = 70      # headline section; below this a week is "no big news"
 SCORE_NOTABLE = 55    # collapsed toggle
-MAX_ITEMS_PER_DIGEST = 12   # Notion digest only; the website shows everything
-MAX_MINOR_ITEMS = 5         # Notion digest only
 
 # The domain the scoring model puts each story in, and the website category
 # (group) it belongs to. Keep in step with DOMAINS in frontend/js/config.js.
@@ -110,53 +98,3 @@ EMBED_DIM = 384
 # Clustering: same event if cosine >= this AND >= 1 shared entity.
 CLUSTER_COSINE = 0.86
 CLUSTER_WINDOW_HOURS = 72
-
-
-# ---------------------------------------------------------------- window
-
-
-@dataclass(frozen=True)
-class Window:
-    start: datetime   # Sunday 00:00 IST, inclusive
-    end: datetime     # Friday 12:00 IST, exclusive
-    label: str        # "Week 41 - 04-09 Oct 2026"
-
-    def __contains__(self, ts: datetime) -> bool:
-        return self.start <= ts.astimezone(IST) < self.end
-
-
-def week_window(now: datetime | None = None) -> Window:
-    """The digest window containing `now`.
-
-    Python's weekday(): Monday=0 ... Sunday=6.
-    (weekday() + 1) % 7 is therefore "days since the most recent Sunday".
-    """
-    now = (now or datetime.now(IST)).astimezone(IST)
-    days_since_sunday = (now.weekday() + 1) % 7
-    start = (now - timedelta(days=days_since_sunday)).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    end = (start + timedelta(days=5)).replace(hour=12)  # Friday 12:00
-    label = (
-        f"Week {start.isocalendar().week} - "
-        f"{start:%d}-{(end - timedelta(days=0)):%d %b %Y}"
-    )
-    return Window(start=start, end=end, label=label)
-
-
-def addendum_window(now: datetime | None = None) -> Window:
-    """Friday 12:00 IST -> Saturday 00:00 IST, the gap the digest misses.
-
-    Called from the Saturday 08:00 IST job, so `now` is Saturday and the
-    containing week window is still the one that just closed.
-    """
-    wk = week_window(now)
-    start = wk.end                                   # Friday 12:00
-    end = (wk.start + timedelta(days=6))             # Saturday 00:00
-    return Window(start=start, end=end, label=wk.label + " (late breaking)")
-
-
-def retention_cutoff(now: datetime | None = None, days: int = 30) -> datetime:
-    """Items published before this are archived from Notion unless saved."""
-    now = (now or datetime.now(IST)).astimezone(IST)
-    return now - timedelta(days=days)

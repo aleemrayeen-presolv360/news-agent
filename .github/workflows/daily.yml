@@ -4,16 +4,15 @@
 # '31 1 * * *' = 01:31 UTC = 07:01 IST, every day, so the site is fresh each morning.
 #
 # Why daily: Groq's free tier allows ~11 scoring calls a minute (8,000 tokens/min),
-# so one weekly run can't keep up with ~60 new articles a day. Notion stays weekly
-# (publish.yml, Friday).
+# so one weekly run can't keep up with ~60 new articles a day.
 #
 # GitHub delays or drops scheduled runs when it is busy (seen: 5h late, and
 # 4-hourly ingests running only 3-4 times a day). So the job starts with its own
 # ingest, and a 09:01 IST catch-up run does the work only if 07:01 never happened.
 #
-# Budget: the repo is private, so Actions gets 2,000 min/month. Measured 19-26 Oct 2026:
+# Budget: a private repo gets 2,000 Actions min/month (public: unlimited). Measured 19-26 Oct 2026:
 # this job 28-42 min with --limit 250, ingest ~1 min x 6 a day. At --limit 200 the month is
-# ~1,300 min (this job ~30 x 32, ingest ~180, the rest ~150). The timeout caps a stuck run.
+# ~1,150 min (this job ~30 x 32, ingest ~180, new-source a few). The timeout caps a stuck run.
 # Waiting on Groq's rate limit is billed, so --limit on the score step is the main dial.
 
 name: daily
@@ -24,7 +23,7 @@ on:
     - cron: '31 3 * * *'   # 09:01 IST catch-up; exits in seconds if the site is already fresh
   workflow_dispatch:
 
-# Same group as publish.yml: the two never run at once or race to push data.js
+# Same group as new-source.yml: the two never run at once or race to push data.js
 concurrency:
   group: publish
   cancel-in-progress: false
@@ -104,10 +103,7 @@ jobs:
         env:
           NEON_DSN: ${{ secrets.NEON_DSN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}       # optional first backup
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}   # optional fallback
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}       # optional backup
 
       - name: Cluster stories
         if: steps.fresh.outputs.skip != 'true'

@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS threads (
   first_seen     TIMESTAMPTZ,
   last_seen      TIMESTAMPTZ,
   part_count     INT NOT NULL DEFAULT 0,
-  notion_page_id TEXT
+  notion_page_id TEXT              -- unused since the Notion digest was removed (Nov 2026)
 );
 
 -- -------------------------------------------------------------- clusters
@@ -63,12 +63,11 @@ CREATE TABLE IF NOT EXISTS clusters (
 );
 
 -- ----------------------------------------------------------- news_memory
--- THE PERMANENT LAYER. Never deleted. Retention only nulls notion_page_id,
--- so Notion stays tidy (30 days) while old news can still be referenced.
+-- THE PERMANENT LAYER. Never deleted, so old news can still be referenced.
 CREATE TABLE IF NOT EXISTS news_memory (
   id              BIGINT PRIMARY KEY REFERENCES raw_items(id),
   headline        TEXT NOT NULL,
-  one_liner       TEXT NOT NULL,     -- survives the Notion page being gone
+  one_liner       TEXT NOT NULL,
   source_url      TEXT NOT NULL,
   source_name     TEXT NOT NULL,
   published_at    TIMESTAMPTZ NOT NULL,
@@ -80,9 +79,11 @@ CREATE TABLE IF NOT EXISTS news_memory (
   market_impact   TEXT,
   cluster_id      BIGINT REFERENCES clusters(id),
   thread_id       BIGINT REFERENCES threads(id),
-  notion_page_id  TEXT,              -- NULL once archived out of Notion
-  notion_status   TEXT NOT NULL DEFAULT 'live',  -- live|archived|restored
-  reference_count INT NOT NULL DEFAULT 0,        -- >=2 triggers auto-save
+  -- The next four were for the Notion digest, removed Nov 2026. Kept so this file matches
+  -- the live table; nothing reads or writes them now.
+  notion_page_id  TEXT,
+  notion_status   TEXT NOT NULL DEFAULT 'live',
+  reference_count INT NOT NULL DEFAULT 0,
   published_week  DATE,
   carry_over      BOOLEAN NOT NULL DEFAULT false,
   alerted_at      TIMESTAMPTZ

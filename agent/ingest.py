@@ -33,7 +33,7 @@ from .config import (
     env, supabase_settings,
 )
 from .normalize import normalize_cisa_kev, normalize_entry, normalize_hf_paper, normalize_newsdata
-from .sources import REQUEST_PREFIX, Source, _google_news, enabled_sources, requested_sources
+from .sources import REQUEST_PREFIX, Source, _google_news, enabled_sources, requested_sources, url_key
 
 
 class FetchResult:
@@ -217,58 +217,38 @@ async def fetch_all(sources: list[Source]) -> list[FetchResult]:
         return await asyncio.gather(*(_fetch_one(client, s, sem) for s in sources))
 
 
-def fetch_requested_sources() -> list[Source]:
-    """Approved source requests from the website. Supabase being down only skips them this run.
-
-    Reads them through approved_source_feeds() (sql/security.sql), which works with Row Level
-    Security on. Before that SQL has been run the function doesn't exist (404), so the table is
-    read directly as before.
-    """
+def _supabase_rpc(name: str) -> list[dict] | None:
+    """Rows from one of the website's public Supabase functions (sql/*.sql), read with the public
+    key. None when Supabase isn't set up, the function doesn't exist yet, or the call fails, so a
+    Supabase problem only skips website sources and switches for this run."""
     url, key = supabase_settings()
     if not url or not key:
-        return []
-    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
+        return None
     try:
-        resp = httpx.post(f"{url}/rest/v1/rpc/approved_source_feeds", json={},
-                          headers=headers, timeout=FEED_TIMEOUT)
+        resp = httpx.post(f"{url}/rest/v1/rpc/{name}", json={}, timeout=FEED_TIMEOUT,
+                          headers={"apikey": key, "Authorization": f"Bearer {key}"})
         if resp.status_code == 404:
-            resp = httpx.get(f"{url}/rest/v1/source_request",
-                             params={"status": "eq.approved", "select": "id,name,url", "order": "id"},
-                             headers=headers, timeout=FEED_TIMEOUT)
+            print(f"ingest: Supabase has no {name}() yet; run its file in sql/", file=sys.stderr)
+            return None
         resp.raise_for_status()
-        return requested_sources(resp.json())
+        return resp.json()
     except (httpx.HTTPError, ValueError) as e:
-        print(f"ingest: couldn't read approved source requests from Supabase ({e}); "
-              "skipping them this run", file=sys.stderr)
-        return []
+        print(f"ingest: couldn't call {name}() in Supabase ({e})", file=sys.stderr)
+        return None
+
+
+def fetch_requested_sources() -> list[Source]:
+    """Approved source requests from the website, through approved_source_feeds() (sql/security.sql)."""
+    return requested_sources(_supabase_rpc("approved_source_feeds") or [])
 
 
 def fetch_switched_off() -> tuple[set[str], set[str]]:
-    """Feed addresses and names an admin switched off for everyone (Settings > Admin > Sources).
-
-    Read through switched_off_sources() (sql/source_switches.sql). Before that SQL has been run,
-    or when Supabase is down, nothing is skipped: the website still hides those stories.
-    """
-    url, key = supabase_settings()
-    if not url or not key:
-        return set(), set()
-    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
-    try:
-        resp = httpx.post(f"{url}/rest/v1/rpc/switched_off_sources", json={},
-                          headers=headers, timeout=FEED_TIMEOUT)
-        if resp.status_code == 404:
-            return set(), set()
-        resp.raise_for_status()
-        rows = resp.json()
-    except (httpx.HTTPError, ValueError) as e:
-        print(f"ingest: couldn't read switched-off sources from Supabase ({e}); fetching all", file=sys.stderr)
-        return set(), set()
-    return ({_url_key(r.get("url")) for r in rows if r.get("url")},
-            {str(r.get("name") or "").strip() for r in rows if r.get("name")})
-
-
-def _url_key(url: str | None) -> str:
-    return str(url or "").strip().rstrip("/").lower()
+    """Feed addresses and names an admin switched off for everyone (Settings > Admin > Sources),
+    through switched_off_sources() (sql/source_switches.sql). Nothing is skipped when it can't
+    be read: the website still hides those stories."""
+    rows = _supabase_rpc("switched_off_sources") or []
+    return ({url_key(r["url"]) for r in rows if r.get("url")},
+            {str(r["name"]).strip() for r in rows if r.get("name")})
 
 
 def split_switched_off(sources: list[Source], off_urls: set[str],
@@ -277,7 +257,7 @@ def split_switched_off(sources: list[Source], off_urls: set[str],
     name, the same name the website uses to hide a source's stories."""
     keep, off = [], []
     for s in sources:
-        (off if _url_key(s.url) in off_urls or s.name in off_names else keep).append(s)
+        (off if url_key(s.url) in off_urls or s.name in off_names else keep).append(s)
     return keep, off
 
 

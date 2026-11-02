@@ -237,21 +237,26 @@ PAPER_SOURCES = ARXIV_SOURCES + ("hf_papers",)
 REQUEST_PREFIX = "req_"
 
 
+def url_key(url: str | None) -> str:
+    """A feed address for comparing: no trailing slash, any case."""
+    return str(url or "").strip().rstrip("/").lower()
+
+
 def requested_sources(rows: list[dict]) -> list[Source]:
     """Source requests an admin approved on the website (Supabase source_request) as tier-D feeds.
 
     A feed that sources.py already has is skipped, so approving it twice never polls it twice.
     """
-    known = {s.url.rstrip("/").lower() for s in SOURCES if s.url}
+    known = {url_key(s.url) for s in SOURCES if s.url}
     out = []
     for r in rows:
         url = str(r.get("url") or "").strip()
         name = str(r.get("name") or "").strip()
         if not name or not url.lower().startswith(("http://", "https://")):
             continue
-        if url.rstrip("/").lower() in known:
+        if url_key(url) in known:
             continue
-        known.add(url.rstrip("/").lower())
+        known.add(url_key(url))
         out.append(Source(id=f"{REQUEST_PREFIX}{r['id']}", name=name[:120], tier="D", url=url,
                           note="requested on the website"))
     return out

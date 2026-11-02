@@ -37,7 +37,7 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      # Ingest only fetches feeds and stores them; scoring happens in publish.yml
+      # Ingest only fetches feeds and stores them; scoring happens in daily.yml
       - name: Run ingest
         run: python -m agent.ingest
         env:
