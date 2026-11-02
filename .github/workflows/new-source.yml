@@ -83,4 +83,5 @@ jobs:
           NEWSDATA_API_KEY: ${{ secrets.NEWSDATA_API_KEY }}   # so the source list matches what's fetched
 
       - name: Commit and push data.js
-        run: bash scripts/push_site_data.sh "chore: website data after a source change [skip ci]"
+        run: |
+          bash scripts/push_site_data.sh "chore: website data after a source change [skip ci]"

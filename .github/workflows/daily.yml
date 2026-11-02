@@ -126,4 +126,5 @@ jobs:
 
       - name: Commit and push data.js
         if: steps.fresh.outputs.skip != 'true'
-        run: bash scripts/push_site_data.sh "chore: daily website data [skip ci]"
+        run: |
+          bash scripts/push_site_data.sh "chore: daily website data [skip ci]"
