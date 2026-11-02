@@ -83,11 +83,4 @@ jobs:
           NEWSDATA_API_KEY: ${{ secrets.NEWSDATA_API_KEY }}   # so the source list matches what's fetched
 
       - name: Commit and push data.js
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add frontend/data.js frontend/index.html
-          git diff --staged --quiet && exit 0
-          git commit -m "chore: website data after a source change [skip ci]"
-          git pull --rebase
-          git push
+        run: bash scripts/push_site_data.sh "chore: website data after a source change [skip ci]"
