@@ -17,12 +17,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import html
 import json
 import sys
 import re
 from collections import Counter
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 import feedparser
 import httpx
@@ -32,7 +33,7 @@ from .config import (
     env, supabase_settings,
 )
 from .normalize import normalize_cisa_kev, normalize_entry, normalize_hf_paper, normalize_newsdata
-from .sources import Source, _google_news, enabled_sources, requested_sources
+from .sources import REQUEST_PREFIX, Source, _google_news, enabled_sources, requested_sources
 
 
 class FetchResult:
@@ -44,6 +45,50 @@ class FetchResult:
         self.rows = rows
         self.error = error
         self.newest = max((r["published_at"] for r in rows), default=None)
+
+
+COMMON_FEED_PATHS = ("/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml",
+                     "/blog/feed", "/news/feed", "/blog/rss.xml")
+_LINK_TAG = re.compile(r"<link\b[^>]*>", re.I)
+_ATTR = re.compile(r"""([\w-]+)\s*=\s*(["'])(.*?)\2""", re.S)
+
+
+def feed_links(page: str, base: str) -> list[str]:
+    """Feeds a web page advertises with <link rel="alternate" type="application/rss+xml" href="...">."""
+    out = []
+    for tag in _LINK_TAG.findall(page):
+        attrs = {k.lower(): v for k, _, v in _ATTR.findall(tag)}
+        if ("alternate" in attrs.get("rel", "").lower() and attrs.get("href")
+                and re.search(r"(rss|atom)\+xml", attrs.get("type", ""), re.I)):
+            url = urljoin(base, html.unescape(attrs["href"].strip()))
+            if url.startswith(("http://", "https://")) and url not in out:
+                out.append(url)
+    return out
+
+
+def feed_candidates(page: str, page_url: str) -> list[str]:
+    """Where a site's feed may be: what the page advertises first, then the usual addresses."""
+    parts = urlsplit(page_url)
+    root = f"{parts.scheme}://{parts.netloc}"
+    out = feed_links(page, page_url)
+    out += [root + p for p in COMMON_FEED_PATHS if root + p not in out]
+    return out
+
+
+async def _find_feed(client: httpx.AsyncClient, page_url: str, page: bytes) -> tuple[str, bytes]:
+    """The feed behind a web page, as (address, body). A site with no feed at all is covered by a
+    Google News search of the whole site, so it still brings in news."""
+    for url in feed_candidates(page.decode("utf-8", "replace"), page_url):
+        try:
+            resp = await client.get(url, timeout=FEED_TIMEOUT)
+            if resp.status_code == 200 and feedparser.parse(resp.content).entries:
+                return url, resp.content
+        except httpx.HTTPError:
+            continue
+    host = urlsplit(page_url).hostname or ""
+    url = _google_news(f"site:{host.removeprefix('www.')}")
+    resp = await client.get(url, timeout=FEED_TIMEOUT)
+    return url, resp.content
 
 
 async def _fetch_one(client: httpx.AsyncClient, source: Source,
@@ -59,6 +104,14 @@ async def _fetch_one(client: httpx.AsyncClient, source: Source,
             return FetchResult(source, [], f"HTTP {exc.response.status_code}")
         except Exception as exc:                      # noqa: BLE001
             return FetchResult(source, [], f"{type(exc).__name__}: {exc}")
+
+        # People add a site's address on the website ("https://epoch.ai/"), not its feed
+        if source.id.startswith(REQUEST_PREFIX) and source.kind == "rss" and not feedparser.parse(body).entries:
+            try:
+                feed_url, body = await _find_feed(client, str(resp.url), body)
+            except httpx.HTTPError as exc:
+                return FetchResult(source, [], f"no feed found ({type(exc).__name__})")
+            print(f"ingest: {source.name} is a web page; reading {feed_url}", file=sys.stderr)
 
     try:
         if source.kind == "json":

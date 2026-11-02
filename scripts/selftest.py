@@ -35,7 +35,7 @@ from agent.db import backed_off_source_ids  # noqa: E402
 from agent.trends import parse_picks  # noqa: E402
 from agent.config import DOMAINS, supabase_settings  # noqa: E402
 from agent.publish_static import coverage_for, display_names, item_to_dict, split_by_label, stamp_assets, stamp_csp  # noqa: E402
-from agent.ingest import gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
+from agent.ingest import feed_candidates, gap_fill_rows, needs_gap_fill, split_first_fetch  # noqa: E402
 from agent.triage import check_arxiv_gate  # noqa: E402
 import agent.score as score_mod  # noqa: E402
 
@@ -535,6 +535,17 @@ _gn = [{"title": "Tesla ships Cybercab - Electrek", "source_id": "gn"},
 check("gap fill drops stories the feed already has and keeps the source",
       [(r["title"], r["source_id"]) for r in gap_fill_rows(_busy, _recent, _gn)],
       [("Rivian cuts prices", "electrek")])
+
+_page = ('<head><link rel="stylesheet" href="/a.css"><link rel="alternate" type="application/atom+xml" '
+         'title="Latest" href="/atom.xml"><LINK REL="alternate" TYPE="application/rss+xml" '
+         "HREF='https://feeds.example.net/x?a=1&amp;b=2'></head>")
+_found = feed_candidates(_page, "https://epoch.ai/publications/post?utm_source=tldrai")
+check("a web page's advertised feeds come first, relative and absolute, entities decoded",
+      _found[:2], ["https://epoch.ai/atom.xml", "https://feeds.example.net/x?a=1&b=2"])
+check("then the usual feed addresses on the site, without repeats",
+      (_found[2], _found.count("https://epoch.ai/atom.xml")), ("https://epoch.ai/feed", 1))
+check("a page with no feed link still gets the usual addresses",
+      feed_candidates("<html></html>", "https://site.in/")[0], "https://site.in/feed")
 
 check("source ids are unique", len({s.id for s in SOURCES}), len(SOURCES))
 check("Google News feeds are encoded and limited to 7 days",

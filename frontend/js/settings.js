@@ -470,7 +470,7 @@ const Settings = {
                     <input id="request-reason" type="text" maxlength="300" autocomplete="off" placeholder="We build on Laravel; releases and security notices matter to us…">
                 </div>
                 <div class="request-send"><button type="submit" class="btn btn-primary">Send request</button></div>
-                <p class="hint wide" id="request-url-hint">An RSS or Atom feed works best. Most news sites have one at /feed or /rss.</p>
+                <p class="hint wide" id="request-url-hint">The site's address is enough, such as epoch.ai. We find its news feed, or search the whole site if it has none.</p>
                 <p class="form-error wide" id="request-error" aria-live="polite"></p>
             </form>
             <div class="table-wrap" id="request-table">${this.myRequestsTable()}</div>`;
