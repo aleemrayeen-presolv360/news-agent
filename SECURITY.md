@@ -66,7 +66,7 @@ Key: ✅ done · 👤 needs you · ➖ not needed (with the reason)
 | [agent/publish_static.py](agent/publish_static.py) | The existing `--stamp-only` step now also writes the inline script's hash into the policy, and always writes LF line endings. |
 | [scripts/selftest.py](scripts/selftest.py) | 2 new tests: the policy hash is refreshed and matches the page. 110 tests pass. |
 | [sql/hardening.sql](sql/hardening.sql), [hardening_rollback.sql](sql/hardening_rollback.sql) | New database checks, real emails, write limits; and their undo. |
-| [sql/source_switches.sql](sql/source_switches.sql) (2 Nov, later) | `switched_off_sources()` for the pipeline: names and feed addresses only, like `approved_source_feeds()`. A 100 KB cap on each person's `user_setting` row, which now holds their "My sources" list (owner-only by `security.sql`). |
+| [sql/source_switches.sql](sql/source_switches.sql) (2 Nov, later) | `source_off` table for "Off for everyone": signed-in people read it, only admins change it (Row Level Security). `switched_off_sources()` and `approved_source_feeds()` give the pipeline source ids, names, links and categories only; no emails. A 100 KB cap on each person's `user_setting` row, which holds their "My sources" list (owner-only by `security.sql`). |
 | `.github/workflows/ingest.yml`, `addendum.yml`, `retention.yml` | `permissions: contents: read`. |
 
 ## How it was tested
