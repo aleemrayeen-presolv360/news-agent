@@ -17,12 +17,12 @@ Key: ✅ done · 👤 needs you · ➖ not needed (with the reason)
 
 ## What you need to do
 
-| # | What | Where | Time |
+| # | What | Where | Status |
 |---|---|---|---|
-| 1 | Run [sql/hardening.sql](sql/hardening.sql) | Supabase → SQL Editor → New query → paste the whole file → **Run**. Expect "Success. No rows returned". | 1 min |
-| 2 | Three Supabase settings: **(a)** Minimum password length **8**. **(b)** Turn on **CAPTCHA** (Cloudflare Turnstile is free; tell me before you switch it on, because the sign-in form needs a small change). **(c)** Under **Redirect URLs**, keep only `https://news-agent.atlair.app` and `http://localhost:8000`. | **(a)** Authentication → Providers → Email (in some dashboard versions: Authentication → Policies) **(b)** Authentication → Attack Protection **(c)** Authentication → URL Configuration | 5 min |
-| 3 | Turn on **two-factor sign-in** | GitHub, Supabase, Google Cloud, Neon, Atlair | 15 min |
-| 4 | Make the repo **private** | GitHub → Settings → General → Danger Zone. Check that Atlair still deploys afterwards. | 2 min |
+| 1 | Run [sql/hardening.sql](sql/hardening.sql) | Supabase → SQL Editor → New query → paste the whole file → **Run**. Expect "Success. No rows returned". | ✅ Done 2 Nov; confirmed live |
+| 2 | Three Supabase settings: **(a)** Minimum password length **8**. **(b)** Turn on **CAPTCHA** (Cloudflare Turnstile is free; tell me before you switch it on, because the sign-in form needs a small change). **(c)** Under **Redirect URLs**, keep only `https://news-agent.atlair.app` and `http://localhost:8000`. | **(a)** Authentication → Providers → Email (in some dashboard versions: Authentication → Policies) **(b)** Authentication → Attack Protection **(c)** Authentication → URL Configuration | ⏸ Put off for now (your call, 2 Nov) |
+| 3 | Turn on **two-factor sign-in** | GitHub, Supabase, Google Cloud, Neon, Atlair | ⏸ Put off for now (your call, 2 Nov). Still the biggest remaining risk |
+| 4 | Make the repo **private** | GitHub → Settings → General → Danger Zone. Check that Atlair still deploys afterwards. | 👤 You're doing this |
 | 5 | Decide on `ANALYSIS.md` (an old notes file that was never committed) and the empty `TELEGRAM_*` lines in your local `.env` | Delete both if you don't need them. I left them alone because they are your files. | 1 min |
 
 **If something breaks after step 1:** run [sql/hardening_rollback.sql](sql/hardening_rollback.sql) the same way. It removes only this batch and deletes no data.
@@ -90,7 +90,8 @@ Key: ✅ done · 👤 needs you · ➖ not needed (with the reason)
   - the SQL Editor and the pipeline skip every new rule;
   - one rollback file undoes all of it.
 
-  After you run it, I'll do a live check (step 1 above).
+  **Run on live Supabase on 2 November.** Checked with the public key: the new functions exist,
+  `my_recent_rows` refuses visitors who aren't signed in, and the pipeline's feed list still works.
 
 ## Trade-offs I chose
 
