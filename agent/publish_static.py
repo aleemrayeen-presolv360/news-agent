@@ -257,11 +257,12 @@ window.digestData = {json.dumps(data, indent=4, ensure_ascii=False)};
     print(f"publish_static: wrote {output_path}")
 
 
-ASSET_REF = re.compile(r'((?:href|src)=")((?:css|js)/[\w.-]+\.(?:css|js)|data\.js)(?:\?v=\w+)?(")')
+ASSET_REF = re.compile(r'((?:href|src)=")((?:css|js)/[\w.-]+\.(?:css|js)|data\.js|favicon\.(?:ico|svg)|apple-touch-icon\.png)'
+                       r'(?:\?v=\w+)?(")')
 
 
 def stamp_assets(html: str, frontend_dir: Path) -> str:
-    """Add ?v=<content hash> to local css/js links. The host's CDN caches these
+    """Add ?v=<content hash> to local css/js/icon links. The host's CDN caches these
     files for 4 hours by name, so without a new name visitors get stale code and
     yesterday's news."""
     def repl(m):
