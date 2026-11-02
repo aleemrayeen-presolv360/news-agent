@@ -78,6 +78,13 @@ Key: ✅ done · 👤 needs you · ➖ not needed (with the reason)
   - `safeUrl` refuses `javascript:`, `data:` and `//` links.
   - Demo sign-in works on localhost and is refused on any other address.
   - Inside another site's frame, the page hides itself.
+- **Live site after the push (`7d58743`), all passed:**
+  - the policy is in place;
+  - Supabase and Google sign-in work, and a password sign-in reaches Supabase;
+  - no pretend demo sign-in;
+  - no errors from our own code.
+
+  The only reported violations are the two Cloudflare scripts above, blocked on purpose.
 - **The SQL has not been run yet.** I wrote a test that runs `supabase.sql`, `security.sql` and `hardening.sql` on a throwaway copy of Postgres and tries each attack (26 checks). This laptop couldn't run it: Docker Desktop wouldn't start, and running downloaded Postgres programs was blocked. The SQL was checked by reading it instead. It is written to be safe:
   - existing rows are not re-checked (`NOT VALID`);
   - the SQL Editor and the pipeline skip every new rule;
@@ -87,6 +94,11 @@ Key: ✅ done · 👤 needs you · ➖ not needed (with the reason)
 
 ## Trade-offs I chose
 
+- **The policy blocks two scripts our host adds to every page.** Atlair serves the site through Cloudflare, which injects:
+  - a bot-detection inline script ("challenge-platform") with a new token on every request, so it can't be allowed by hash;
+  - the Cloudflare Web Analytics beacon (`static.cloudflareinsights.com`).
+
+  Nothing of ours uses either. Allowing the first would need `'unsafe-inline'`, which turns off the protection against injected scripts. The second tracks visitors, and [privacy.html](frontend/privacy.html) says we don't. Both stay blocked. The only side effect is two "Content Security Policy" lines in the browser console on each page load, and they are expected. Checked live on 2 November: sign-in, Supabase, Google sign-in and the privacy page all work.
 - **`style-src 'unsafe-inline'` stays in the policy.** A few layout widths are set inline. Allowing inline styles can't run code, and the script rules are what stop XSS.
 - **Referrer policy is `strict-origin-when-cross-origin`**, not `no-referrer`. Outlets see only `news-agent.atlair.app`, never the page or story you came from.
 - **Note limit is 10 MB**, because notes hold pasted images as text (one 2 MB image is about 2.7 MB).
