@@ -564,7 +564,7 @@ fresh on those (notes and settings do follow you).
 
 Colours are **tokens** in `css/base.css` (`--ink: #1E3570` for actions, `--tape: #B8282B` only for
 Breaking). Dark mode swaps the token values automatically, following the laptop's setting. Fonts are
-Geist (all text) and Geist Mono (shortcuts and counts). Full rules: [design.md](design.md).
+Geist (all text) and Geist Mono (shortcuts and counts).
 
 ---
 
@@ -792,6 +792,5 @@ news-agent/
 
 ---
 
-**Related documents:** [architecture.md](architecture.md) (engineer's summary),
-[developer-guide.md](developer-guide.md) (setup and commands), [prd.md](prd.md) (what the product
-must do), [SECURITY.md](../SECURITY.md).
+**Related documents:** [developer-guide.md](developer-guide.md) (setup and commands),
+[SECURITY.md](../SECURITY.md).

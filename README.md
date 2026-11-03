@@ -162,16 +162,13 @@ Google sign-in, the privacy page, the security work, the new font (Geist) and th
 **Next improvement:** sharper "why it matters" lines. 10 real before/after examples will be shown for
 approval first.
 
-The full, up-to-date list is in [docs/tasks.md](docs/tasks.md).
-
 ---
 
 ## Design rules we keep
 
 The site is meant to look like a serious reading tool, not a marketing page. So there are **no**
 purple gradients, round pill buttons, emoji icons, fake numbers or reviews, flashy animations,
-AI-made photos, or vague slogans. Every number on the site is real. More in
-[docs/design.md](docs/design.md).
+AI-made photos, or vague slogans. Every number on the site is real.
 
 ---
 
@@ -194,12 +191,6 @@ AI-made photos, or vague slogans. Every number on the site is real. More in
 
 | Document | For | What's in it |
 |---|---|---|
-| [docs/prd.md](docs/prd.md) | Product | Requirements, features, launch checklist |
-| [docs/tasks.md](docs/tasks.md) | Everyone | What's done, what's next, what's waiting on whom |
-| [docs/design.md](docs/design.md) | Design | Colours, fonts, design rules |
-| [docs/memory.md](docs/memory.md) | Everyone | Key decisions and why they were made |
 | [SECURITY.md](SECURITY.md) | Everyone | Every security decision |
 | [docs/tech-guide.md](docs/tech-guide.md) | PM, anyone curious | The whole system explained with real code: backend, APIs, databases, website |
-| [docs/architecture.md](docs/architecture.md) | Engineers | How the system is built |
-| [docs/rules.md](docs/rules.md) | Engineers | Coding rules |
 | [docs/developer-guide.md](docs/developer-guide.md) | Engineers | Setup, commands, troubleshooting |

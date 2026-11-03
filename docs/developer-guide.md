@@ -9,9 +9,7 @@ simple website where the team reads, saves and takes notes.
 **In one sentence:** feeds go in, an AI ranks them, the website shows the ones that matter
 and tells you why.
 
-**Other docs:** [product requirements](prd.md), [architecture](architecture.md),
-[coding rules](rules.md), [design](design.md), [tasks](tasks.md), [project context](memory.md)
-and [security](../SECURITY.md).
+**Other docs:** [how the system works](tech-guide.md) and [security](../SECURITY.md).
 
 ---
 
