@@ -145,14 +145,14 @@ const Notices = {
                 <div class="summary">
                     <div><strong>${when(Stories.generatedAt())}</strong>website updated</div>
                     <div><strong>${when(h.last_ingest_at)}</strong>feeds fetched (${h.ingest_runs_24h} times in 24h)</div>
-                    ${score ? `<div><strong>${when(score.at)}</strong>last scoring: ${score.scored} scored, ${score.waiting ?? '?'} waiting</div>` : ''}
-                    ${score && score.groq_remaining !== null ? `<div><strong>${score.groq_remaining}</strong>Groq calls were left that day</div>` : ''}
+                    ${score ? `<div><strong>${score.scored_24h ?? score.scored}</strong>stories scored in 24h</div>` : ''}
+                    ${score && score.waiting != null ? `<div><strong>${score.waiting}</strong>recent stories waiting to be scored</div>` : ''}
                 </div>
                 ${h.warnings.length
                     ? `<ul class="health-warnings">${h.warnings.map(w => `<li>${Util.esc(w)}</li>`).join('')}</ul>`
                     : '<p class="muted">No problems found in the last run.</p>'}
                 ${list('Feeds failing', h.failing_sources)}
-                ${list('Feeds with nothing new for 14 days', h.quiet_sources)}
+                ${h.quiet_sources?.length ? `<p class="muted">Quiet, nothing new for 14 days (not a problem): ${h.quiet_sources.map(n => Util.esc(n)).join(', ')}</p>` : ''}
             </section>`;
     }
 };

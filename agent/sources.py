@@ -15,8 +15,9 @@ than silently pretending they do not exist.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlsplit
 
 
 def _google_news(query: str, days: int = 7) -> str:
@@ -26,6 +27,12 @@ def _google_news(query: str, days: int = 7) -> str:
 
 
 _GN_NOTE = "Google News search; links are redirects, so it is scored from the headline"
+
+
+def display_url(url: str) -> str:
+    """The address people recognise: a Google News search of one site shows as that site."""
+    site = re.search(r"site:([^\s&]+)", unquote(url)) if "news.google.com" in url else None
+    return f"https://{site.group(1)}" if site else url
 
 
 @dataclass(frozen=True)
@@ -47,13 +54,14 @@ class Source:
 
 SOURCES: list[Source] = [
     # ---------------------------------------------------- Tier A
+    # MIT and Cambridge refuse GitHub's servers (HTTP 403) but not other networks, so they
+    # are read through Google News
     Source("mit_ai", "MIT News (AI)", "A",
-           url="https://news.mit.edu/topic/mitartificial-intelligence2-rss.xml"),
+           url=_google_news('site:news.mit.edu "artificial intelligence"'), note=_GN_NOTE),
     Source("mit_main", "MIT News", "A",
-           url="https://news.mit.edu/rss/feed"),
+           url=_google_news("site:news.mit.edu"), note=_GN_NOTE),
     Source("mit_csail", "MIT CSAIL", "A",
-           url="https://news.mit.edu/rss/topic/computer-science-and-artificial-intelligence-laboratory-csail",
-           note="low volume"),
+           url=_google_news("site:news.mit.edu CSAIL"), note=f"low volume. {_GN_NOTE}"),
     Source("mit_tr", "MIT Technology Review", "A",
            url="https://www.technologyreview.com/feed/"),
     Source("bair", "Berkeley BAIR", "A",
@@ -70,7 +78,7 @@ SOURCES: list[Source] = [
     Source("mpg", "Max Planck", "A",
            url="https://www.mpg.de/en/research.rss"),
     Source("cambridge", "Cambridge", "A",
-           url="https://www.cam.ac.uk/news/feed"),
+           url=_google_news("site:cam.ac.uk"), note=_GN_NOTE),
     Source("harvard", "Harvard Gazette", "A",
            url="https://news.harvard.edu/gazette/feed/",
            note="SEAS has no feed; Gazette is the substitute"),
@@ -137,8 +145,9 @@ SOURCES: list[Source] = [
            url="https://techcrunch.com/category/artificial-intelligence/feed/"),
     Source("ieee", "IEEE Spectrum", "D",
            url="https://spectrum.ieee.org/feeds/feed.rss"),
+    # VentureBeat's own feed has answered HTTP 429 to everyone since 12 Oct 2026
     Source("venturebeat", "VentureBeat AI", "D",
-           url="https://venturebeat.com/category/ai/feed/"),
+           url=_google_news("site:venturebeat.com AI"), note=_GN_NOTE),
     Source("hn", "Hacker News 100+", "D",
            url="https://hnrss.org/frontpage?points=100",
            note="points filter confirmed working"),
@@ -258,6 +267,8 @@ def requested_sources(rows: list[dict]) -> list[Source]:
         if url_key(url) in known:
             continue
         known.add(url_key(url))
+        if name.lower().startswith(("http://", "https://")):   # someone typed the address as the name
+            name = (urlsplit(name).hostname or name).removeprefix("www.")
         out.append(Source(id=f"{REQUEST_PREFIX}{r['id']}", name=name[:120], tier="D", url=url,
                           note="requested on the website", category=str(r.get("category") or "other")))
     return out

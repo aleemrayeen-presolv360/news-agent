@@ -183,6 +183,8 @@ req = requested_sources([
     {"id": 11, "name": "Laravel twice", "url": "https://feed.laravel-news.com"},
 ])
 check("approved request becomes a tier-D source", [(s.id, s.tier) for s in req], [("req_7", "D")])
+check("a request named with its address shows the site's name",
+      requested_sources([{"id": 12, "name": "https://www.epoch.ai/", "url": "https://epoch.ai/"}])[0].name, "epoch.ai")
 check("request ids never clash with sources.py", all(not s.id.startswith("req_") for s in SOURCES), True)
 with mock.patch.dict(os.environ, {"SUPABASE_URL": "", "SUPABASE_ANON_KEY": ""}):
     sb_url, sb_key = supabase_settings()
@@ -386,14 +388,11 @@ check("failing sources back off for a day",
       ("consecutive_failures >=" in _c.cur.sql[0][0], _c.cur.sql[0][1]), (True, (3, 24)))
 
 _ok = {"scored": 200, "failed": 0, "gemini": 0}
-check("no warning on a healthy run", score_mod.budget_warnings(_ok, 600, False), [])
-check("warns when Groq runs low", "Only 90 Groq calls" in score_mod.budget_warnings(_ok, 90, False)[0], True)
-check("warns when the quota ran out", "ran out" in score_mod.budget_warnings(_ok, 0, True)[0], True)
-check("warns on backup scores and names the backup",
-      score_mod.budget_warnings({**_ok, "gemini": 40}, 600, False), ["40 stories were scored by the backup model (Gemini)"])
+check("no warning on a healthy run", score_mod.budget_warnings(_ok), [])
+check("the backup scoring stories is not a warning", score_mod.budget_warnings({**_ok, "gemini": 40}), [])
 check("says why stories went unscored",
       "(groq: quota; the backup model (Gemini) has no key set)" in score_mod.budget_warnings(
-          {**_ok, "failed": 5}, 0, True, "groq: quota; the backup model (Gemini) has no key set")[1], True)
+          {**_ok, "failed": 5}, "groq: quota; the backup model (Gemini) has no key set")[0], True)
 
 _item = {"id": 1, "title": "t", "source_name": "s", "tier": "D", "feed_summary": "x"}
 _json = '{"domain": "ai", "novelty": 10, "impact": 10, "relevance": 10}'

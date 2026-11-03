@@ -54,6 +54,11 @@ def sync_sources(conn, extra: Sequence[Source] = ()) -> None:
                 kind     = EXCLUDED.kind,
                 feed_url = EXCLUDED.feed_url,
                 enabled  = EXCLUDED.enabled,
+                -- a new feed address starts with a clean record, so an old failure streak doesn't stick
+                consecutive_failures = CASE WHEN sources.feed_url IS DISTINCT FROM EXCLUDED.feed_url
+                                            THEN 0 ELSE sources.consecutive_failures END,
+                last_error = CASE WHEN sources.feed_url IS DISTINCT FROM EXCLUDED.feed_url
+                                  THEN NULL ELSE sources.last_error END,
                 note     = EXCLUDED.note
             """,
             [(s.id, s.name, s.tier, s.kind, s.url, s.usable, s.note)

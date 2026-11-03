@@ -134,8 +134,9 @@ def _parse_score_response(text: str, tier: str) -> dict:
 SUMMARY_CHARS = 1200
 GROQ_MAX_WAIT = 65         # seconds; a longer retry-after means the daily quota is gone
 _groq_exhausted = False     # set once the daily quota is gone, so the rest of the run skips Groq
-_groq_remaining: int | None = None   # daily requests left, from Groq's last response
-GROQ_WARN_REMAINING = 150   # the website warns admins when fewer daily calls than this are left
+_groq_remaining: int | None = None   # daily requests left, from Groq's last response (the log only:
+                                     # its daily token limit runs out first, at ~200 stories)
+WAITING_HOURS = 48          # the website's "waiting" count covers stories published this recently
 
 
 class GroqQuotaExhausted(RuntimeError):
@@ -345,6 +346,22 @@ def get_unscored_items(conn, limit: int | None = None,
         return cur.fetchall()
 
 
+def count_recent_unscored(conn) -> int:
+    """Stories published in the last WAITING_HOURS that passed triage but have no score yet.
+
+    Older ones are left from when a new source brought in its back catalogue; they are
+    scored after newer stories and drop out after PROCESS_DAYS, so counting them misleads.
+    """
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT count(*) AS n
+            FROM raw_items r JOIN news_memory m ON r.id = m.id
+            WHERE r.rules_pass = true AND m.score IS NULL
+              AND r.published_at >= now() - make_interval(hours => %s)
+        """, (WAITING_HOURS,))
+        return cur.fetchone()["n"]
+
+
 def update_scores(conn, results: list[ScoreResult]) -> dict:
     """Update news_memory with scores."""
     stats = {"scored": 0, "failed": 0, "breaking": 0, "major": 0, "notable": 0, "gemini": 0}
@@ -489,34 +506,30 @@ def run(dry_run: bool = False, limit: int | None = None, ingested_hours: int | N
 
     # Kept in Neon (the runner is wiped after each run); publish_static shows the warnings
     # on the website's pipeline health panel
-    warnings = budget_warnings(total_stats, _groq_remaining, _groq_exhausted, first_error)
+    warnings = budget_warnings(total_stats, first_error)
     with db.connect() as conn:
-        waiting = len(get_unscored_items(conn))
+        waiting = count_recent_unscored(conn)
         db.record_run(conn, "score", {"detail": {
             **total_stats, "waiting": waiting, "warnings": warnings,
             "groq_remaining": _groq_remaining, "groq_exhausted": _groq_exhausted,
         }}, ok=True)
-    print(f"score: {waiting} items still waiting")
+    print(f"score: {waiting} stories from the last {WAITING_HOURS} hours still waiting")
     for w in warnings:
         print(f"score: warning: {w}")
 
     return 0
 
 
-def budget_warnings(stats: dict, groq_remaining: int | None, groq_exhausted: bool,
-                    error: str | None = None) -> list[str]:
-    """Plain-English problems with the free LLM budget in this run, if any."""
-    problems = []
-    if groq_exhausted:
-        problems.append("Groq's free daily quota ran out during scoring")
-    elif groq_remaining is not None and groq_remaining < GROQ_WARN_REMAINING:
-        problems.append(f"Only {groq_remaining} Groq calls were left for the day")
-    if stats.get("gemini"):
-        problems.append(f"{stats['gemini']} stories were scored by the backup model (Gemini)")
-    if stats.get("failed"):
-        problems.append(f"{stats['failed']} stories could not be scored"
-                        + (f" ({error})" if error else "") + "; they wait for the next run")
-    return problems
+def budget_warnings(stats: dict, error: str | None = None) -> list[str]:
+    """Plain-English problems with scoring in this run, if any.
+
+    Only stories left unscored count. Groq running out is normal (its daily limit is ~200
+    stories) and Gemini picking up the rest is the backup working, so neither is a warning.
+    """
+    if not stats.get("failed"):
+        return []
+    return [f"{stats['failed']} stories could not be scored"
+            + (f" ({error})" if error else "") + "; they wait for the next run"]
 
 
 def main() -> int:

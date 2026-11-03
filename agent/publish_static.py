@@ -25,7 +25,7 @@ from .config import (
     SCORE_BREAKING, SCORE_MAJOR, SCORE_NOTABLE, WEBSITE_DAYS,
 )
 from .ingest import fetch_requested_sources
-from .sources import enabled_sources
+from .sources import display_url, enabled_sources
 
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
@@ -98,6 +98,12 @@ def get_health(conn) -> dict:
         ingest = cur.fetchone()
         cur.execute("SELECT finished_at, detail FROM runs WHERE job = 'score' ORDER BY finished_at DESC LIMIT 1")
         score = cur.fetchone()
+        # The day's total: a new source's run after the morning one scores only a handful
+        cur.execute("""
+            SELECT coalesce(sum((detail->>'scored')::int), 0) AS n FROM runs
+            WHERE job = 'score' AND finished_at > now() - interval '24 hours'
+        """)
+        scored_24h = cur.fetchone()["n"]
 
     broken = [s for s in unhealthy_sources(conn) if not s["id"].startswith("trend_")]
     failing = [s["name"] for s in broken if s["consecutive_failures"] >= 3]
@@ -121,9 +127,8 @@ def get_health(conn) -> dict:
         "ingest_runs_24h": ingest["runs_24h"] or 0,
         "last_score": {
             "at": iso(score["finished_at"]),
-            "scored": detail.get("scored", 0),
-            "waiting": detail.get("waiting"),
-            "groq_remaining": detail.get("groq_remaining"),
+            "scored_24h": scored_24h,
+            "waiting": detail.get("waiting"),   # published in the last 48 hours, still unscored
         } if score else None,
         "failing_sources": failing,
         "quiet_sources": quiet,
@@ -157,7 +162,7 @@ def source_list() -> list[dict]:
     """What the pipeline fetches, for the website's source settings: the feeds in sources.py plus
     approved website requests. Sources switched off on the website stay listed, so they can be
     switched back on; trend watches don't, as they last only a few days."""
-    return [{"id": s.id, "name": s.name, "url": s.url, "category": s.category}
+    return [{"id": s.id, "name": s.name, "url": display_url(s.url), "category": s.category}
             for s in enabled_sources() + fetch_requested_sources()]
 
 
