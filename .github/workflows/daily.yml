@@ -17,11 +17,20 @@
 
 name: daily
 
+# GitHub starts scheduled runs late, sometimes by hours, so cron-job.org starts this job at
+# 07:01 IST (backup 09:01) through the API, with timer=true. The schedules below stay as a
+# last resort. A timer or scheduled run exits in seconds once a run has finished today;
+# a run started by hand in Actions always runs in full.
 on:
   schedule:
     - cron: '31 1 * * *'   # 07:01 IST
-    - cron: '31 3 * * *'   # 09:01 IST catch-up; exits in seconds if the site is already fresh
+    - cron: '31 3 * * *'   # 09:01 IST catch-up
   workflow_dispatch:
+    inputs:
+      timer:
+        description: 'Started by the morning timer: skip if today has already run'
+        type: boolean
+        default: false
 
 # Same group as new-source.yml: the two never run at once or race to push data.js
 concurrency:
@@ -30,6 +39,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: read    # to see whether today's run already happened
 
 jobs:
   daily:
@@ -38,14 +48,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Catch-up run only: stop if today's (IST) data.js is already committed
-      - name: Already refreshed today?
+      # Timer and scheduled runs: stop if a daily run already finished today (IST)
+      - name: Already ran today?
         id: fresh
-        if: github.event.schedule == '31 3 * * *'
+        if: github.event_name == 'schedule' || github.event.inputs.timer == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          today=$(TZ=Asia/Kolkata date +%F)
-          if grep -q "\"generated_at\": \"$today" frontend/data.js; then
-            echo "data.js already generated on $today, nothing to do"
+          since=$(TZ=Asia/Kolkata date +%FT00:00:00+05:30)
+          done=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow daily.yml --status success --created ">=$since" --json databaseId --jq length)
+          if [ "$done" -gt 0 ]; then
+            echo "the daily job already ran today, nothing to do"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
