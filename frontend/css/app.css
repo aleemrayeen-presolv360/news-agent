@@ -146,3 +146,18 @@ a.notice-text:hover { text-decoration: underline; }
 .notice-close .icon { width: 14px; height: 14px; }
 .notice-close:hover { background: var(--panel); color: var(--text); }
 @media (max-width: 700px) { .notice { padding: 9px 16px; } }
+
+/* Info icon beside a heading. The tip opens under the heading's line, never over it. */
+.has-help { position: relative; display: flex; align-items: center; gap: 6px; }
+.help { display: inline-flex; }
+.help-btn { display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: help; }
+.help-btn:hover, .help-btn[aria-expanded="true"] { color: var(--ink); }
+.help-btn .icon { width: 15px; height: 15px; }
+.help-tip {
+    position: absolute; left: 0; top: calc(100% + 6px); z-index: 20; width: max-content; max-width: min(320px, calc(100vw - 48px));
+    padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); color: var(--text);
+    box-shadow: 0 6px 18px -6px rgba(10, 16, 32, 0.18); font-size: 13px; font-weight: 400; line-height: 1.45; letter-spacing: 0;
+    opacity: 0; visibility: hidden; transition: opacity .12s ease;
+}
+.help:hover .help-tip, .help-btn:focus-visible + .help-tip, .help.open .help-tip { opacity: 1; visibility: visible; }
+@media (prefers-reduced-motion: reduce) { .help-tip { transition: none; } }

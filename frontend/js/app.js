@@ -141,6 +141,19 @@ const App = {
 
         document.addEventListener('keydown', e => this.onKey(e));
 
+        // Info tips: a tap or click pins one open (phones have no hover); a click elsewhere or Escape closes it
+        const closeHelp = except => document.querySelectorAll('.help.open').forEach(h => {
+            if (h === except) return;
+            h.classList.remove('open');
+            h.querySelector('.help-btn').setAttribute('aria-expanded', 'false');
+        });
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('.help-btn');
+            closeHelp(btn && btn.parentElement);
+            if (btn) btn.setAttribute('aria-expanded', String(btn.parentElement.classList.toggle('open')));
+        });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
+
         // Offline banner
         const banner = document.getElementById('offline-banner');
         const app = document.getElementById('app');

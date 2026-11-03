@@ -10,7 +10,8 @@
 .settings-nav .admin-group { margin-top: 6px; border-top: 1px solid var(--rule); padding-top: 6px; display: grid; gap: 2px; }
 
 .settings-body { padding: 26px 40px 60px; display: grid; gap: 16px; align-content: start; min-width: 0; }
-.settings-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.settings-head { position: relative; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.settings-head .help { margin-left: -10px; align-self: center; }
 .settings-head h1 { font-size: 24px; }
 .settings-head .right { margin-left: auto; }
 .settings-lede { color: var(--muted); max-width: 62ch; margin-top: -8px; }

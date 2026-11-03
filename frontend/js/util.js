@@ -174,6 +174,13 @@ const Util = {
         return el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName);
     },
 
+    /** An info icon beside a heading. Hover, focus or tap shows `text` underneath. */
+    help(topic, text) {
+        const id = `help-${++this.helpCount}`;
+        return `<span class="help"><button type="button" class="help-btn" aria-label="About ${this.esc(topic)}" aria-expanded="false" aria-describedby="${id}"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></button><span class="help-tip" role="tooltip" id="${id}">${this.esc(text)}</span></span>`;
+    },
+    helpCount: 0,
+
     initials(name) {
         return String(name || '?').split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase();
     }

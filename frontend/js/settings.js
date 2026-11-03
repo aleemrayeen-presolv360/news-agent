@@ -121,24 +121,23 @@ const Settings = {
 
         return `
             <div class="settings-head"><h1>Preferences</h1></div>
-            <p class="settings-lede">These only change News Intel for you.</p>
 
             <div class="setting-row">
-                <div><h2 id="pref-theme-label">Theme</h2><p>System follows your laptop's light or dark setting.</p></div>
+                <div><h2 id="pref-theme-label">Theme</h2></div>
                 <div class="segmented" role="radiogroup" aria-labelledby="pref-theme-label">
                     ${radio('theme', 'light', theme, 'Light')}${radio('theme', 'dark', theme, 'Dark')}${radio('theme', 'system', theme, 'System')}
                 </div>
             </div>
 
             <div class="setting-row">
-                <div><h2 id="pref-count-label">Stories in Today's list</h2><p>Five takes about ten minutes. A change applies from the next list.</p></div>
+                <div class="has-help"><h2 id="pref-count-label">Stories in Today's list</h2>${Util.help("Stories in Today's list", 'Five takes about ten minutes. A change applies from the next list.')}</div>
                 <div class="segmented" role="radiogroup" aria-labelledby="pref-count-label">
                     ${radio('dailyCount', 3, prefs.dailyCount, '3')}${radio('dailyCount', 5, prefs.dailyCount, '5')}${radio('dailyCount', 7, prefs.dailyCount, '7')}
                 </div>
             </div>
 
             <div class="setting-row setting-row-wide">
-                <div><h2 id="pref-domains-label">Domains I follow</h2><p>Your choice, kept until you change it. Today's list only uses the ones you tick, plus any Breaking story.</p></div>
+                <div class="has-help"><h2 id="pref-domains-label">Domains I follow</h2>${Util.help('Domains I follow', "Your choice, kept until you change it. Today's list only uses the ones you tick, plus any Breaking story. All stories still shows every domain.")}</div>
                 <fieldset class="domain-picks" aria-labelledby="pref-domains-label">
                     ${Object.entries(CONFIG.DOMAINS).map(([id, name]) => `
                         <label><input type="checkbox" data-domain="${id}" ${!followed || followed.includes(id) ? 'checked' : ''}><span>${Util.esc(name)}</span></label>`).join('')}
@@ -146,12 +145,12 @@ const Settings = {
             </div>
 
             <div class="setting-row">
-                <div><h2 id="pref-legal-label">Always include Legal India</h2><p>Keep at least one Legal India story in Today's list, even in a busy AI week.</p></div>
+                <div class="has-help"><h2 id="pref-legal-label">Always include Legal India</h2>${Util.help('Always include Legal India', "Keeps at least one Legal India story in Today's list, even in a busy AI week.")}</div>
                 <button type="button" class="switch" role="switch" aria-checked="${prefs.includeLegal}" aria-labelledby="pref-legal-label" data-pref="includeLegal"></button>
             </div>
 
             <div class="setting-row">
-                <div><h2>Keyboard shortcuts</h2><p>J and K to move, S to save, N to add to a note, Ctrl K to search.</p></div>
+                <div><h2>Keyboard shortcuts</h2></div>
                 <button type="button" class="btn btn-small" data-open="shortcuts">Show all shortcuts<kbd>?</kbd></button>
             </div>`;
     },
@@ -196,8 +195,8 @@ const Settings = {
         const hidden = new Set(UserState.hiddenSources());
         const shown = this.sources.filter(s => !hidden.has(s.id) && !this.isOff(s)).length;
         return `
-            <div class="settings-head"><h1>My sources</h1></div>
-            <p class="settings-lede">Hide sources you don't need. Their stories are left out of Today and All stories, for you only, on every device you sign in on. You're showing ${shown} of ${this.sources.length}.</p>
+            <div class="settings-head"><h1>My sources</h1>${Util.help('My sources', "Hide sources you don't need. Their stories are left out of Today and All stories, for you only, on every device you sign in on.")}</div>
+            <p class="settings-lede">You're showing ${shown} of ${this.sources.length}.</p>
             ${this.sourceToolbarHtml()}
             <div class="table-wrap" id="source-table">${this.mySourcesTable()}</div>`;
     },
@@ -282,8 +281,7 @@ const Settings = {
         const off = this.sources.filter(s => this.isOff(s)).length;
         return `
             <div class="settings-head">
-                <h1>Sources</h1>
-                <span class="muted">The pipeline checks feeds every 4 hours and updates the site every morning.</span>
+                <h1>Sources</h1>${Util.help('Sources', 'The pipeline checks feeds every 4 hours and updates the site every morning.')}
                 <button type="button" class="btn btn-primary btn-small right" data-open="source-dialog"><svg class="icon"><use href="#i-plus"/></svg>Add source</button>
             </div>
             <div class="summary">
@@ -458,8 +456,7 @@ const Settings = {
     myRequestsHtml() {
         const option = ([id, name]) => `<option value="${id}">${Util.esc(name)}</option>`;
         return `
-            <div class="settings-head"><h1>Request a source</h1></div>
-            <p class="settings-lede">Know a news site, blog or newsletter the team should follow? Ask for it here. An admin approves or rejects each request, and you'll see the answer on this page and at the top of the site.</p>
+            <div class="settings-head"><h1>Request a source</h1>${Util.help('Request a source', "Know a news site, blog or newsletter the team should follow? Ask for it here. An admin approves or rejects each request, and you'll see the answer on this page and at the top of the site.")}</div>
             <form class="request-form" id="request-form" novalidate>
                 <div class="field">
                     <label for="request-url">Site address</label>
@@ -550,10 +547,9 @@ const Settings = {
         const waiting = this.requests.filter(r => r.status === 'pending').length;
         return `
             <div class="settings-head">
-                <h1>Source requests</h1>
+                <h1>Source requests</h1>${Util.help('Source requests', `Approving adds the feed to the news pipeline. ${this.ARRIVAL_TEXT} At first only its last 24 hours are kept. Rejecting needs a short reason, which the person who asked will see.`)}
                 <span class="muted">${waiting ? `${waiting} waiting` : 'Nothing waiting'}</span>
             </div>
-            <p class="settings-lede">Approving adds the feed to the news pipeline. ${this.ARRIVAL_TEXT} At first only its last 24 hours are kept. Rejecting needs a short reason, which the person who asked will see.</p>
             <div id="request-table">${this.adminRequestsTables()}</div>
             <p class="callout">Every decision is recorded in the audit log. A feed that keeps failing after approval shows under Pipeline health in Sources.</p>`;
     },
@@ -635,8 +631,7 @@ const Settings = {
         this.users = await db.getUsers();
         const admins = this.users.filter(u => u.role === 'admin' || u.is_admin === true).length;
         return `
-            <div class="settings-head"><h1>Users</h1><span class="muted">${this.users.length} ${this.users.length === 1 ? 'person' : 'people'}, ${admins} ${admins === 1 ? 'admin' : 'admins'}</span></div>
-            <p class="settings-lede">People join by creating an account on the sign-in page. Admins can manage sources, users and the audit log.</p>
+            <div class="settings-head"><h1>Users</h1>${Util.help('Users', 'People join by creating an account on the sign-in page. Admins can manage sources, users and the audit log.')}<span class="muted">${this.users.length} ${this.users.length === 1 ? 'person' : 'people'}, ${admins} ${admins === 1 ? 'admin' : 'admins'}</span></div>
             ${this.users.length ? `
             <div class="table-wrap">
                 <table>
