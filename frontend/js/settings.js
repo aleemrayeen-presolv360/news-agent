@@ -138,7 +138,7 @@ const Settings = {
             </div>
 
             <div class="setting-row setting-row-wide">
-                <div><h2 id="pref-domains-label">Domains I follow</h2><p>Today's list picks from these, and they're marked in All stories. Breaking stories always come through. All stories still shows everything.</p></div>
+                <div><h2 id="pref-domains-label">Domains I follow</h2><p>Your choice, kept until you change it. Today's list only uses the ones you tick, plus any Breaking story.</p></div>
                 <fieldset class="domain-picks" aria-labelledby="pref-domains-label">
                     ${Object.entries(CONFIG.DOMAINS).map(([id, name]) => `
                         <label><input type="checkbox" data-domain="${id}" ${!followed || followed.includes(id) ? 'checked' : ''}><span>${Util.esc(name)}</span></label>`).join('')}
@@ -462,8 +462,8 @@ const Settings = {
             <p class="settings-lede">Know a news site, blog or newsletter the team should follow? Ask for it here. An admin approves or rejects each request, and you'll see the answer on this page and at the top of the site.</p>
             <form class="request-form" id="request-form" novalidate>
                 <div class="field">
-                    <label for="request-url">Feed address</label>
-                    <input id="request-url" type="url" maxlength="2000" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="laravel-news.com/feed…" aria-describedby="request-url-hint">
+                    <label for="request-url">Site address</label>
+                    <input id="request-url" type="url" maxlength="2000" inputmode="url" autocomplete="off" spellcheck="false" required placeholder="laravel-news.com…" aria-describedby="request-url-hint">
                 </div>
                 <div class="field">
                     <label for="request-name">Name</label>
